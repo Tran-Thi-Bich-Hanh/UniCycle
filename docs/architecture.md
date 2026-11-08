@@ -47,53 +47,29 @@ graph TD
 
 ---
 
-## 2. Cấu trúc Thư mục Dự án (Project Layout)
+## 2. Các Boundary Ổn Định Của Hệ Thống (Stable Architecture Boundaries)
+
+Sơ đồ dưới đây chỉ giữ lại những thư mục và file gốc có ý nghĩa về mặt kiến trúc. Không liệt kê từng route, page hoặc component cụ thể vì chúng sẽ thay đổi thường xuyên khi sản phẩm mở rộng.
 
 ```text
 unicycle/
-├── app/
-│   ├── api/
-│   │   ├── auth/
-│   │   │   ├── register/route.ts     # POST: Đăng ký tài khoản sinh viên mới
-│   │   │   ├── login/route.ts        # POST: Xác thực email/mật khẩu, cấp JWT cookie
-│   │   │   ├── logout/route.ts       # POST: Hủy session cookie
-│   │   │   └── me/route.ts           # GET: Lấy user hiện tại, PUT: Cập nhật thông tin
-│   │   ├── categories/route.ts       # GET: Danh sách danh mục & đếm số sản phẩm
-│   │   ├── products/
-│   │   │   ├── route.ts              # GET: Tìm kiếm + Lọc nâng cao, POST: Đăng tin
-│   │   │   └── [id]/route.ts         # GET: Chi tiết tin (+view count), PUT/DELETE: Sửa/Ẩn
-│   │   ├── my-listings/route.ts      # GET: Danh sách bài đăng của user đang login
-│   │   └── upload/route.ts           # POST: Upload hình ảnh chụp thực tế
-│   ├── login/page.tsx                # Giao diện Đăng nhập Trust Blue
-│   ├── register/page.tsx             # Giao diện Đăng ký tài khoản sinh viên
-│   ├── products/
-│   │   ├── page.tsx                  # Chợ đồ cũ: Search bar, Category, Price, Condition
-│   │   ├── [id]/page.tsx             # Xem chi tiết đồ cũ, ảnh to, liên hệ người bán
-│   │   ├── new/page.tsx              # Đăng bài bán đồ cũ + Upload ảnh
-│   │   └── [id]/edit/page.tsx        # Chỉnh sửa tin, đổi giá, chuyển trạng thái "Đã bán"
-│   ├── profile/
-│   │   ├── page.tsx                  # Hồ sơ sinh viên (Trường, KTX, SĐT/Zalo)
-│   │   └── my-listings/page.tsx      # Quản lý tin của tôi (Tabs: Đang bán, Đã bán, Ẩn)
-│   ├── layout.tsx                    # Root Layout, Title, Font hệ thống
-│   ├── page.tsx                      # Trang chủ (Hero, 5 danh mục sinh viên, đồ mới đăng)
-│   └── globals.css                   # Tailwind v4 import & biến toàn cục
-├── components/
-│   ├── icons.tsx                     # Bộ Icon SVG vector nhẹ (Book, Zap, Armchair, MapPin...)
-│   ├── navbar.tsx                    # Header sticky với Search, Nút đăng tin, User menu
-│   ├── footer.tsx                    # Footer thông tin đồ án & Mẹo an toàn sinh viên
-│   └── product-card.tsx              # Card hiển thị sản phẩm (Ảnh, Tag, Tình trạng, Giá VND)
-├── lib/
-│   ├── db.ts                         # SQLite Native Driver (node:sqlite) + Auto-seed
-│   ├── auth.ts                       # Module băm scrypt + Sinh JWT session cookie
-│   └── utils.ts                      # Helpers: format tiền VND, thời gian tương đối
-├── data/
-│   └── unicycle.db                   # File cơ sở dữ liệu SQLite cục bộ (được gitignore)
-├── docs/
-│   ├── architecture.md               # Tài liệu kiến trúc và hướng dẫn debug (File này)
-│   ├── design.md                     # Tài liệu thiết kế hệ thống màu sắc và UI/UX
-│   └── project-overview.md           # Báo cáo tổng quan đồ án UniCycle
-└── package.json
+├── app/                  # Presentation & routing: pages, layouts, route handlers
+├── components/           # Shared UI và các component theo domain
+├── lib/                  # Core services, domain logic, auth và database access
+├── data/                 # Persistence boundary: dữ liệu SQLite local
+├── public/               # Static assets và media được phục vụ trực tiếp
+├── docs/                 # Architecture, design system và product documentation
+├── contracts/            # Web3 boundary (dự kiến ở các phase sau)
+├── package.json          # Dependency và scripts của ứng dụng
+├── next.config.ts        # Cấu hình framework/build
+└── tsconfig.json         # Ràng buộc TypeScript
 ```
+
+### Nguyên tắc phụ thuộc:
+1. **`app/` và `components/`** chỉ hiển thị và điều phối tương tác; không truy cập SQLite trực tiếp.
+2. **`lib/`** là boundary ổn định cho nghiệp vụ, xác thực và truy cập dữ liệu. Có thể thay UI hoặc storage mà không làm thay đổi contract của tầng này.
+3. **`data/` và `public/`** là các boundary lưu trữ có thể thay thế hoặc chuyển sang dịch vụ bên ngoài mà không lan logic vào tầng giao diện.
+4. **`contracts/`** chỉ giao tiếp với ứng dụng qua một integration layer riêng khi Web3 được triển khai.
 
 ---
 
@@ -225,4 +201,3 @@ Remove-Item -Force data\unicycle.db*
    - Khắc phục: Tắt các terminal Node đang chạy ngầm và chạy lại lệnh.
 2. **Lỗi kết nối font Google khi offline**:
    - Dự án đã được cấu hình font hệ thống trong `app/layout.tsx` nên hoàn toàn không phụ thuộc kết nối Internet đến `fonts.googleapis.com`.
-

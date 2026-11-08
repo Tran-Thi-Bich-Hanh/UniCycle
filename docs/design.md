@@ -1,102 +1,105 @@
-# UniCycle – Hệ Thống Thiết Kế (Design System & Guidelines)
+# UniCycle - Design System
 
-Tài liệu này định nghĩa ngôn ngữ thiết kế, bảng màu, typography, quy chuẩn tương tác và các tokens giao diện cho **UniCycle** theo tiêu chuẩn **ui-ux-pro-max** (chuẩn WCAG 2.2 AA, độ tương phản tối thiểu 4.5:1, micro-interactions mượt mà).
+Tài liệu này định nghĩa ngôn ngữ giao diện cho UniCycle: một marketplace C2C dành cho sinh viên, ưu tiên cảm giác tin cậy, dễ đọc và thân thiện. Mọi màn hình mới nên dùng các token và quy tắc dưới đây thay vì tự tạo màu hoặc kiểu chữ riêng.
 
----
+## 1. Định hướng thị giác
 
-## 1. Triết lý Thiết kế (Design Philosophy)
+**Từ khóa:** tin cậy, gọn gàng, trẻ trung vừa phải, có hơi hướng bền vững.
 
-UniCycle là sàn thương mại điện tử C2C dành cho sinh viên kết hợp Web3/Blockchain. Vì vậy, phong cách thiết kế chủ đạo là **Trust & Vitality (Tin cậy & Trẻ trung)**:
-- **Nền tảng trắng sáng (Clean & Focused)**: Giúp hình ảnh sản phẩm thực tế của sinh viên nổi bật, không gây rối mắt khi lướt tìm đồ cũ.
-- **Hệ màu Xanh chủ đạo (Trust Blue Spectrum)**: Màu xanh dương đậm đại diện cho sự tin cậy, chính trực và an toàn trong giao dịch; màu xanh dương tươi (Royal Blue) tạo năng lượng công nghệ; xanh dương nhạt tạo bề mặt êm dịu.
-- **Màu bổ trợ hài hòa (Harmonious Accents)**:
-  - **Xanh bạc hà / Emerald (`#059669`)**: Đại diện cho kinh tế tuần hoàn, tính bền vững, trạng thái "Mới 99%" và thông báo thành công.
-  - **Vàng ấm / Amber (`#D97706`)**: Đại diện cho trạng thái "Đang giữ chỗ", đồ cũ mức khá và cảnh báo giao dịch.
-  - **Đỏ cam (`#DC2626`)**: Báo lỗi, xóa bài đăng, trạng thái đã bán/hủy.
+- Dùng nền xanh xám rất nhạt để tách nội dung khỏi khung trình duyệt.
+- Dùng xanh teal đậm làm màu thương hiệu duy nhất cho hành động chính.
+- Dùng mint làm điểm nhấn cho trạng thái tích cực, không dùng nhiều màu cạnh tranh trong cùng một khu vực.
+- Ưu tiên bề mặt phẳng, border nhẹ và shadow rất nhỏ. Không dùng gradient cho nút hoặc toàn trang.
+- Hình ảnh sản phẩm là điểm nhấn chính; UI không được có quá nhiều badge, icon hoặc hiệu ứng.
 
----
+## 2. Color tokens
 
-## 2. Bảng Màu Chi Tiết (Color Palette & Tokens)
+| Token | Hex | Vai trò |
+|---|---|---|
+| `canvas` | `#F7F9FC` | Nền toàn trang |
+| `surface` | `#FFFFFF` | Card, form, modal |
+| `surface-subtle` | `#EAF2F4` | Nền khu vực phụ, hover nhẹ |
+| `brand` | `#1F5E7A` | CTA chính, link, focus ring |
+| `brand-strong` | `#174A61` | Hover/active của CTA |
+| `accent` | `#5FB3A2` | Điểm nhấn bền vững, trạng thái thành công |
+| `accent-subtle` | `#E6F4F1` | Nền badge/chip tích cực |
+| `text` | `#102A43` | Heading và nội dung chính |
+| `text-muted` | `#627D98` | Metadata, placeholder, mô tả phụ |
+| `border` | `#D9E2EC` | Border và divider |
+| `warning` | `#B7791F` | Cảnh báo và trạng thái giữ chỗ |
+| `danger` | `#C05640` | Lỗi, xóa, hủy |
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│  HỆ THỐNG MÀU CHỦ ĐẠO UNICYCLE                                         │
-├────────────────────────────────────────────────────────────────────────┤
-│  [ Dark Blue ]    #1E3A8A / #1D4ED8   (Navy Trust - Header, Tiêu đề)   │
-│  [ Royal Blue ]   #2563EB / #3B82F6   (Brand Primary - Nút bấm, Link)  │
-│  [ Light Blue ]   #EFF6FF / #DBEAFE   (Soft Surface - Nền thẻ, Badge)  │
-│  [ Emerald Mint ] #059669 / #10B981   (Eco/Success - Xác thực, Giá tốt)│
-│  [ Warm Amber ]   #D97706 / #F59E0B   (Attention/Warning - Giữ chỗ)    │
-│  [ Slate Pure ]   #0F172A / #475569   (Neutral Text & Crisp Borders)   │
-│  [ Canvas White ] #FFFFFF / #F8FAFC   (Clean Background)               │
-└────────────────────────────────────────────────────────────────────────┘
-```
+### Quy tắc dùng màu
 
-### Bảng Tokens CSS & Tailwind:
+- Chữ thường trên nền sáng phải đạt tương phản tối thiểu 4.5:1; không dùng `text-muted` cho nội dung quan trọng.
+- Một khu vực chỉ nên có một màu hành động chính. `accent`, `warning` và `danger` chỉ mô tả trạng thái, không dùng làm CTA mặc định.
+- Không truyền đạt trạng thái chỉ bằng màu; kết hợp với nhãn hoặc icon có tên truy cập được.
+- Trạng thái focus dùng outline `2px` màu `brand`, có khoảng cách tối thiểu `2px` với control.
 
-| Vai trò Token | Mã Hex | Tailwind Class | Mục đích sử dụng |
-|---|---|---|---|
-| **Primary (Brand Blue)** | `#2563EB` | `bg-blue-600`, `text-blue-600` | Nút bấm chính (CTA), link active, focus ring |
-| **Primary Dark (Navy)** | `#1E3A8A` | `bg-blue-900`, `text-blue-950` | Tiêu đề chính H1/H2, thanh điều hướng top |
-| **Primary Light (Sky)** | `#EFF6FF` | `bg-blue-50`, `border-blue-200` | Nền input, thẻ danh mục hover, pill badge |
-| **Secondary (Cyan/Teal)** | `#0284C7` | `bg-sky-600`, `text-sky-700` | Nút phụ, icon sinh viên, đường dẫn phụ |
-| **Success / Eco (Emerald)** | `#059669` | `bg-emerald-600`, `text-emerald-700`| Giá tiền niêm yết, tình trạng Like-New, Verify badge |
-| **Warning (Amber)** | `#D97706` | `bg-amber-500`, `text-amber-800` | Trạng thái Đang giữ chỗ, lưu ý hẹn gặp |
-| **Background (Canvas)** | `#F8FAFC` | `bg-slate-50` | Nền toàn trang, độ tương phản dịu mắt |
-| **Card / Surface** | `#FFFFFF` | `bg-white` | Thẻ sản phẩm, khung form, modal |
-| **Text Primary** | `#0F172A` | `text-slate-900` | Văn bản chính, đảm bảo độ tương phản > 7:1 |
-| **Text Muted** | `#64748B` | `text-slate-500` | Phụ đề, thời gian đăng, mô tả ngắn |
-| **Border Neutral** | `#E2E8F0` | `border-slate-200` | Viền thẻ, đường kẻ phân cách tinh tế |
+## 3. Typography
 
----
+### Font family
 
-## 3. Typography & Thang đo Phông chữ
+- Font chính: system sans-serif ổn định; ưu tiên **Geist Sans** khi được tải qua `next/font`, fallback theo thứ tự `"Segoe UI", Arial, sans-serif`.
+- Không trộn nhiều font sans-serif trong cùng một màn hình.
+- Không dùng `font-black` cho heading. Độ đậm 600-700 đủ tạo phân cấp mà vẫn giữ cảm giác mềm và dễ đọc.
 
-- **Font Family**: System UI Sans-serif tối ưu (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`), giúp tải ngay lập tức không bị giật layout (zero CLS) và hoạt động offline ổn định.
-- **Thang đo kích thước**:
-  - **H1 (Display Hero)**: `text-3xl sm:text-5xl font-black tracking-tight`
-  - **H2 (Section Heading)**: `text-xl sm:text-2xl font-extrabold text-slate-900`
-  - **H3 (Card Title / Subhead)**: `text-sm sm:text-base font-bold text-slate-800`
-  - **Body (Nội dung đọc)**: `text-xs sm:text-sm text-slate-600 leading-relaxed`
-  - **Caption / Meta**: `text-[11px] text-slate-400 font-medium`
+### Type scale
 
----
+| Vai trò | Kích thước | Weight | Line height |
+|---|---:|---:|---:|
+| Display/H1 | 36px, mobile 30px | 700 | 1.15 |
+| H2 | 26px, mobile 22px | 700 | 1.25 |
+| H3 | 18px | 600 | 1.35 |
+| Body | 16px | 400 | 1.6 |
+| Small/Meta | 14px | 400-500 | 1.45 |
+| Label/Badge | 12px | 600 | 1.2 |
 
-## 4. Quy chuẩn Giao diện Form Xác thực (Login / Register / Logout UX)
+Giới hạn chiều dài đoạn văn ở khoảng 65-75 ký tự mỗi dòng. Dùng `tracking-tight` cho heading lớn, nhưng không ép letter-spacing cho body text hoặc label.
 
-Tuân thủ nguyên tắc **Accessible Authentication** từ `ui-ux-pro-max`:
-1. **Không chặn Paste**: Người dùng được tự do dán mật khẩu từ Password Manager (Bitwarden, 1Password, Chrome AutoFill).
-2. **Thuộc tính AutoComplete đầy đủ**:
-   - Email: `autoComplete="username email"`
-   - Mật khẩu: `autoComplete="current-password"` (trang login) hoặc `autoComplete="new-password"` (trang register).
-3. **Hiển thị trạng thái tương tác rõ nét**:
-   - Focus ring: `focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white`
-   - Báo lỗi tức thời (Error summary) với màu đỏ sẫm nền hồng nhạt dễ đọc (`bg-red-50 text-red-700 border-red-200`).
-4. **Hỗ trợ Test nhanh (Demo Speed)**: Cung cấp nút 1-click điền thông tin tài khoản sinh viên mẫu (Bách Khoa, KHTN) để giảng viên hoặc người chấm đồ án kiểm thử chỉ trong 1 giây.
-5. **Nút bấm rõ ràng**: Trạng thái loading chuyển thành spinner kèm nhãn "Đang xử lý...", nút disabled chống double-click.
+## 4. Layout và spacing
 
----
+- Dùng thang spacing theo bội số 4: `4 / 8 / 12 / 16 / 24 / 32 / 48`.
+- Container desktop tối đa `1200px`, mobile dùng padding ngang `16px`, desktop `24px`.
+- Card dùng `border-radius: 12px`; modal và khu vực lớn dùng tối đa `16px`. Tránh bo tròn quá mức làm giao diện giống ứng dụng đồ chơi.
+- Card nền trắng có border `border` và shadow nhẹ `0 2px 8px rgba(16, 42, 67, 0.06)`.
+- Hình ảnh sản phẩm dùng tỷ lệ 4:3, không làm méo ảnh và không đặt text lên ảnh nếu không cần thiết.
 
-## 5. Quy chuẩn Component UI
+## 5. Component và trạng thái
 
-- **Product Card**:
-  - Khung ảnh tỷ lệ 4:3 có border bo góc `rounded-2xl`.
-  - Nhãn tình trạng (Mới, Như mới, Tốt, Khá) bo tròn đặt góc trên bên trái với màu theo cấp độ.
-  - Giá tiền in đậm to rõ bằng màu xanh ngọc tin cậy hoặc xanh dương đậm.
-  - Hiển thị vị trí nhận đồ (KTX Khu A, Khu B, Trường Bách Khoa...) kèm icon bản đồ.
-- **Nút bấm (Buttons)**:
-  - Nút chính (Primary): Gradient `from-blue-600 to-indigo-600`, bo góc tròn `rounded-full` hoặc `rounded-xl`, shadow `shadow-blue-600/20`.
-  - Nút phụ (Secondary): Nền `bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200`.
-- **Badges / Chips**:
-  - Chiều cao tối thiểu 24px, font chữ `text-[11px] font-bold`, padding `px-2.5 py-0.5`.
+### Buttons
 
----
+- **Primary:** nền `brand`, chữ trắng; hover dùng `brand-strong`.
+- **Secondary:** nền `surface`, chữ `brand`, border `brand` với độ đậm vừa phải.
+- **Tertiary:** không nền, chỉ dùng cho hành động phụ.
+- Chiều cao tối thiểu `40px`, vùng bấm tối thiểu `44px`; trạng thái loading giữ nguyên kích thước nút.
 
-## 6. Pre-delivery Checklist (Kiểm định Chất lượng)
+### Product card
 
-- [x] Độ tương phản chữ nền tối thiểu 4.5:1 (đạt chuẩn WCAG 2.2 AA).
-- [x] Không sử dụng emoji thay thế icon hệ thống (sử dụng SVG vector chuẩn).
-- [x] Tất cả các nút và thẻ bấm đều có `cursor-pointer` và hiệu ứng hover 150-200ms.
-- [x] Bàn phím có thể điều hướng (Focus ring rõ nét, không bị che khuất).
-- [x] Thiết kế Mobile-first chuẩn 375px, 768px, 1024px và 1440px.
+- Thứ tự thị giác: ảnh → tên sản phẩm → giá → tình trạng/vị trí → người bán.
+- Chỉ hiển thị badge khi badge giúp ra quyết định; tối đa hai badge trên một card.
+- Giá dùng `text`, không dùng màu xanh lá quá sáng. Trạng thái `Like new` hoặc xác thực mới dùng `accent`.
+- Hover chỉ tăng nhẹ shadow hoặc đổi border; không phóng to card làm xô lệch grid.
 
+### Forms
+
+- Label luôn hiển thị phía trên input; placeholder không thay thế label.
+- Input dùng nền `surface`, border `border`, focus bằng `brand`.
+- Lỗi hiển thị ngay cạnh field và có thông báo tổng hợp khi submit nhiều field.
+- Cho phép paste và password manager; dùng `autocomplete` đúng loại thông tin.
+
+## 6. Motion và accessibility
+
+- Transition màu, border và shadow trong `150-200ms`, easing tự nhiên.
+- Không dùng animation liên tục cho nội dung không cần chú ý. Tôn trọng `prefers-reduced-motion`.
+- Mọi icon đứng cạnh text chỉ mang tính trang trí phải được ẩn khỏi accessibility tree; icon button phải có accessible name.
+- Kiểm tra màn hình ở 375px, 768px và desktop; không để focus bị che bởi header hoặc footer cố định.
+
+## 7. Checklist trước khi bàn giao
+
+- [ ] Màn hình chỉ dùng token màu đã định nghĩa.
+- [ ] Heading, body và metadata có cấp bậc rõ ràng, không trộn font.
+- [ ] CTA chính dùng `brand`; trạng thái không bị dùng như màu trang trí.
+- [ ] Contrast text đạt WCAG 2.2 AA.
+- [ ] Hover, focus, disabled và loading đều có trạng thái rõ ràng nhưng không làm layout nhảy.
+- [ ] Giao diện vẫn dễ đọc khi giảm motion và ở viewport mobile.
