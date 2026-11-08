@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { Product } from "@/lib/db";
 import { formatCurrencyVND, formatRelativeTime, CONDITION_LABELS, STATUS_LABELS } from "@/lib/utils";
+import { IconCamera, IconEye, IconMapPin } from "./icons";
 
 export function ProductCard({ product }: { product: Product }) {
   const coverImage =
@@ -50,7 +51,7 @@ export function ProductCard({ product }: { product: Product }) {
         {/* Số lượng ảnh */}
         {product.images && product.images.length > 1 && (
           <span className="absolute bottom-2 right-2 text-[10px] font-medium bg-[#001B48]/70 text-white px-1.5 py-0.5 rounded-md backdrop-blur-xs">
-            📷 {product.images.length}
+            <IconCamera className="w-3 h-3 inline -mt-0.5 mr-1" />{product.images.length}
           </span>
         )}
       </div>
@@ -81,14 +82,14 @@ export function ProductCard({ product }: { product: Product }) {
         {/* Địa điểm & Lượt xem */}
         <div className="mt-3.5 pt-3 border-t border-[#D6E8EE]/70 flex items-center justify-between text-[11px] text-slate-500">
           <div className="flex items-center gap-1 max-w-[65%] truncate">
-            <span className="text-[#018ABE] shrink-0 text-xs">📍</span>
+            <IconMapPin className="w-3.5 h-3.5 text-[#018ABE] shrink-0" />
             <span className="truncate text-slate-600" title={product.pickup_location}>
               {product.pickup_location}
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0 text-[10px] text-slate-400">
-            <span>👁️ {product.view_count}</span>
+            <span className="inline-flex items-center gap-1"><IconEye className="w-3.5 h-3.5" />{product.view_count}</span>
             <span>•</span>
             <span>{formatRelativeTime(product.created_at)}</span>
           </div>

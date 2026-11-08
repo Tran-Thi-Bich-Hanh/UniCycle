@@ -1,4 +1,5 @@
 import React from "react";
+import { IconArmchair, IconBook, IconHome, IconMapPin, IconSparkles, IconZap } from "./icons";
 import Link from "next/link";
 import { IconShieldCheck } from "./icons";
 import UniCycleLogo from "./logo";
@@ -30,22 +31,22 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href="/products?category=sach-giao-trinh" className="hover:text-[#97CADB] transition-colors">
-                  📚 Sách & Giáo trình đại học
+                  <IconBook className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> Sách & Giáo trình đại học
                 </Link>
               </li>
               <li>
                 <Link href="/products?category=ban-ghe-noi-that" className="hover:text-[#97CADB] transition-colors">
-                  🪑 Bàn ghế & Nội thất phòng trọ
+                  <IconArmchair className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> Bàn ghế & Nội thất phòng trọ
                 </Link>
               </li>
               <li>
                 <Link href="/products?category=do-dien-thiet-bi" className="hover:text-[#97CADB] transition-colors">
-                  ⚡ Quạt, đèn & Thiết bị học tập
+                  <IconZap className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> Quạt, đèn & Thiết bị học tập
                 </Link>
               </li>
               <li>
                 <Link href="/products?category=do-dung-ktx-sinh-hoat" className="hover:text-[#97CADB] transition-colors">
-                  🏠 Đồ dùng KTX & Sinh hoạt
+                  <IconHome className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> Đồ dùng KTX & Sinh hoạt
                 </Link>
               </li>
             </ul>
@@ -55,11 +56,11 @@ export function Footer() {
           <div>
             <h4 className="text-white font-bold text-xs tracking-wider uppercase mb-3">Khu vực sinh viên</h4>
             <ul className="space-y-2 text-[#D6E8EE]/70">
-              <li className="hover:text-white transition-colors">📍 Ký túc xá Khu A ĐHQG (Dĩ An)</li>
-              <li className="hover:text-white transition-colors">📍 Ký túc xá Khu B ĐHQG</li>
-              <li className="hover:text-white transition-colors">📍 ĐH Bách Khoa CS1 & CS2</li>
-              <li className="hover:text-white transition-colors">📍 Làng Đại học Thủ Đức</li>
-              <li className="hover:text-white transition-colors">📍 Cụm trường Quận 10 & Tân Bình</li>
+              <li className="hover:text-white transition-colors"><IconMapPin className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> Ký túc xá Khu A ĐHQG (Dĩ An)</li>
+              <li className="hover:text-white transition-colors"><IconMapPin className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> Ký túc xá Khu B ĐHQG</li>
+              <li className="hover:text-white transition-colors"><IconMapPin className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> ĐH Bách Khoa CS1 & CS2</li>
+              <li className="hover:text-white transition-colors"><IconMapPin className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> Làng Đại học Thủ Đức</li>
+              <li className="hover:text-white transition-colors"><IconMapPin className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> Cụm trường Quận 10 & Tân Bình</li>
             </ul>
           </div>
 
@@ -70,7 +71,7 @@ export function Footer() {
               Mô hình kinh tế tuần hoàn (Circular Economy) kết hợp cơ chế kiểm chứng Web3/Blockchain trên Avalanche C-Chain.
             </p>
             <div className="p-3 bg-[#02457A]/50 rounded-xl border border-[#02457A] text-[11px] text-[#D6E8EE]">
-              💡 <span className="font-semibold text-[#97CADB]">Giai đoạn 1:</span> Sàn mua bán đồ cũ C2C chuẩn mực.
+              <IconSparkles className="w-3.5 h-3.5 inline -mt-0.5 mr-1.5" /> <span className="font-semibold text-[#97CADB]">Giai đoạn 1:</span> Sàn mua bán đồ cũ C2C chuẩn mực.
             </div>
           </div>
         </div>
