@@ -8,6 +8,7 @@ import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
 import { Product, Category } from "@/lib/db";
 import { formatCurrencyVND, CONDITION_LABELS } from "@/lib/utils";
+import { CategoryGlyph, IconPackage, IconSearchOff, IconSparkles, IconX } from "@/components/icons";
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Mới đăng nhất" },
@@ -24,6 +25,18 @@ const PRICE_PRESETS = [
   { label: "500k - 1 triệu", min: "500000", max: "1000000" },
   { label: "Trên 1 triệu", min: "1000000", max: "" },
 ];
+
+/** Trả về danh sách trang gọn: luôn có trang đầu/cuối và 1 trang kề trang hiện tại. */
+function pageWindow(current: number, total: number): (number | "gap")[] {
+  const pages = new Set<number>([1, total, current - 1, current, current + 1]);
+  const sorted = Array.from(pages).filter((n) => n >= 1 && n <= total).sort((a, b) => a - b);
+  const out: (number | "gap")[] = [];
+  sorted.forEach((n, i) => {
+    if (i > 0 && n - sorted[i - 1] > 1) out.push("gap");
+    out.push(n);
+  });
+  return out;
+}
 
 function ProductsExplorer() {
   const router = useRouter();
@@ -71,11 +84,12 @@ function ProductsExplorer() {
       .catch((err) => console.error("Failed to load categories:", err));
   }, []);
 
-  // Fetch products whenever URL searchParams change
+  // Fetch products whenever URL searchParams change (huỷ request cũ để tránh kết quả lệch)
   useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     const query = searchParams.toString();
-    fetch(`/api/products?${query}`)
+    fetch(`/api/products?${query}`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         setProducts(data.products || []);
@@ -83,14 +97,23 @@ function ProductsExplorer() {
           setTotal(data.pagination.total || 0);
           setTotalPages(data.pagination.totalPages || 1);
         }
+        setLoading(false);
       })
       .catch((err) => {
+        if (err?.name === "AbortError") return;
         console.error("Failed to fetch products:", err);
-      })
-      .finally(() => {
         setLoading(false);
       });
+    return () => controller.abort();
   }, [searchParams]);
+
+  // Đóng drawer bộ lọc bằng phím Esc
+  useEffect(() => {
+    if (!mobileFilterOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMobileFilterOpen(false);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileFilterOpen]);
 
   // Update query params helper
   const updateFilters = (updates: Record<string, string | null>) => {
@@ -105,12 +128,21 @@ function ProductsExplorer() {
     });
 
     // Reset to page 1 whenever filters change (unless updating page itself)
-    if (!("page" in updates)) {
+    const isPageChange = "page" in updates;
+    if (!isPageChange) {
       nextParams.delete("page");
     }
 
+    const url = `/products?${nextParams.toString()}`;
     startTransition(() => {
-      router.push(`/products?${nextParams.toString()}`);
+      // Đổi bộ lọc dùng replace để nút Back không bị "kẹt" qua từng lần tick checkbox;
+      // đổi trang vẫn push để Back quay lại trang trước.
+      if (isPageChange) {
+        router.push(url, { scroll: false });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        router.replace(url, { scroll: false });
+      }
     });
   };
 
@@ -157,7 +189,7 @@ function ProductsExplorer() {
     setMinPriceInput("");
     setMaxPriceInput("");
     startTransition(() => {
-      router.push("/products");
+      router.replace("/products", { scroll: false });
     });
   };
 
@@ -254,22 +286,18 @@ function ProductsExplorer() {
                       setKeywordInput("");
                       updateFilters({ search: null });
                     }}
-                    className="hover:text-red-600 transition-colors"
-                  >
-                    ×
-                  </button>
+                    aria-label="Xóa bộ lọc từ khóa" className="p-0.5 rounded-full hover:text-red-600 transition-colors"
+                  ><IconX className="w-3.5 h-3.5" /></button>
                 </span>
               )}
 
               {activeCategoryObj && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#D6E8EE] text-[#001B48] border border-[#97CADB]">
-                  {activeCategoryObj.icon} {activeCategoryObj.name}
+                  <CategoryGlyph name={activeCategoryObj.icon} className="w-3.5 h-3.5 text-[#018ABE]" /> {activeCategoryObj.name}
                   <button
                     onClick={() => updateFilters({ category: null })}
-                    className="hover:text-red-600 transition-colors"
-                  >
-                    ×
-                  </button>
+                    aria-label="Xóa bộ lọc danh mục" className="p-0.5 rounded-full hover:text-red-600 transition-colors"
+                  ><IconX className="w-3.5 h-3.5" /></button>
                 </span>
               )}
 
@@ -281,10 +309,8 @@ function ProductsExplorer() {
                   {CONDITION_LABELS[cond]?.label || cond}
                   <button
                     onClick={() => handleConditionToggle(cond)}
-                    className="hover:text-red-600 transition-colors"
-                  >
-                    ×
-                  </button>
+                    aria-label="Bỏ lọc tình trạng" className="p-0.5 rounded-full hover:text-red-600 transition-colors"
+                  ><IconX className="w-3.5 h-3.5" /></button>
                 </span>
               ))}
 
@@ -301,10 +327,8 @@ function ProductsExplorer() {
                       setMaxPriceInput("");
                       updateFilters({ minPrice: null, maxPrice: null });
                     }}
-                    className="hover:text-red-600 transition-colors"
-                  >
-                    ×
-                  </button>
+                    aria-label="Xóa bộ lọc khoảng giá" className="p-0.5 rounded-full hover:text-red-600 transition-colors"
+                  ><IconX className="w-3.5 h-3.5" /></button>
                 </span>
               )}
 
@@ -351,6 +375,7 @@ function ProductsExplorer() {
                 <input
                   type="text"
                   placeholder="Giáo trình, tai nghe..."
+                  aria-label="Tìm từ khóa"
                   value={keywordInput}
                   onChange={(e) => setKeywordInput(e.target.value)}
                   className="w-full pl-3 pr-8 py-2 text-sm bg-white rounded-xl border border-[#D6E8EE] text-[#001B48] placeholder-[#02457A]/50 focus:outline-hidden focus:border-[#018ABE] focus:ring-1 focus:ring-[#018ABE]"
@@ -383,7 +408,7 @@ function ProductsExplorer() {
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <span>✨</span>
+                    <IconSparkles className="w-4 h-4 shrink-0" />
                     <span>Tất cả danh mục</span>
                   </span>
                   <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${!currentCategory ? "bg-white/20 text-white" : "bg-[#D6E8EE] text-[#001B48]"}`}>
@@ -405,7 +430,7 @@ function ProductsExplorer() {
                       }`}
                     >
                       <span className="flex items-center gap-2 truncate">
-                        <span>{cat.icon || "📦"}</span>
+                        <CategoryGlyph name={cat.icon} className="w-4 h-4 shrink-0" />
                         <span className="truncate">{cat.name}</span>
                       </span>
                       {typeof cat.product_count === "number" && (
@@ -482,6 +507,7 @@ function ProductsExplorer() {
                   <input
                     type="number"
                     placeholder="Từ"
+                    aria-label="Giá từ (VND)"
                     value={minPriceInput}
                     onChange={(e) => setMinPriceInput(e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[#D6E8EE] text-[#001B48] focus:border-[#018ABE] focus:outline-hidden"
@@ -490,6 +516,7 @@ function ProductsExplorer() {
                   <input
                     type="number"
                     placeholder="Đến"
+                    aria-label="Giá đến (VND)"
                     value={maxPriceInput}
                     onChange={(e) => setMaxPriceInput(e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[#D6E8EE] text-[#001B48] focus:border-[#018ABE] focus:outline-hidden"
@@ -534,7 +561,7 @@ function ProductsExplorer() {
             </div>
 
             {/* Trạng thái đang tải (Loading Skeleton) */}
-            {loading ? (
+            {loading && products.length === 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6">
                 {Array.from({ length: 6 }).map((_, idx) => (
                   <div
@@ -554,7 +581,12 @@ function ProductsExplorer() {
             ) : products.length > 0 ? (
               <>
                 {/* Lưới sản phẩm */}
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6">
+                <div
+                  aria-busy={loading}
+                  className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6 transition-opacity ${
+                    loading ? "opacity-50 pointer-events-none" : ""
+                  }`}
+                >
                   {products.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
@@ -573,11 +605,20 @@ function ProductsExplorer() {
                     </button>
 
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                      {pageWindow(currentPage, totalPages).map((p, i) => {
+                        if (p === "gap") {
+                          return (
+                            <span key={`gap-${i}`} aria-hidden="true" className="w-6 text-center text-[#02457A]">
+                              …
+                            </span>
+                          );
+                        }
                         const isActive = p === currentPage;
                         return (
                           <button
                             key={p}
+                            aria-label={`Trang ${p}`}
+                            aria-current={isActive ? "page" : undefined}
                             type="button"
                             onClick={() => updateFilters({ page: p.toString() })}
                             className={`w-9 h-9 text-xs font-extrabold rounded-xl transition-all ${
@@ -606,8 +647,8 @@ function ProductsExplorer() {
             ) : (
               /* Trạng thái trống (Empty State) */
               <div className="text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-[#97CADB] flex flex-col items-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#D6E8EE]/60 flex items-center justify-center text-3xl mb-4 text-[#018ABE]">
-                  🔍
+                <div className="w-16 h-16 rounded-2xl bg-[#D6E8EE]/60 flex items-center justify-center mb-4 text-[#018ABE]">
+                  <IconSearchOff className="w-8 h-8" />
                 </div>
                 <h3 className="text-lg font-bold text-[#001B48]">
                   Không tìm thấy món đồ phù hợp
@@ -632,7 +673,7 @@ function ProductsExplorer() {
 
       {/* MOBILE FILTER MODAL DRAWER */}
       {mobileFilterOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+        <div className="fixed inset-0 z-50 lg:hidden flex" role="dialog" aria-modal="true" aria-label="Bộ lọc tìm kiếm">
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
@@ -647,9 +688,10 @@ function ProductsExplorer() {
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#02457A] hover:bg-[#D6E8EE]/50"
+                aria-label="Đóng bộ lọc"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-[#02457A] hover:bg-[#D6E8EE]/50"
               >
-                ✕
+                <IconX className="w-4 h-4" />
               </button>
             </div>
 
@@ -670,6 +712,7 @@ function ProductsExplorer() {
                   <input
                     type="text"
                     placeholder="Nhập tên đồ..."
+                    aria-label="Tìm từ khóa"
                     value={keywordInput}
                     onChange={(e) => setKeywordInput(e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-xl border border-[#D6E8EE] focus:border-[#018ABE]"
@@ -689,11 +732,11 @@ function ProductsExplorer() {
                       updateFilters({ category: null });
                       setMobileFilterOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold ${
+                    className={`w-full flex items-center gap-2 text-left px-3 py-2.5 rounded-xl text-xs font-semibold ${
                       !currentCategory ? "bg-[#02457A] text-white" : "text-[#001B48] hover:bg-[#D6E8EE]/40"
                     }`}
                   >
-                    ✨ Tất cả danh mục
+                    Tất cả danh mục
                   </button>
                   {categories.map((cat) => (
                     <button
@@ -703,13 +746,14 @@ function ProductsExplorer() {
                         handleCategorySelect(cat.slug);
                         setMobileFilterOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold ${
+                      className={`w-full flex items-center gap-2 text-left px-3 py-2.5 rounded-xl text-xs font-semibold ${
                         currentCategory === cat.slug || currentCategory === cat.id
                           ? "bg-[#02457A] text-white"
                           : "text-[#001B48] hover:bg-[#D6E8EE]/40"
                       }`}
                     >
-                      {cat.icon || "📦"} {cat.name} ({cat.product_count || 0})
+                      <CategoryGlyph name={cat.icon} className="w-4 h-4 shrink-0" />
+                      <span>{cat.name} ({cat.product_count || 0})</span>
                     </button>
                   ))}
                 </div>
