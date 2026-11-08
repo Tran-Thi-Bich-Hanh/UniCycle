@@ -7,11 +7,12 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { IconShieldCheck, IconSparkles, IconArrowRight } from "@/components/icons";
 import UniCycleLogo from "@/components/logo";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/";
+  const redirectUrl = safeRedirect(searchParams.get("redirect"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { IconShieldCheck, IconArrowRight } from "@/components/icons";
 import UniCycleLogo from "@/components/logo";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 const POPULAR_UNIVERSITIES = [
   "Đại học Bách Khoa - ĐHQG TP.HCM",
@@ -24,7 +25,7 @@ const POPULAR_UNIVERSITIES = [
 function RegisterFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/";
+  const redirectUrl = safeRedirect(searchParams.get("redirect"));
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
