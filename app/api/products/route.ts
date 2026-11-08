@@ -145,7 +145,7 @@ export async function GET(request: Request) {
         university: row.s_university,
         campus_location: row.s_campus,
         avatar_url: row.s_avatar,
-        phone: row.s_phone,
+        phone: null, // Danh sách công khai không trả SĐT người bán
       },
       images: imagesByProduct[row.id] || [],
     }));
@@ -185,6 +185,10 @@ export async function POST(request: Request) {
 
     if (Number(price) < 0) {
       return NextResponse.json({ error: "Giá bán không hợp lệ." }, { status: 400 });
+    }
+
+    if (!Array.isArray(images) || images.filter((u: unknown) => typeof u === "string" && u).length === 0) {
+      return NextResponse.json({ error: "Vui lòng tải lên ít nhất 1 ảnh thực tế của món đồ." }, { status: 400 });
     }
 
     const productId = `prod_${crypto.randomBytes(8).toString("hex")}`;
