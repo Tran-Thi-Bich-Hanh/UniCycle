@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { IconShieldCheck, IconSparkles, IconArrowRight } from "@/components/icons";
+import UniCycleLogo from "@/components/logo";
 
 function LoginFormContent() {
   const router = useRouter();
@@ -49,17 +50,15 @@ function LoginFormContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-white selection:bg-[#018ABE] selection:text-white">
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center p-4 py-12">
-        <div className="max-w-md w-full bg-white p-6 sm:p-9 rounded-3xl border border-slate-200/90 shadow-xl shadow-blue-950/5 space-y-6">
+        <div className="max-w-md w-full bg-white p-6 sm:p-9 rounded-3xl border border-[#D6E8EE] shadow-xl shadow-[#001B48]/5 space-y-6">
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-xl bg-[#1F5E7A] text-white flex items-center justify-center text-xl font-bold mx-auto shadow-sm" aria-hidden="true">
-              U
-            </div>
-            <h1 className="text-2xl font-bold text-[#102A43] tracking-tight">
+            <UniCycleLogo className="h-16 w-auto mx-auto mb-1 drop-shadow-xs" />
+            <h1 className="text-2xl font-black text-[#001B48] tracking-tight">
               Đăng nhập UniCycle
             </h1>
             <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
@@ -83,7 +82,7 @@ function LoginFormContent() {
             <div>
               <label
                 htmlFor="login-email"
-                className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5"
+                className="block text-xs font-bold text-[#001B48] uppercase tracking-wider mb-1.5"
               >
                 Email sinh viên
               </label>
@@ -94,7 +93,7 @@ function LoginFormContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ten.sinhvien@edu.vn"
-                className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 text-slate-800 transition-all placeholder-slate-400"
+                className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-[#D6E8EE] rounded-xl focus:bg-white focus:border-[#018ABE] focus:outline-hidden focus:ring-2 focus:ring-[#018ABE]/20 text-[#001B48] transition-all placeholder-slate-400"
                 required
               />
             </div>
@@ -103,11 +102,11 @@ function LoginFormContent() {
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="login-password"
-                  className="block text-xs font-bold text-slate-700 uppercase tracking-wider"
+                  className="block text-xs font-bold text-[#001B48] uppercase tracking-wider"
                 >
                   Mật khẩu
                 </label>
-                <span className="text-[11px] text-blue-700 font-medium hover:underline cursor-pointer">
+                <span className="text-[11px] text-[#018ABE] font-medium hover:underline cursor-pointer">
                   Quên mật khẩu?
                 </span>
               </div>
@@ -118,7 +117,7 @@ function LoginFormContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 text-slate-800 transition-all placeholder-slate-400"
+                className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-[#D6E8EE] rounded-xl focus:bg-white focus:border-[#018ABE] focus:outline-hidden focus:ring-2 focus:ring-[#018ABE]/20 text-[#001B48] transition-all placeholder-slate-400"
                 required
               />
             </div>
@@ -126,21 +125,21 @@ function LoginFormContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg text-xs font-bold text-white bg-[#1F5E7A] hover:bg-[#174A61] shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
+              className="w-full py-3 rounded-full text-xs font-bold text-white bg-gradient-to-r from-[#02457A] to-[#018ABE] hover:from-[#001B48] hover:to-[#02457A] shadow-md shadow-[#018ABE]/25 transition-all active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               <span>{loading ? "Đang xác thực..." : "Đăng nhập ngay"}</span>
-              {!loading && <IconArrowRight className="w-3.5 h-3.5" />}
+              {!loading && <IconArrowRight className="w-3.5 h-3.5 text-[#D6E8EE]" />}
             </button>
           </form>
 
           {/* Quick Demo Login Box */}
-          <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 text-xs space-y-2.5">
+          <div className="p-4 rounded-2xl bg-[#D6E8EE]/40 border border-[#97CADB]/60 text-xs space-y-2.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-bold text-blue-950">
-                <IconSparkles className="w-3.5 h-3.5 text-blue-600" />
+              <div className="flex items-center gap-1.5 font-bold text-[#001B48]">
+                <IconSparkles className="w-3.5 h-3.5 text-[#018ABE]" />
                 <span>Test nhanh 1-Click (Tài khoản mẫu):</span>
               </div>
-              <span className="text-[10px] font-semibold text-blue-700 bg-white px-2 py-0.5 rounded-full border border-blue-200">
+              <span className="text-[10px] font-bold text-[#02457A] bg-white px-2 py-0.5 rounded-full border border-[#97CADB]/60">
                 Sinh viên
               </span>
             </div>
@@ -149,9 +148,9 @@ function LoginFormContent() {
               <button
                 type="button"
                 onClick={() => handleQuickLogin("an.nguyen@student.hcmut.edu.vn")}
-                className="text-left px-3 py-2 rounded-xl bg-white border border-blue-200 hover:border-blue-500 hover:bg-blue-50/50 text-slate-700 transition-all cursor-pointer shadow-2xs group"
+                className="text-left px-3 py-2 rounded-xl bg-white border border-[#D6E8EE] hover:border-[#018ABE] hover:bg-[#D6E8EE]/30 text-slate-700 transition-all cursor-pointer shadow-2xs group"
               >
-                <div className="font-bold text-xs text-blue-950 group-hover:text-blue-700 truncate">
+                <div className="font-bold text-xs text-[#001B48] group-hover:text-[#018ABE] truncate">
                   Nguyễn Văn An
                 </div>
                 <div className="text-[10px] text-slate-500 truncate">ĐH Bách Khoa TP.HCM</div>
@@ -160,32 +159,32 @@ function LoginFormContent() {
               <button
                 type="button"
                 onClick={() => handleQuickLogin("mai.tran@student.hcmus.edu.vn")}
-                className="text-left px-3 py-2 rounded-xl bg-white border border-blue-200 hover:border-blue-500 hover:bg-blue-50/50 text-slate-700 transition-all cursor-pointer shadow-2xs group"
+                className="text-left px-3 py-2 rounded-xl bg-white border border-[#D6E8EE] hover:border-[#018ABE] hover:bg-[#D6E8EE]/30 text-slate-700 transition-all cursor-pointer shadow-2xs group"
               >
-                <div className="font-bold text-xs text-blue-950 group-hover:text-blue-700 truncate">
+                <div className="font-bold text-xs text-[#001B48] group-hover:text-[#018ABE] truncate">
                   Trần Thị Mai
                 </div>
                 <div className="text-[10px] text-slate-500 truncate">ĐH Khoa học Tự nhiên</div>
               </button>
             </div>
 
-            <p className="text-[10px] text-blue-800/80 text-center font-medium pt-1">
-              Mật khẩu mặc định: <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono text-blue-900">Password123</code>
+            <p className="text-[10px] text-[#02457A] text-center font-medium pt-1">
+              Mật khẩu mặc định: <code className="bg-white px-1.5 py-0.5 rounded border border-[#97CADB] font-mono text-[#001B48]">Password123</code>
             </p>
           </div>
 
           {/* Trust and safety highlight */}
           <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 pt-1">
-            <IconShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <IconShieldCheck className="w-3.5 h-3.5 text-[#018ABE]" />
             <span>Môi trường mua bán đồ cũ an toàn & minh bạch</span>
           </div>
 
           {/* Footer link */}
-          <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
+          <div className="text-center text-xs text-slate-500 pt-2 border-t border-[#D6E8EE]/70">
             Chưa có tài khoản?{" "}
             <Link
               href={`/register?redirect=${encodeURIComponent(redirectUrl)}`}
-              className="text-blue-700 font-bold hover:underline"
+              className="text-[#018ABE] font-bold hover:underline"
             >
               Tạo tài khoản sinh viên mới
             </Link>
@@ -200,7 +199,7 @@ function LoginFormContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50 p-8 text-center text-slate-500">Đang tải...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white p-8 text-center text-slate-500">Đang tải...</div>}>
       <LoginFormContent />
     </Suspense>
   );
