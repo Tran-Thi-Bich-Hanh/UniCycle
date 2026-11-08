@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   IconSearch,
   IconPlus,
   IconUser,
   IconLogOut,
   IconSparkles,
+  IconSchool,
 } from "./icons";
 import UniCycleLogo from "./logo";
 
@@ -22,6 +23,8 @@ interface CurrentUser {
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+  const menuRef = useRef<HTMLDivElement>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -42,6 +45,29 @@ export function Navbar() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!showDropdown) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowDropdown(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setShowDropdown(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [showDropdown]);
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+  const navLink = (href: string) =>
+    `text-xs font-semibold px-3 py-2 rounded-lg transition-colors ${
+      isActive(href)
+        ? "text-[#018ABE] bg-[#D6E8EE]/60"
+        : "text-[#02457A] hover:text-[#018ABE] hover:bg-[#D6E8EE]/40"
+    }`;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +123,8 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             <Link
               href="/products"
-              className="hidden lg:inline-flex items-center text-xs font-semibold text-[#02457A] hover:text-[#018ABE] px-3 py-2 rounded-lg hover:bg-[#D6E8EE]/40 transition-colors"
+              aria-current={isActive("/products") ? "page" : undefined}
+              className={`hidden lg:inline-flex items-center ${navLink("/products")}`}
             >
               Tất cả đồ cũ
             </Link>
@@ -113,9 +140,10 @@ export function Navbar() {
 
             {/* Auth User Menu */}
             {currentUser ? (
-              <div className="relative">
+              <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setShowDropdown(!showDropdown)}
+                  aria-haspopup="menu"
                   className="flex items-center gap-2 p-1.5 rounded-full hover:bg-[#D6E8EE]/40 transition-colors border border-[#D6E8EE] cursor-pointer"
                   aria-expanded={showDropdown}
                 >
@@ -136,7 +164,7 @@ export function Navbar() {
                       <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
                       {currentUser.university && (
                         <p className="text-[10px] text-[#018ABE] font-semibold mt-1 truncate">
-                          🏫 {currentUser.university}
+                          <IconSchool className="w-3 h-3 inline -mt-0.5 mr-1" />{currentUser.university}
                         </p>
                       )}
                     </div>
@@ -209,6 +237,25 @@ export function Navbar() {
             </button>
           </form>
         </div>
+
+        {/* Mobile quick navigation */}
+        <nav aria-label="Điều hướng chính" className="flex items-center gap-1 pb-2 lg:hidden overflow-x-auto -mx-1 px-1">
+          <Link href="/" aria-current={isActive("/") ? "page" : undefined} className={`shrink-0 ${navLink("/")}`}>
+            Trang chủ
+          </Link>
+          <Link href="/products" aria-current={isActive("/products") ? "page" : undefined} className={`shrink-0 ${navLink("/products")}`}>
+            Tất cả đồ cũ
+          </Link>
+          {currentUser && (
+            <Link
+              href="/profile/my-listings"
+              aria-current={isActive("/profile") ? "page" : undefined}
+              className={`shrink-0 ${navLink("/profile")}`}
+            >
+              Tin của tôi
+            </Link>
+          )}
+        </nav>
       </div>
     </header>
   );

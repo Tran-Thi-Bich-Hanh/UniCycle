@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { Toast, useToast } from "@/components/toast";
+import { IconClock, IconEdit, IconEye, IconMapPin, IconPackage } from "@/components/icons";
 import { Product } from "@/lib/db";
 import { formatCurrencyVND, formatRelativeTime, CONDITION_LABELS, STATUS_LABELS } from "@/lib/utils";
 
@@ -22,6 +24,7 @@ export default function MyListingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const { toast, show, dismiss } = useToast();
 
   const fetchListings = () => {
     setLoading(true);
@@ -48,20 +51,34 @@ export default function MyListingsPage() {
     fetchListings();
   }, [activeTab]);
 
-  // Update status (ACTIVE, SOLD, HIDDEN)
-  const handleUpdateStatus = async (productId: string, newStatus: "ACTIVE" | "SOLD" | "HIDDEN") => {
-    setActionLoadingId(productId);
+  const STATUS_MESSAGES: Record<string, string> = {
+    SOLD: "Đã đánh dấu là đã bán.",
+    HIDDEN: "Đã tạm ẩn tin khỏi kết quả tìm kiếm.",
+    ACTIVE: "Tin đã được mở bán lại.",
+  };
+
+  // Update status (ACTIVE, SOLD, HIDDEN) - có thông báo và cho phép hoàn tác
+  const handleUpdateStatus = async (
+    product: Product,
+    newStatus: "ACTIVE" | "SOLD" | "HIDDEN",
+    isUndo = false
+  ) => {
+    const previousStatus = product.status as "ACTIVE" | "SOLD" | "HIDDEN";
+    setActionLoadingId(product.id);
     try {
-      const res = await fetch(`/api/products/${productId}`, {
+      const res = await fetch(`/api/products/${product.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (res.ok) {
-        fetchListings();
-      }
+      if (!res.ok) throw new Error();
+      fetchListings();
+      show(isUndo ? "Đã hoàn tác." : STATUS_MESSAGES[newStatus], isUndo ? {} : {
+        actionLabel: "Hoàn tác",
+        onAction: () => handleUpdateStatus(product, previousStatus, true),
+      });
     } catch (err) {
-      console.error("Failed to update status:", err);
+      show("Không thể cập nhật trạng thái, hãy thử lại.", { type: "error" });
     } finally {
       setActionLoadingId(null);
     }
@@ -261,11 +278,9 @@ export default function MyListingsPage() {
                       </div>
 
                       <div className="flex items-center gap-3 text-xs text-[#02457A]">
-                        <span>🕒 {formatRelativeTime(product.created_at)}</span>
-                        <span>•</span>
-                        <span>👁️ {product.view_count} lượt xem</span>
-                        <span>•</span>
-                        <span className="truncate">📍 {product.pickup_location}</span>
+                        <span className="inline-flex items-center gap-1"><IconClock className="w-3.5 h-3.5" /> {formatRelativeTime(product.created_at)}</span>
+                        <span className="inline-flex items-center gap-1"><IconEye className="w-3.5 h-3.5" /> {product.view_count}</span>
+                        <span className="inline-flex items-center gap-1 truncate"><IconMapPin className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{product.pickup_location}</span></span>
                       </div>
                     </div>
                   </div>
@@ -277,16 +292,16 @@ export default function MyListingsPage() {
                       <button
                         type="button"
                         disabled={isActionLoading}
-                        onClick={() => handleUpdateStatus(product.id, "SOLD")}
+                        onClick={() => handleUpdateStatus(product, "SOLD")}
                         className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#02457A] hover:bg-[#001B48] text-white transition-colors text-center disabled:opacity-50"
                       >
-                        {isActionLoading ? "..." : "✓ Đã bán"}
+                        {isActionLoading ? "..." : "Đã bán"}
                       </button>
                     ) : (
                       <button
                         type="button"
                         disabled={isActionLoading}
-                        onClick={() => handleUpdateStatus(product.id, "ACTIVE")}
+                        onClick={() => handleUpdateStatus(product, "ACTIVE")}
                         className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#018ABE] hover:bg-[#02457A] text-white transition-colors text-center disabled:opacity-50"
                       >
                         {isActionLoading ? "..." : "Mở bán lại"}
@@ -296,9 +311,9 @@ export default function MyListingsPage() {
                     {/* Sửa tin */}
                     <Link
                       href={`/products/${product.id}/edit`}
-                      className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#001B48] border border-[#97CADB] hover:bg-[#D6E8EE]/40 transition-colors text-center"
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#001B48] border border-[#97CADB] hover:bg-[#D6E8EE]/40 transition-colors text-center"
                     >
-                      ✏️ Chỉnh sửa
+                      <IconEdit className="w-3.5 h-3.5" /> Chỉnh sửa
                     </Link>
 
                     {/* Ẩn tin / Bỏ ẩn */}
@@ -306,7 +321,7 @@ export default function MyListingsPage() {
                       <button
                         type="button"
                         disabled={isActionLoading}
-                        onClick={() => handleUpdateStatus(product.id, "HIDDEN")}
+                        onClick={() => handleUpdateStatus(product, "HIDDEN")}
                         className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-[11px] font-medium text-[#02457A] hover:text-red-600 transition-colors text-center"
                       >
                         Tạm ẩn
@@ -315,7 +330,7 @@ export default function MyListingsPage() {
                       <button
                         type="button"
                         disabled={isActionLoading}
-                        onClick={() => handleUpdateStatus(product.id, "ACTIVE")}
+                        onClick={() => handleUpdateStatus(product, "ACTIVE")}
                         className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-[11px] font-medium text-[#018ABE] hover:underline transition-colors text-center"
                       >
                         Bỏ ẩn
@@ -328,8 +343,8 @@ export default function MyListingsPage() {
           </div>
         ) : (
           <div className="text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-[#97CADB] flex flex-col items-center">
-            <div className="w-16 h-16 rounded-2xl bg-[#D6E8EE]/60 flex items-center justify-center text-3xl mb-4 text-[#018ABE]">
-              📦
+            <div className="w-16 h-16 rounded-2xl bg-[#D6E8EE]/60 flex items-center justify-center mb-4 text-[#018ABE]">
+              <IconPackage className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold text-[#001B48]">
               {activeTab === "ACTIVE"
@@ -353,6 +368,7 @@ export default function MyListingsPage() {
         )}
       </main>
 
+      <Toast toast={toast} onDismiss={dismiss} />
       <Footer />
     </div>
   );
