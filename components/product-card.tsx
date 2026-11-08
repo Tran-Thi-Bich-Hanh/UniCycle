@@ -1,9 +1,12 @@
 import React from "react";
+import { connection } from "next/server";
 import Link from "next/link";
 import { Product } from "@/lib/db";
 import { formatCurrencyVND, formatRelativeTime, CONDITION_LABELS, STATUS_LABELS } from "@/lib/utils";
 
-export function ProductCard({ product }: { product: Product }) {
+export async function ProductCard({ product }: { product: Product }) {
+  await connection();
+
   const coverImage =
     product.images && product.images.length > 0
       ? product.images[0].url
@@ -18,7 +21,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/products/${product.id}`}
-      className="group flex flex-col bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs hover:shadow-lg hover:shadow-blue-900/5 hover:border-blue-300 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+      className="group flex flex-col bg-white rounded-xl border border-[#D9E2EC] overflow-hidden shadow-[0_2px_8px_rgba(16,42,67,0.06)] hover:shadow-[0_4px_12px_rgba(16,42,67,0.1)] hover:border-[#1F5E7A] transition-all duration-200 cursor-pointer"
     >
       {/* Khung ảnh sản phẩm */}
       <div className="relative aspect-4/3 w-full bg-slate-100 overflow-hidden">
@@ -72,7 +75,7 @@ export function ProductCard({ product }: { product: Product }) {
 
           {/* Giá tiền */}
           <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-sm sm:text-base font-black text-blue-700">
+            <span className="text-sm sm:text-base font-bold text-[#1F5E7A]">
               {formatCurrencyVND(product.price)}
             </span>
           </div>
@@ -81,14 +84,14 @@ export function ProductCard({ product }: { product: Product }) {
         {/* Địa điểm & Lượt xem */}
         <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
           <div className="flex items-center gap-1 max-w-[65%] truncate">
-            <span className="text-slate-400 shrink-0">📍</span>
+            <span className="text-[#627D98] shrink-0" aria-hidden="true">●</span>
             <span className="truncate" title={product.pickup_location}>
               {product.pickup_location}
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0 text-[10px] text-slate-400">
-            <span>👁️ {product.view_count}</span>
+            <span>{product.view_count} lượt xem</span>
             <span>•</span>
             <span>{formatRelativeTime(product.created_at)}</span>
           </div>
@@ -97,4 +100,3 @@ export function ProductCard({ product }: { product: Product }) {
     </Link>
   );
 }
-

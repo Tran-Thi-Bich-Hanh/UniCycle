@@ -4,22 +4,22 @@ import { IconShieldCheck } from "./icons";
 
 export function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-400 text-xs mt-auto border-t border-slate-800">
+    <footer className="bg-[#102A43] text-[#B8C7D6] text-xs mt-auto border-t border-[#1F5E7A]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           {/* Brand info */}
           <div className="md:col-span-1 space-y-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
-                🔄
+              <div className="w-8 h-8 rounded-lg bg-[#5FB3A2] flex items-center justify-center text-[#174A61] font-bold text-lg" aria-hidden="true">
+                U
               </div>
-              <span className="text-xl font-black text-white">UniCycle</span>
+              <span className="text-xl font-bold text-white">UniCycle</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Nền tảng mua bán và tái sử dụng đồ dùng uy tín, tiết kiệm dành riêng cho cộng đồng sinh viên các trường đại học tại TP.HCM.
             </p>
-            <div className="flex items-center gap-1.5 text-xs text-blue-400 pt-1 font-semibold">
-              <IconShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center gap-1.5 text-xs text-[#A9D8CF] pt-1 font-semibold">
+              <IconShieldCheck className="w-4 h-4 text-[#5FB3A2]" />
               <span>Giao dịch an toàn & minh bạch</span>
             </div>
           </div>
@@ -30,22 +30,22 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href="/products?category=sach-giao-trinh" className="hover:text-blue-400 transition-colors">
-                  📚 Sách & Giáo trình đại học
+                  Sách & Giáo trình đại học
                 </Link>
               </li>
               <li>
                 <Link href="/products?category=ban-ghe-noi-that" className="hover:text-blue-400 transition-colors">
-                  🪑 Bàn ghế & Nội thất phòng trọ
+                  Bàn ghế & Nội thất phòng trọ
                 </Link>
               </li>
               <li>
                 <Link href="/products?category=do-dien-thiet-bi" className="hover:text-blue-400 transition-colors">
-                  ⚡ Quạt, đèn & Thiết bị học tập
+                  Quạt, đèn & Thiết bị học tập
                 </Link>
               </li>
               <li>
                 <Link href="/products?category=do-dung-ktx-sinh-hoat" className="hover:text-blue-400 transition-colors">
-                  🏠 Đồ dùng KTX & Sinh hoạt
+                  Đồ dùng KTX & Sinh hoạt
                 </Link>
               </li>
             </ul>
@@ -55,11 +55,11 @@ export function Footer() {
           <div>
             <h4 className="text-white font-bold text-xs tracking-wider uppercase mb-3">Khu vực sinh viên</h4>
             <ul className="space-y-2">
-              <li className="hover:text-slate-300">📍 Ký túc xá Khu A ĐHQG (Dĩ An)</li>
-              <li className="hover:text-slate-300">📍 Ký túc xá Khu B ĐHQG</li>
-              <li className="hover:text-slate-300">📍 ĐH Bách Khoa CS1 & CS2</li>
-              <li className="hover:text-slate-300">📍 Làng Đại học Thủ Đức</li>
-              <li className="hover:text-slate-300">📍 Cụm trường Quận 10 & Tân Bình</li>
+              <li className="hover:text-white transition-colors">Ký túc xá Khu A ĐHQG (Dĩ An)</li>
+              <li className="hover:text-white transition-colors">Ký túc xá Khu B ĐHQG</li>
+              <li className="hover:text-white transition-colors">ĐH Bách Khoa CS1 & CS2</li>
+              <li className="hover:text-white transition-colors">Làng Đại học Thủ Đức</li>
+              <li className="hover:text-white transition-colors">Cụm trường Quận 10 & Tân Bình</li>
             </ul>
           </div>
 
@@ -69,8 +69,8 @@ export function Footer() {
             <p className="text-xs text-slate-400 leading-relaxed mb-3">
               Mô hình kinh tế tuần hoàn (Circular Economy) kết hợp cơ chế kiểm chứng Web3/Blockchain trên Avalanche C-Chain.
             </p>
-            <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700/60 text-[11px] text-slate-300">
-              💡 <span className="font-semibold text-blue-400">Giai đoạn 1:</span> Sàn mua bán đồ cũ C2C chuẩn mực.
+            <div className="p-3 bg-[#174A61] rounded-xl border border-[#2D6D83] text-[11px] text-[#D8E5EC]">
+              <span className="font-semibold text-[#A9D8CF]">Giai đoạn 1:</span> Sàn mua bán đồ cũ C2C chuẩn mực.
             </div>
           </div>
         </div>
@@ -87,4 +87,3 @@ export function Footer() {
     </footer>
   );
 }
-

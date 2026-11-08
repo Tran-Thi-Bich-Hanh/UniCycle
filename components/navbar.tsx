@@ -60,16 +60,16 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs">
+    <header className="sticky top-0 z-50 bg-white border-b border-[#D9E2EC] shadow-[0_1px_4px_rgba(16,42,67,0.04)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-500 flex items-center justify-center text-white font-black text-xl shadow-md shadow-blue-600/25 group-hover:scale-105 transition-transform">
-              🔄
+            <div className="w-10 h-10 rounded-xl bg-[#1F5E7A] flex items-center justify-center text-white font-bold text-xl shadow-sm group-hover:bg-[#174A61] transition-colors" aria-hidden="true">
+              U
             </div>
             <div>
-              <span className="text-xl font-extrabold bg-gradient-to-r from-blue-950 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+              <span className="text-xl font-bold text-[#102A43]">
                 UniCycle
               </span>
               <span className="hidden sm:inline-block ml-1.5 px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200/80 rounded-md">
@@ -88,7 +88,7 @@ export function Navbar() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm giáo trình, bàn học, quạt điện, nệm KTX..."
-              className="w-full pl-10 pr-4 py-2 text-xs bg-slate-100/90 border border-transparent rounded-full focus:bg-white focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-800 placeholder-slate-400"
+              className="w-full pl-10 pr-4 py-2 text-xs bg-[#EAF2F4] border border-transparent rounded-lg focus:bg-white focus:border-[#1F5E7A] focus:outline-hidden focus:ring-2 focus:ring-[#1F5E7A]/20 transition-all text-[#102A43] placeholder-[#627D98]"
             />
             <button
               type="submit"
@@ -111,7 +111,7 @@ export function Navbar() {
             {/* Post listing button */}
             <Link
               href="/products/new"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-500 shadow-sm shadow-blue-600/30 hover:shadow-md hover:shadow-blue-600/40 transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-[#1F5E7A] hover:bg-[#174A61] shadow-sm transition-colors cursor-pointer"
             >
               <IconPlus className="w-3.5 h-3.5" />
               <span>Đăng tin</span>
@@ -122,7 +122,7 @@ export function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="flex items-center gap-2 p-1.5 rounded-full hover:bg-blue-50/80 transition-colors border border-slate-200 cursor-pointer"
+                  className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[#EAF2F4] transition-colors border border-[#D9E2EC] cursor-pointer"
                   aria-expanded={showDropdown}
                 >
                   <img
@@ -136,13 +136,13 @@ export function Navbar() {
                 </button>
 
                 {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50">
+                  <div                   className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-[#D9E2EC] py-2 z-50">
                     <div className="px-4 py-2 border-b border-slate-100">
                       <p className="text-xs font-bold text-slate-900 truncate">{currentUser.fullName}</p>
                       <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
                       {currentUser.university && (
-                        <p className="text-[10px] text-blue-700 font-semibold mt-1 truncate">
-                          🏫 {currentUser.university}
+                        <p className="text-[10px] text-[#1F5E7A] font-semibold mt-1 truncate">
+                          {currentUser.university}
                         </p>
                       )}
                     </div>
@@ -150,7 +150,7 @@ export function Navbar() {
                     <Link
                       href="/profile/my-listings"
                       onClick={() => setShowDropdown(false)}
-                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-800 transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-[#EAF2F4] hover:text-[#174A61] transition-colors"
                     >
                       <IconSparkles className="w-4 h-4 text-blue-600" />
                       <span>Tin đã đăng của tôi</span>
@@ -159,7 +159,7 @@ export function Navbar() {
                     <Link
                       href="/profile"
                       onClick={() => setShowDropdown(false)}
-                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-800 transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-[#EAF2F4] hover:text-[#174A61] transition-colors"
                     >
                       <IconUser className="w-4 h-4 text-slate-500" />
                       <span>Hồ sơ cá nhân</span>
@@ -219,4 +219,3 @@ export function Navbar() {
     </header>
   );
 }
-

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -6,7 +6,6 @@ import { ProductCard } from "@/components/product-card";
 import {
   CategoryIcon,
   IconArrowRight,
-  IconShieldCheck,
   IconSearch,
   IconSparkles,
 } from "@/components/icons";
@@ -90,23 +89,22 @@ export default async function HomePage() {
   }));
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F7F9FC]">
       <Navbar />
 
       <main className="flex-1">
         {/* Hero Section theo Theme Trust Blue */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-blue-950 via-blue-900 to-slate-900 text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <section className="relative overflow-hidden bg-[#174A61] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
 
           <div className="relative max-w-5xl mx-auto text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-sky-300 text-xs font-bold backdrop-blur-md">
-              <IconSparkles className="w-3.5 h-3.5 text-sky-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white/10 border border-white/20 text-[#D8F0EB] text-xs font-semibold">
+              <IconSparkles className="w-3.5 h-3.5 text-[#8FD0C2]" />
               <span>Chợ đồ cũ sinh viên ĐHQG & TP. Hồ Chí Minh</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
               Mua bán đồ cũ dễ dàng, <br />
-              <span className="bg-gradient-to-r from-sky-400 via-blue-300 to-indigo-200 bg-clip-text text-transparent">
+              <span className="text-[#A9D8CF]">
                 tái sử dụng thông minh
               </span>
             </h1>
@@ -119,32 +117,32 @@ export default async function HomePage() {
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <Link
                 href="/products"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-bold text-slate-950 bg-sky-300 hover:bg-sky-200 shadow-lg shadow-sky-500/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-xs sm:text-sm font-bold text-[#174A61] bg-[#A9D8CF] hover:bg-[#C8E8E1] shadow-sm transition-colors cursor-pointer"
               >
-                <IconSearch className="w-4 h-4 text-blue-950" />
+                <IconSearch className="w-4 h-4 text-[#174A61]" />
                 <span>Khám phá đồ đang bán</span>
               </Link>
               <Link
                 href="/products/new"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-bold text-white bg-blue-900/60 hover:bg-blue-800 border border-blue-400/30 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-xs sm:text-sm font-bold text-white bg-transparent hover:bg-white/10 border border-white/40 transition-colors cursor-pointer"
               >
                 <span>Đăng thanh lý ngay</span>
-                <IconArrowRight className="w-4 h-4 text-sky-300" />
+                <IconArrowRight className="w-4 h-4 text-[#A9D8CF]" />
               </Link>
             </div>
 
             {/* Trust highlights */}
             <div className="pt-8 flex flex-wrap items-center justify-center gap-6 sm:gap-12 text-xs text-slate-300">
               <div className="flex items-center gap-2">
-                <span className="text-sky-400 font-bold text-base">✓</span>
+                <span className="text-[#A9D8CF] font-bold text-base">✓</span>
                 <span>Giá sinh viên siêu rẻ</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sky-400 font-bold text-base">✓</span>
+                <span className="text-[#A9D8CF] font-bold text-base">✓</span>
                 <span>Giao dịch trực tiếp tại KTX/Trường</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sky-400 font-bold text-base">✓</span>
+                <span className="text-[#A9D8CF] font-bold text-base">✓</span>
                 <span>Tình trạng minh bạch rõ ràng</span>
               </div>
             </div>
@@ -153,10 +151,10 @@ export default async function HomePage() {
 
         {/* Danh mục sản phẩm (Categories Section) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-blue-950/5 border border-slate-200/90">
+          <div className="bg-white rounded-xl p-6 sm:p-8 shadow-[0_2px_8px_rgba(16,42,67,0.06)] border border-[#D9E2EC]">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-base sm:text-lg font-black text-slate-900">
+                <h2 className="text-base sm:text-lg font-bold text-[#102A43]">
                   Danh mục đồ cũ sinh viên
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -165,7 +163,7 @@ export default async function HomePage() {
               </div>
               <Link
                 href="/products"
-                className="text-xs font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1 group"
+                className="text-xs font-bold text-[#1F5E7A] hover:text-[#174A61] flex items-center gap-1 group"
               >
                 <span>Xem tất cả</span>
                 <IconArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -177,12 +175,12 @@ export default async function HomePage() {
                 <Link
                   key={cat.id}
                   href={`/products?category=${cat.slug}`}
-                  className="group flex flex-col items-center text-center p-4 rounded-2xl bg-slate-50/70 hover:bg-blue-50/80 border border-slate-200/70 hover:border-blue-300 transition-all hover:-translate-y-1 cursor-pointer"
+                  className="group flex flex-col items-center text-center p-4 rounded-xl bg-[#F7F9FC] hover:bg-[#EAF2F4] border border-[#D9E2EC] hover:border-[#1F5E7A] transition-colors cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-2xs">
+                  <div className="w-12 h-12 rounded-xl bg-[#EAF2F4] text-[#1F5E7A] flex items-center justify-center mb-3 group-hover:bg-[#1F5E7A] group-hover:text-white transition-colors">
                     <CategoryIcon name={cat.icon} className="w-6 h-6" />
                   </div>
-                  <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-800 transition-colors">
+                  <span className="text-xs sm:text-sm font-semibold text-[#102A43] group-hover:text-[#174A61] transition-colors">
                     {cat.name}
                   </span>
                   <span className="text-[11px] text-slate-500 mt-1">
@@ -200,7 +198,7 @@ export default async function HomePage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+                <h2 className="text-xl sm:text-2xl font-bold text-[#102A43]">
                   Đồ mới đăng thanh lý
                 </h2>
               </div>
@@ -211,7 +209,7 @@ export default async function HomePage() {
 
             <Link
               href="/products"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-200/80"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold text-[#1F5E7A] bg-[#EAF2F4] hover:bg-[#D8E9ED] transition-colors border border-[#B8D2DA]"
             >
               <span>Xem thêm</span>
               <IconArrowRight className="w-4 h-4" />
@@ -223,25 +221,35 @@ export default async function HomePage() {
               <p className="text-slate-500 text-sm">Chưa có sản phẩm nào được đăng.</p>
               <Link
                 href="/products/new"
-                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-blue-600 hover:bg-blue-500"
+                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-[#1F5E7A] hover:bg-[#174A61]"
               >
                 Hãy là người đầu tiên đăng tin
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {products.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
+            <Suspense
+              fallback={
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {products.map((product) => (
+                    <div key={product.id} className="h-72 rounded-xl bg-white border border-[#D9E2EC]" />
+                  ))}
+                </div>
+              }
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {products.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            </Suspense>
           )}
         </section>
 
         {/* Hướng dẫn quy trình 3 bước an toàn */}
-        <section className="bg-blue-50/50 border-y border-blue-100/80 py-16 px-4 sm:px-6 lg:px-8">
+        <section className="bg-[#EAF2F4] border-y border-[#D9E2EC] py-16 px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
             <div className="text-center space-y-2 mb-12">
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#102A43]">
                 Quy trình mua bán đồ cũ 3 bước an toàn
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
@@ -250,8 +258,8 @@ export default async function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-2xs flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-blue-700 text-white font-extrabold text-base flex items-center justify-center mb-4 shadow-md shadow-blue-700/20">
+              <div className="bg-white p-6 rounded-xl border border-[#D9E2EC] shadow-[0_2px_8px_rgba(16,42,67,0.06)] flex flex-col items-center text-center">
+                <div className="w-12 h-12 rounded-xl bg-[#1F5E7A] text-white font-bold text-base flex items-center justify-center mb-4">
                   1
                 </div>
                 <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-2">Đăng đồ & Mô tả thực tế</h3>
@@ -260,8 +268,8 @@ export default async function HomePage() {
                 </p>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-2xs flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-700 text-white font-extrabold text-base flex items-center justify-center mb-4 shadow-md shadow-indigo-700/20">
+              <div className="bg-white p-6 rounded-xl border border-[#D9E2EC] shadow-[0_2px_8px_rgba(16,42,67,0.06)] flex flex-col items-center text-center">
+                <div className="w-12 h-12 rounded-xl bg-[#5FB3A2] text-[#174A61] font-bold text-base flex items-center justify-center mb-4">
                   2
                 </div>
                 <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-2">Tìm kiếm & Hẹn xem đồ</h3>
@@ -270,8 +278,8 @@ export default async function HomePage() {
                 </p>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-2xs flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-sky-700 text-white font-extrabold text-base flex items-center justify-center mb-4 shadow-md shadow-sky-700/20">
+              <div className="bg-white p-6 rounded-xl border border-[#D9E2EC] shadow-[0_2px_8px_rgba(16,42,67,0.06)] flex flex-col items-center text-center">
+                <div className="w-12 h-12 rounded-xl bg-[#A9D8CF] text-[#174A61] font-bold text-base flex items-center justify-center mb-4">
                   3
                 </div>
                 <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-2">Kiểm tra & Nhận hàng</h3>
@@ -285,12 +293,12 @@ export default async function HomePage() {
 
         {/* Banner kêu gọi đăng bán */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white p-8 sm:p-12 shadow-xl shadow-blue-950/10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="rounded-xl bg-[#174A61] text-white p-8 sm:p-12 shadow-[0_4px_12px_rgba(16,42,67,0.1)] flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="space-y-3 max-w-xl">
               <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold backdrop-blur-xs text-sky-200 border border-white/10">
                 Chuyển phòng trọ • Dọn KTX • Tốt nghiệp
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold leading-tight">
                 Bạn có đồ dùng sinh hoạt hoặc giáo trình không còn dùng tới?
               </h2>
               <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
@@ -300,10 +308,10 @@ export default async function HomePage() {
 
             <Link
               href="/products/new"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-xs sm:text-sm font-bold text-blue-950 bg-white hover:bg-blue-50 shadow-lg transition-all transform hover:scale-105 shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-lg text-xs sm:text-sm font-bold text-[#174A61] bg-white hover:bg-[#EAF2F4] shadow-sm transition-colors shrink-0 cursor-pointer"
             >
               <span>Đăng bán đồ cũ ngay</span>
-              <IconArrowRight className="w-4 h-4 text-blue-700" />
+              <IconArrowRight className="w-4 h-4 text-[#1F5E7A]" />
             </Link>
           </div>
         </section>

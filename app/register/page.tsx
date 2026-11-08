@@ -75,10 +75,10 @@ function RegisterFormContent() {
         <div className="max-w-lg w-full bg-white p-6 sm:p-9 rounded-3xl border border-slate-200/90 shadow-xl shadow-blue-950/5 space-y-6">
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-500 text-white flex items-center justify-center text-xl font-black mx-auto shadow-md shadow-blue-600/25">
+            <div className="w-12 h-12 rounded-xl bg-[#1F5E7A] text-white flex items-center justify-center text-xl font-bold mx-auto shadow-sm" aria-hidden="true">
               🎓
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-bold text-[#102A43] tracking-tight">
               Đăng ký tài khoản sinh viên
             </h1>
             <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
@@ -226,7 +226,7 @@ function RegisterFormContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-full text-xs font-bold text-white bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-500 shadow-md shadow-blue-600/30 transition-all active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
+              className="w-full py-3 rounded-lg text-xs font-bold text-white bg-[#1F5E7A] hover:bg-[#174A61] shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               <span>{loading ? "Đang tạo tài khoản..." : "Hoàn tất đăng ký sinh viên"}</span>
               {!loading && <IconArrowRight className="w-3.5 h-3.5" />}
@@ -258,4 +258,3 @@ export default function RegisterPage() {
     </Suspense>
   );
 }
-
