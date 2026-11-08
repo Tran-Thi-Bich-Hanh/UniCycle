@@ -10,9 +10,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const viewer = await getSessionUser();
 
-    // Tăng lượt xem
-    db.prepare("UPDATE products SET view_count = view_count + 1 WHERE id = ? OR slug = ?").run(id, id);
+    // Tăng lượt xem (không tính lượt xem của chính chủ tin)
+    const owner = db.prepare("SELECT seller_id FROM products WHERE id = ? OR slug = ?").get(id, id) as
+      | { seller_id: string }
+      | undefined;
+    if (owner && owner.seller_id !== viewer?.id) {
+      db.prepare("UPDATE products SET view_count = view_count + 1 WHERE id = ? OR slug = ?").run(id, id);
+    }
 
     const querySql = `
       SELECT 
@@ -68,12 +74,13 @@ export async function GET(
         university: row.s_university,
         campus_location: row.s_campus,
         avatar_url: row.s_avatar,
-        phone: row.s_phone,
+        // Chỉ người đã đăng nhập mới thấy SĐT người bán (chống thu thập số hàng loạt)
+        phone: viewer ? row.s_phone : null,
       },
       images,
     };
 
-    return NextResponse.json({ product });
+    return NextResponse.json({ product, requiresLogin: !viewer });
   } catch (err: any) {
     console.error("Product GET by id error:", err);
     return NextResponse.json({ error: "Lỗi xem sản phẩm" }, { status: 500 });
