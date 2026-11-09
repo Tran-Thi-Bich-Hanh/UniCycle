@@ -76,7 +76,7 @@ Bám sát bảng màu 5 sắc thái xanh chủ đạo:
 - [x] **Task 2.1: Bộ Engine băm Passport SHA-256 (`lib/passport.ts`) & Cập nhật Dữ liệu Seed**
   - Tạo engine băm chuẩn hóa JSON ra định dạng `0x...` `bytes32`.
   - Cập nhật 6 sản phẩm mẫu trong DB kèm thông số Passport thực tế.
-- [ ] **Task 2.2: Form Đăng tin thông minh với Checklist động theo Danh mục**
+- [x] **Task 2.2: Form Đăng tin thông minh với Checklist động theo Danh mục**
   - Tích hợp bộ câu hỏi nhanh cho từng danh mục (Sách, Bàn ghế, Đồ điện, KTX).
   - Tự động sinh `passport_hash` khi sinh viên đăng bài hoặc cập nhật bài đăng.
 - [ ] **Task 2.3: Trang Chứng nhận Hộ chiếu điện tử (`/products/[id]/passport`)**

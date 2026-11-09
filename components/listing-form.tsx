@@ -4,12 +4,16 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Category } from "@/lib/db";
 import { formatCurrencyVND, CONDITION_LABELS } from "@/lib/utils";
+import { CATEGORY_SPEC_CONFIG } from "@/lib/passport";
 import {
   IconAlert,
   IconCamera,
+  IconCheck,
   IconFileText,
   IconGift,
   IconMapPin,
+  IconShieldCheck,
+  IconSparkles,
   IconTag,
   IconWallet,
   IconX,
@@ -24,6 +28,7 @@ export interface ListingFormValues {
   description: string;
   images: string[];
   status: string;
+  attributes: Record<string, any>;
 }
 
 export interface ListingPayload {
@@ -35,6 +40,7 @@ export interface ListingPayload {
   description: string;
   images: string[];
   status: string;
+  attributes: Record<string, any>;
 }
 
 type FieldKey = "images" | "title" | "categoryId" | "price" | "pickupLocation" | "description";
@@ -60,6 +66,7 @@ export const EMPTY_LISTING: ListingFormValues = {
   description: "",
   images: [],
   status: "ACTIVE",
+  attributes: {},
 };
 
 const inputBase =
@@ -125,6 +132,16 @@ export function ListingForm({
   const set = <K extends keyof ListingFormValues>(key: K, val: ListingFormValues[K]) => {
     setValues((v) => ({ ...v, [key]: val }));
     if (key in errors) setErrors((e) => ({ ...e, [key]: undefined }));
+  };
+
+  const setAttribute = (attrKey: string, val: any) => {
+    setValues((v) => ({
+      ...v,
+      attributes: {
+        ...(v.attributes || {}),
+        [attrKey]: val,
+      },
+    }));
   };
 
   const validate = (): Partial<Record<FieldKey, string>> => {
@@ -204,6 +221,7 @@ export function ListingForm({
         description: values.description.trim(),
         images: values.images,
         status: values.status,
+        attributes: values.attributes || {},
       });
     } catch (err: any) {
       setServerError(err.message || "Đã xảy ra lỗi, vui lòng thử lại.");
@@ -428,6 +446,111 @@ export function ListingForm({
               </select>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* HỘ CHIẾU SỐ SINH VIÊN & THÔNG SỐ MINH BẠCH (UNICYCLE PASSPORT) */}
+      <section className="bg-white rounded-2xl border-2 border-[#D6E8EE] p-6 shadow-2xs space-y-6 relative overflow-hidden transition-all hover:border-[#97CADB]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <SectionTitle icon={<IconShieldCheck className="w-5 h-5" />}>
+              UniCycle Passport • Thông số minh bạch
+            </SectionTitle>
+            <p className="text-xs text-[#02457A] mt-1">
+              Checklist đặc thù theo danh mục giúp người mua tin tưởng bạn tuyệt đối khi hẹn gặp.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#001B48] text-white text-[11px] font-bold shrink-0 self-start sm:self-auto shadow-2xs">
+            <IconSparkles className="w-3.5 h-3.5 text-[#97CADB]" />
+            <span>Được băm SHA-256 (0x...)</span>
+          </span>
+        </div>
+
+        {/* Dynamic Checklist based on active category */}
+        {(() => {
+          const specConfig = CATEGORY_SPEC_CONFIG[values.categoryId];
+          if (!specConfig || !specConfig.fields || specConfig.fields.length === 0) {
+            return (
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-[#001B48] uppercase tracking-wider">
+                  Ghi chú đặc thù món đồ
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ghi chú thêm về phụ kiện, xuất xứ hoặc độ nguyên vẹn..."
+                  value={values.attributes?.specs_note || ""}
+                  onChange={(e) => setAttribute("specs_note", e.target.value)}
+                  className={`${inputBase} ${okBorder}`}
+                />
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-5 pt-1">
+              {specConfig.fields.map((field) => {
+                const currentVal = values.attributes?.[field.key] ?? "";
+                return (
+                  <div key={field.key} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-[#001B48] uppercase tracking-wider">
+                        {field.label}
+                      </label>
+                      {field.helper && (
+                        <span className="text-[11px] text-[#02457A] font-medium">{field.helper}</span>
+                      )}
+                    </div>
+
+                    {field.type === "select" && field.options ? (
+                      <div className="flex flex-wrap gap-2 pt-0.5">
+                        {field.options.map((opt) => {
+                          const isSelected = currentVal === opt;
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => setAttribute(field.key, opt)}
+                              className={`px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all border flex items-center gap-1.5 cursor-pointer ${
+                                isSelected
+                                  ? "bg-[#018ABE] text-white border-[#018ABE] shadow-xs"
+                                  : "bg-[#D6E8EE]/30 hover:bg-[#D6E8EE]/70 text-[#001B48] border-transparent hover:border-[#97CADB]"
+                              }`}
+                            >
+                              {isSelected ? (
+                                <IconCheck className="w-3.5 h-3.5 shrink-0 text-white" />
+                              ) : (
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#018ABE]/40 shrink-0" />
+                              )}
+                              <span>{opt}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        placeholder={field.placeholder}
+                        value={currentVal}
+                        onChange={(e) => setAttribute(field.key, e.target.value)}
+                        className={`${inputBase} ${okBorder}`}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* Cam kết minh bạch */}
+        <div className="p-4 rounded-xl bg-[#D6E8EE]/30 border border-[#97CADB]/60 text-xs text-[#02457A] flex items-start gap-3">
+          <div className="p-1.5 rounded-lg bg-[#018ABE] text-white shrink-0 mt-0.5">
+            <IconShieldCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="font-bold text-[#001B48]">Bảo chứng bằng Hộ chiếu số: </span>
+            Các thông số bạn chọn cùng ảnh chụp sẽ được kết hợp tạo mã băm mật mã học SHA-256 (định dạng <code>0x...</code> 66 ký tự). Khi hẹn gặp tại KTX hoặc cổng trường, người mua có thể quét QR để kiểm tra tính toàn vẹn 100%.
+          </div>
         </div>
       </section>
 
