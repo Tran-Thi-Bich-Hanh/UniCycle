@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { QrCode } from "@/components/qr-code";
+import { OwnershipTimeline } from "@/components/ownership-timeline";
 import {
   IconAlert,
   IconArrowLeft,
@@ -217,7 +218,7 @@ export default function ProductPassportPage() {
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold transition-all shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold transition-all shadow-2xs cursor-pointer"
                 >
                   {copiedLink ? <IconCheck className="w-3.5 h-3.5" /> : <IconCopy className="w-3.5 h-3.5" />}
                   <span>{copiedLink ? "Đã chép link!" : "Chia sẻ Passport"}</span>
@@ -328,16 +329,16 @@ export default function ProductPassportPage() {
                   </div>
                 </div>
 
-                {/* Cột bên phải: QR Code phục vụ buổi gặp mặt (Meetup Mode) */}
+                {/* Cột bên phải: QR Code */}
                 <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/10 border border-white/15 text-center">
                   <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#97CADB] mb-2">
-                    Mã QR Hẹn Gặp
+                    Mã QR Hộ Chiếu
                   </span>
                   <div className="p-2 bg-white rounded-xl shadow-lg">
                     <QrCode value={currentUrl || `https://unicycle.edu.vn/products/${product.id}/passport`} size={130} />
                   </div>
                   <span className="text-[11px] text-white/80 font-medium mt-2.5 max-w-[160px] leading-tight">
-                    Quét tại KTX hoặc cổng trường để đối chiếu trực tiếp
+                    Mã truy xuất nhanh chứng nhận số của món đồ
                   </span>
                 </div>
               </div>
@@ -354,7 +355,7 @@ export default function ProductPassportPage() {
                   <button
                     type="button"
                     onClick={handleCopyHash}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-[#97CADB] transition-colors self-start sm:self-auto"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-[#97CADB] transition-colors self-start sm:self-auto cursor-pointer"
                   >
                     {copiedHash ? <IconCheck className="w-3.5 h-3.5 text-emerald-400" /> : <IconCopy className="w-3.5 h-3.5" />}
                     <span>{copiedHash ? "Đã sao chép!" : "Sao chép mã băm"}</span>
@@ -379,7 +380,7 @@ export default function ProductPassportPage() {
                     <span className="p-1.5 rounded-lg bg-[#018ABE] text-white">
                       <IconShieldCheck className="w-5 h-5" />
                     </span>
-                    <span>Chế độ Kiểm tra tại chỗ (Meetup Verification)</span>
+                    <span>Chế độ Kiểm tra tính toàn vẹn (Integrity Verification)</span>
                   </h2>
                   <p className="text-xs text-[#02457A] mt-1">
                     Nhấn nút bên dưới để hệ thống quét và tái băm toàn bộ dữ liệu, đối chiếu với mã niêm phong gốc.
@@ -410,7 +411,7 @@ export default function ProductPassportPage() {
               {verification.status === "success" && (
                 <div
                   role="status"
-                  className="p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 space-y-3 animate-fadeIn"
+                  className="p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 space-y-3"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
@@ -457,39 +458,6 @@ export default function ProductPassportPage() {
                   </div>
                 </div>
               )}
-
-              {/* Hướng dẫn 3 bước cho sinh viên tại cổng trường */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                <div className="p-3.5 rounded-2xl bg-[#D6E8EE]/30 border border-[#97CADB]/40 text-xs">
-                  <div className="w-6 h-6 rounded-full bg-[#001B48] text-white flex items-center justify-center font-bold text-[11px] mb-2">
-                    1
-                  </div>
-                  <h5 className="font-extrabold text-[#001B48] mb-0.5">Quét mã QR</h5>
-                  <p className="text-[11px] text-[#02457A]">
-                    Khi gặp bạn bán tại cổng trường/KTX, mở camera quét mã QR trên điện thoại người bán.
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-[#D6E8EE]/30 border border-[#97CADB]/40 text-xs">
-                  <div className="w-6 h-6 rounded-full bg-[#018ABE] text-white flex items-center justify-center font-bold text-[11px] mb-2">
-                    2
-                  </div>
-                  <h5 className="font-extrabold text-[#001B48] mb-0.5">Bấm Kiểm tra toàn vẹn</h5>
-                  <p className="text-[11px] text-[#02457A]">
-                    Bấm nút đối soát để xác nhận ảnh và thông số không bị chỉnh sửa sau khi đăng bài.
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-[#D6E8EE]/30 border border-[#97CADB]/40 text-xs">
-                  <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[11px] mb-2">
-                    3
-                  </div>
-                  <h5 className="font-extrabold text-[#001B48] mb-0.5">An tâm giao nhận</h5>
-                  <p className="text-[11px] text-[#02457A]">
-                    Đối chiếu thực tế với bảng cam kết thông số bên dưới trước khi trả tiền.
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* BẢNG CAM KẾT THÔNG SỐ GỐC THEO DANH MỤC (ORIGINAL SPECIFICATIONS) */}
@@ -598,6 +566,15 @@ export default function ProductPassportPage() {
               </div>
             </div>
 
+            {/* CÂY LỊCH SỬ TUẦN HOÀN SỞ HỮU (CHAIN OF OWNERSHIP TIMELINE) */}
+            <div className="rounded-3xl border border-[#D6E8EE] p-6 sm:p-8 bg-white shadow-2xs">
+              <OwnershipTimeline
+                history={product.ownership_history}
+                currentSellerName={product.seller?.full_name}
+                currentSellerUniversity={product.seller?.university || undefined}
+              />
+            </div>
+
             {/* DẢI HÀNH ĐỘNG DƯỚI CÙNG */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-[#D6E8EE]">
               <Link
@@ -612,7 +589,7 @@ export default function ProductPassportPage() {
                 <button
                   type="button"
                   onClick={handleCopyHash}
-                  className="px-5 py-2.5 rounded-xl border border-[#D6E8EE] hover:border-[#018ABE] text-xs font-bold text-[#001B48] transition-all bg-white shadow-2xs"
+                  className="px-5 py-2.5 rounded-xl border border-[#D6E8EE] hover:border-[#018ABE] text-xs font-bold text-[#001B48] transition-all bg-white shadow-2xs cursor-pointer"
                 >
                   {copiedHash ? "✓ Đã chép mã băm" : "Sao chép SHA-256"}
                 </button>
@@ -632,4 +609,3 @@ export default function ProductPassportPage() {
     </div>
   );
 }
-

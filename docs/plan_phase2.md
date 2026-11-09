@@ -82,7 +82,7 @@ Bám sát bảng màu 5 sắc thái xanh chủ đạo:
 - [x] **Task 2.3: Trang Chứng nhận Hộ chiếu điện tử (`/products/[id]/passport`)**
   - Thiết kế thẻ Passport số cao cấp, mã QR tương tác, hiển thị thông số gốc.
   - Công cụ tương tác trực tiếp: Bấm nút "Kiểm tra tính toàn vẹn (Verify)".
-- [ ] **Task 2.4: Cây Lịch sử Tuần hoàn Sở hữu & Nút mở Passport trên trang Chi tiết**
+- [x] **Task 2.4: Cây Lịch sử Tuần hoàn Sở hữu & Nút mở Passport trên trang Chi tiết**
   - Thiết kế Timeline các thế hệ sinh viên đã sở hữu món đồ.
   - Đặt nút bấm/badge mở Passport nổi bật trên trang `/products/[id]`.
 - [ ] **Task 2.5: API Xác thực Độc lập (`/api/passport/verify`)**
