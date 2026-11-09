@@ -85,7 +85,7 @@ Bám sát bảng màu 5 sắc thái xanh chủ đạo:
 - [x] **Task 2.4: Cây Lịch sử Tuần hoàn Sở hữu & Nút mở Passport trên trang Chi tiết**
   - Thiết kế Timeline các thế hệ sinh viên đã sở hữu món đồ.
   - Đặt nút bấm/badge mở Passport nổi bật trên trang `/products/[id]`.
-- [ ] **Task 2.5: API Xác thực Độc lập (`/api/passport/verify`)**
+- [x] **Task 2.5: API Xác thực Độc lập (`/api/passport/verify`)**
   - Cung cấp endpoint tra cứu Passport nhanh cho thiết bị di động hoặc ví Web3.
 
 #### **Tối ưu hóa UI/UX cho Người bán (Progressive Disclosure):**

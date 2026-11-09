@@ -1,9 +1,23 @@
 import { NextResponse } from "next/server";
-import db, { ProductImage } from "@/lib/db";
-import { generatePassportHash, verifyPassport } from "@/lib/passport";
+import db from "@/lib/db";
+import { generatePassportHash, verifyPassport, PassportData } from "@/lib/passport";
 
-// GET /api/passport/verify?id=prod_...&hash=0x...
-// API Xác thực Độc lập: Kiểm tra tính toàn vẹn của Hộ chiếu số UniCycle Passport
+// Tiêu đề CORS cho phép ứng dụng di động, ví Web3 hoặc hệ thống ngoài tra cứu độc lập
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
+/**
+ * GET /api/passport/verify
+ * 1. Tra cứu theo ID: ?id=prod_... [&hash=0x...]
+ * 2. Tra cứu ngược từ mã băm (Reverse Lookup): ?hash=0x... (phục vụ Web3 / Smart Contract Scanner)
+ */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -12,12 +26,28 @@ export async function GET(request: Request) {
 
     if (!id && !queryHash) {
       return NextResponse.json(
-        { error: "Vui lòng cung cấp mã sản phẩm (id) hoặc mã băm (hash) để xác thực." },
-        { status: 400 }
+        {
+          success: false,
+          isValid: false,
+          error: "Vui lòng cung cấp mã sản phẩm (?id=...) hoặc mã băm (?hash=0x...) để xác thực.",
+        },
+        { status: 400, headers: CORS_HEADERS }
       );
     }
 
-    // Truy vấn sản phẩm theo id hoặc passport_hash
+    // Nếu queryHash được cung cấp, kiểm tra sơ bộ định dạng hex bytes32 (0x + 64 ký tự hex)
+    if (queryHash && !/^0x[0-9a-fA-F]{64}$/.test(queryHash)) {
+      return NextResponse.json(
+        {
+          success: false,
+          isValid: false,
+          error: "Mã băm không đúng định dạng chuẩn bytes32 (Cần bắt đầu bằng 0x kèm 64 ký tự hex).",
+        },
+        { status: 400, headers: CORS_HEADERS }
+      );
+    }
+
+    // Truy vấn sản phẩm theo id (hoặc slug) hoặc theo passport_hash
     const querySql = `
       SELECT 
         p.*,
@@ -37,13 +67,16 @@ export async function GET(request: Request) {
     if (!row) {
       return NextResponse.json(
         {
+          success: false,
           isValid: false,
-          error: "Không tìm thấy Hộ chiếu số tương ứng trong hệ thống UniCycle.",
+          verificationStatus: "NOT_FOUND",
+          error: "Không tìm thấy Hộ chiếu số tương ứng trong hệ sinh thái UniCycle.",
         },
-        { status: 404 }
+        { status: 404, headers: CORS_HEADERS }
       );
     }
 
+    // Lấy danh sách ảnh sản phẩm
     const images = db
       .prepare(
         "SELECT url FROM product_images WHERE product_id = ? ORDER BY is_cover DESC, display_order ASC"
@@ -51,6 +84,7 @@ export async function GET(request: Request) {
       .all(row.id) as { url: string }[];
     const imageUrls = images.map((i) => i.url);
 
+    // Giải mã attributes
     let parsedAttributes = {};
     if (row.attributes) {
       try {
@@ -60,7 +94,7 @@ export async function GET(request: Request) {
       }
     }
 
-    // Tính toán lại mã băm độc lập từ dữ liệu gốc
+    // Tái tạo lại mã băm độc lập từ dữ liệu cơ sở dữ liệu
     const computedHash = generatePassportHash({
       productId: row.id,
       title: (row.title || "").trim(),
@@ -79,54 +113,118 @@ export async function GET(request: Request) {
     const isIntegrityValid =
       computedHash.toLowerCase().trim() === storedHash.toLowerCase().trim();
 
-    // Nếu người dùng có gửi queryHash để đối chiếu
+    // Nếu người dùng có gửi queryHash kèm id để đối soát
     const isQueryHashMatch = queryHash
       ? queryHash.toLowerCase().trim() === storedHash.toLowerCase().trim()
       : true;
 
     const isValid = isIntegrityValid && isQueryHashMatch;
 
+    // Lấy cây lịch sử tuần hoàn sở hữu
     const ownershipHistory = db
-      .prepare("SELECT * FROM ownership_history WHERE product_id = ? ORDER BY order_index ASC, created_at ASC")
+      .prepare(
+        "SELECT id, owner_name, university, cohort, period, notes, order_index, created_at FROM ownership_history WHERE product_id = ? ORDER BY order_index ASC, created_at ASC"
+      )
       .all(row.id);
 
-    return NextResponse.json({
-      isValid,
-      productId: row.id,
-      title: row.title,
-      price: row.price,
-      condition: row.condition,
-      category: {
-        id: row.category_id,
-        name: row.cat_name,
-        slug: row.cat_slug,
-        icon: row.cat_icon,
-      },
-      seller: {
-        id: row.s_id,
-        name: row.s_name,
-        university: row.s_university,
-        campus: row.s_campus,
-        avatar: row.s_avatar,
-      },
-      pickupLocation: row.pickup_location,
-      attributes: parsedAttributes,
-      coverImage: imageUrls[0] || null,
-      imagesCount: imageUrls.length,
-      computedHash,
-      storedHash,
-      ownershipHistory,
-      isIntegrityValid,
-      isQueryHashMatch,
-      createdAt: row.created_at,
-      verifiedAt: new Date().toISOString(),
-    });
-  } catch (err: any) {
-    console.error("Passport verify error:", err);
     return NextResponse.json(
-      { isValid: false, error: "Lỗi hệ thống khi đối soát Hộ chiếu số." },
-      { status: 500 }
+      {
+        success: true,
+        isValid,
+        verificationStatus: isValid
+          ? "VERIFIED_AUTHENTIC"
+          : !isIntegrityValid
+          ? "TAMPER_DETECTED"
+          : "HASH_MISMATCH",
+        productId: row.id,
+        slug: row.slug,
+        title: row.title,
+        price: row.price,
+        condition: row.condition,
+        status: row.status,
+        category: {
+          id: row.category_id,
+          name: row.cat_name,
+          slug: row.cat_slug,
+          icon: row.cat_icon,
+        },
+        seller: {
+          id: row.s_id,
+          name: row.s_name,
+          university: row.s_university,
+          campus: row.s_campus,
+          avatar: row.s_avatar,
+        },
+        pickupLocation: row.pickup_location,
+        coverImage: imageUrls[0] || null,
+        imagesCount: imageUrls.length,
+        computedHash,
+        storedHash,
+        passport: {
+          hash: storedHash,
+          computedHash,
+          isIntegrityValid,
+          isQueryHashMatch,
+          algorithm: "SHA-256",
+          web3Compatibility: "Solidity bytes32 (Avalanche C-Chain)",
+          attributes: parsedAttributes,
+          certifiedAt: row.created_at,
+        },
+        ownershipHistory,
+        verifiedAt: new Date().toISOString(),
+      },
+      { headers: CORS_HEADERS }
+    );
+  } catch (err: any) {
+    console.error("Passport GET verify error:", err);
+    return NextResponse.json(
+      {
+        success: false,
+        isValid: false,
+        error: "Lỗi hệ thống khi đối soát Hộ chiếu số.",
+      },
+      { status: 500, headers: CORS_HEADERS }
     );
   }
 }
 
+/**
+ * POST /api/passport/verify
+ * Xác thực off-chain trực tiếp payload không cần truy vấn DB:
+ * Body: { payload: PassportData, expectedHash: string }
+ */
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { payload, expectedHash } = body;
+
+    if (!payload || !expectedHash) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Vui lòng cung cấp 'payload' và 'expectedHash' để đối soát off-chain.",
+        },
+        { status: 400, headers: CORS_HEADERS }
+      );
+    }
+
+    const result = verifyPassport(payload as PassportData, expectedHash);
+
+    return NextResponse.json(
+      {
+        success: true,
+        isValid: result.isValid,
+        computedHash: result.computedHash,
+        expectedHash: result.expectedHash,
+        verifiedAt: new Date().toISOString(),
+      },
+      { headers: CORS_HEADERS }
+    );
+  } catch (err: any) {
+    console.error("Passport POST verify error:", err);
+    return NextResponse.json(
+      { success: false, error: "Dữ liệu payload không hợp lệ hoặc lỗi phân tích JSON." },
+      { status: 400, headers: CORS_HEADERS }
+    );
+  }
+}
