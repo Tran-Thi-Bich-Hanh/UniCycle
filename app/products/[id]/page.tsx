@@ -24,6 +24,7 @@ import {
 } from "@/components/icons";
 import { Product } from "@/lib/db";
 import { formatCurrencyVND, formatRelativeTime, CONDITION_LABELS, STATUS_LABELS } from "@/lib/utils";
+import { ProductSpecsCard, PassportTrustBanner } from "@/components/product-specs-card";
 
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=80";
@@ -218,18 +219,6 @@ export default function ProductDetailPage() {
                   {statusMeta?.label || product.status}
                 </span>
               )}
-
-              {product.passport_hash ? (
-                <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#001B48]/90 text-white text-[11px] font-mono backdrop-blur-md border border-[#97CADB]/40">
-                  <span className="w-2 h-2 rounded-full bg-[#018ABE]" />
-                  <span>Passport: {product.passport_hash.slice(0, 10)}...</span>
-                </div>
-              ) : (
-                <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 text-[#001B48] text-[11px] font-semibold backdrop-blur-md border border-[#D6E8EE]">
-                  <IconSparkles className="w-3.5 h-3.5 text-[#018ABE]" />
-                  <span>UniCycle Verified Item</span>
-                </div>
-              )}
             </div>
 
             {images.length > 1 && (
@@ -254,6 +243,13 @@ export default function ProductDetailPage() {
                 })}
               </div>
             )}
+
+            {/* THÔNG SỐ KỸ THUẬT CAM KẾT THEO DANH MỤC */}
+            <ProductSpecsCard
+              productId={product.id}
+              categoryId={product.category_id}
+              attributes={product.attributes}
+            />
 
             <section className="bg-white rounded-2xl border border-[#D6E8EE] p-6 space-y-4 shadow-2xs">
               <h2 className="text-lg font-extrabold text-[#001B48] flex items-center gap-2">
@@ -329,6 +325,9 @@ export default function ProductDetailPage() {
                   <div className="text-xs text-[#02457A] font-medium mt-0.5">{product.pickup_location}</div>
                 </div>
               </div>
+
+              {/* Dải bảo chứng Hộ chiếu số tinh gọn */}
+              <PassportTrustBanner productId={product.id} />
             </section>
 
             <section className="bg-white rounded-2xl border border-[#D6E8EE] p-6 shadow-2xs space-y-5">

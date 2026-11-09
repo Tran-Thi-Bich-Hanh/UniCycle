@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { ListingForm, ListingFormValues, ListingPayload } from "@/components/listing-form";
 import { Category, Product } from "@/lib/db";
+import { parseProductAttributes } from "@/lib/passport";
 
 export default function EditProductPage() {
   const params = useParams();
@@ -46,6 +47,7 @@ export default function EditProductPage() {
           description: prod.description,
           images: (prod.images || []).map((i) => i.url),
           status: prod.status === "RESERVED" ? "ACTIVE" : prod.status,
+          attributes: parseProductAttributes(prod.attributes),
         });
       })
       .catch((err: any) => setLoadError(err.message || "Lỗi tải thông tin bài đăng."));

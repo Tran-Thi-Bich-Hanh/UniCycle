@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import db, { Product, ProductImage } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
+import { generatePassportHash } from "@/lib/passport";
 
 // GET /api/products - Tìm kiếm và lọc sản phẩm đa tiêu chí
 export async function GET(request: Request) {
@@ -196,12 +197,30 @@ export async function POST(request: Request) {
     const slug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
     const now = new Date().toISOString();
 
+    const cleanAttributes = attributes && typeof attributes === "object" ? attributes : {};
+    const validImages = Array.isArray(images) ? images.filter((u: unknown) => typeof u === "string" && u) : [];
+
+    // Tự động sinh mã băm Hộ chiếu số SHA-256 (0x... bytes32)
+    const passportHash = generatePassportHash({
+      productId,
+      title: title.trim(),
+      categoryId,
+      sellerId: user.id,
+      condition,
+      price: Number(price),
+      pickupLocation: pickupLocation.trim(),
+      description: description.trim(),
+      images: validImages,
+      attributes: cleanAttributes,
+      createdAt: now,
+    });
+
     const insertProd = db.prepare(`
       INSERT INTO products (
         id, title, slug, description, price, condition, status, 
-        category_id, seller_id, pickup_location, attributes, view_count, created_at, updated_at
+        category_id, seller_id, pickup_location, attributes, passport_hash, view_count, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, 0, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?, 0, ?, ?)
     `);
 
     insertProd.run(
@@ -214,7 +233,8 @@ export async function POST(request: Request) {
       categoryId,
       user.id,
       pickupLocation.trim(),
-      attributes ? JSON.stringify(attributes) : null,
+      JSON.stringify(cleanAttributes),
+      passportHash,
       now,
       now
     );
@@ -233,6 +253,26 @@ export async function POST(request: Request) {
         }
       });
     }
+
+    // Tự động khởi tạo bản ghi lịch sử sở hữu đầu tiên (Thế hệ 1)
+    const ownId = `own_${crypto.randomBytes(6).toString("hex")}`;
+    const originNote =
+      cleanAttributes.origin ||
+      cleanAttributes.usage_time ||
+      "Đăng bán và niêm phong cam kết gốc trên UniCycle.";
+    db.prepare(`
+      INSERT INTO ownership_history (id, product_id, owner_name, university, cohort, period, notes, order_index, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+    `).run(
+      ownId,
+      productId,
+      user.full_name || "Sinh viên",
+      user.university || "Đại học Quốc gia TP.HCM",
+      "Chủ sở hữu hiện tại",
+      `${new Date().getFullYear()} - Hiện tại`,
+      originNote,
+      now
+    );
 
     return NextResponse.json({
       success: true,
