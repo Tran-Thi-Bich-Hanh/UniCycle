@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import db, { Product, ProductImage } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
+import { generatePassportHash } from "@/lib/passport";
 
 // GET /api/products - Tìm kiếm và lọc sản phẩm đa tiêu chí
 export async function GET(request: Request) {
@@ -196,12 +197,30 @@ export async function POST(request: Request) {
     const slug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
     const now = new Date().toISOString();
 
+    const cleanAttributes = attributes && typeof attributes === "object" ? attributes : {};
+    const validImages = Array.isArray(images) ? images.filter((u: unknown) => typeof u === "string" && u) : [];
+
+    // Tự động sinh mã băm Hộ chiếu số SHA-256 (0x... bytes32)
+    const passportHash = generatePassportHash({
+      productId,
+      title: title.trim(),
+      categoryId,
+      sellerId: user.id,
+      condition,
+      price: Number(price),
+      pickupLocation: pickupLocation.trim(),
+      description: description.trim(),
+      images: validImages,
+      attributes: cleanAttributes,
+      createdAt: now,
+    });
+
     const insertProd = db.prepare(`
       INSERT INTO products (
         id, title, slug, description, price, condition, status, 
-        category_id, seller_id, pickup_location, attributes, view_count, created_at, updated_at
+        category_id, seller_id, pickup_location, attributes, passport_hash, view_count, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, 0, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?, 0, ?, ?)
     `);
 
     insertProd.run(
@@ -214,7 +233,8 @@ export async function POST(request: Request) {
       categoryId,
       user.id,
       pickupLocation.trim(),
-      attributes ? JSON.stringify(attributes) : null,
+      JSON.stringify(cleanAttributes),
+      passportHash,
       now,
       now
     );

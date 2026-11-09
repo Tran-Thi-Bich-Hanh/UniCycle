@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import db, { Product, ProductImage } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
+import { generatePassportHash } from "@/lib/passport";
 
 // GET /api/products/[id] - Xem chi tiết 1 sản phẩm và tự động tăng view_count
 export async function GET(
@@ -111,13 +112,58 @@ export async function PUT(
       return NextResponse.json({ error: "Bạn không có quyền chỉnh sửa bài đăng này" }, { status: 403 });
     }
 
-    const { title, description, price, condition, categoryId, pickupLocation, status, images } = body;
+    const { title, description, price, condition, categoryId, pickupLocation, status, images, attributes } = body;
     const now = new Date().toISOString();
+
+    // 1. Cập nhật danh sách ảnh nếu có truyền mảng images
+    let finalImages: string[] = [];
+    if (Array.isArray(images)) {
+      finalImages = images.filter((u: unknown) => typeof u === "string" && u);
+      db.prepare("DELETE FROM product_images WHERE product_id = ?").run(id);
+      const insertImg = db.prepare(`
+        INSERT INTO product_images (id, product_id, url, is_cover, display_order, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      finalImages.forEach((url: string, index: number) => {
+        insertImg.run(`img_${crypto.randomBytes(6).toString("hex")}`, id, url, index === 0 ? 1 : 0, index, now);
+      });
+    } else {
+      const existingImgs = db.prepare("SELECT url FROM product_images WHERE product_id = ? ORDER BY is_cover DESC, display_order ASC").all(id) as { url: string }[];
+      finalImages = existingImgs.map((i) => i.url);
+    }
+
+    // 2. Chuẩn hóa attributes
+    let finalAttributes: Record<string, any> = {};
+    if (attributes !== undefined && typeof attributes === "object" && attributes !== null) {
+      finalAttributes = attributes;
+    } else if (existing.attributes) {
+      try {
+        finalAttributes = JSON.parse(existing.attributes);
+      } catch {
+        finalAttributes = {};
+      }
+    }
+
+    // 3. Tự động tính toán lại mã băm Hộ chiếu số SHA-256 (0x...)
+    const newPassportHash = generatePassportHash({
+      productId: id,
+      title: (title !== undefined ? title : existing.title).trim(),
+      categoryId: categoryId !== undefined ? categoryId : existing.category_id,
+      sellerId: existing.seller_id,
+      condition: condition !== undefined ? condition : existing.condition,
+      price: Number(price !== undefined ? price : existing.price),
+      pickupLocation: (pickupLocation !== undefined ? pickupLocation : existing.pickup_location).trim(),
+      description: (description !== undefined ? description : existing.description).trim(),
+      images: finalImages,
+      attributes: finalAttributes,
+      createdAt: existing.created_at,
+    });
 
     const update = db.prepare(`
       UPDATE products
       SET title = ?, description = ?, price = ?, condition = ?, 
-          category_id = ?, pickup_location = ?, status = ?, updated_at = ?
+          category_id = ?, pickup_location = ?, status = ?, 
+          attributes = ?, passport_hash = ?, updated_at = ?
       WHERE id = ?
     `);
 
@@ -129,25 +175,13 @@ export async function PUT(
       categoryId !== undefined ? categoryId : existing.category_id,
       pickupLocation !== undefined ? pickupLocation : existing.pickup_location,
       status !== undefined ? status : existing.status,
+      JSON.stringify(finalAttributes),
+      newPassportHash,
       now,
       id
     );
 
-    // Cập nhật danh sách ảnh nếu có truyền mảng images
-    if (Array.isArray(images)) {
-      db.prepare("DELETE FROM product_images WHERE product_id = ?").run(id);
-      const insertImg = db.prepare(`
-        INSERT INTO product_images (id, product_id, url, is_cover, display_order, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-      images.forEach((url: string, index: number) => {
-        if (url) {
-          insertImg.run(`img_${crypto.randomBytes(6).toString("hex")}`, id, url, index === 0 ? 1 : 0, index, now);
-        }
-      });
-    }
-
-    return NextResponse.json({ success: true, message: "Cập nhật bài đăng thành công!" });
+    return NextResponse.json({ success: true, message: "Cập nhật bài đăng thành công!", passportHash: newPassportHash });
   } catch (err: any) {
     console.error("Update product error:", err);
     return NextResponse.json({ error: "Lỗi cập nhật sản phẩm" }, { status: 500 });
