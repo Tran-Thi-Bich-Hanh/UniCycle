@@ -86,6 +86,10 @@ export async function GET(request: Request) {
 
     const isValid = isIntegrityValid && isQueryHashMatch;
 
+    const ownershipHistory = db
+      .prepare("SELECT * FROM ownership_history WHERE product_id = ? ORDER BY order_index ASC, created_at ASC")
+      .all(row.id);
+
     return NextResponse.json({
       isValid,
       productId: row.id,
@@ -111,6 +115,7 @@ export async function GET(request: Request) {
       imagesCount: imageUrls.length,
       computedHash,
       storedHash,
+      ownershipHistory,
       isIntegrityValid,
       isQueryHashMatch,
       createdAt: row.created_at,

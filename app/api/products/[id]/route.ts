@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import db, { Product, ProductImage } from "@/lib/db";
+import db, { Product, ProductImage, OwnershipRecord } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { generatePassportHash } from "@/lib/passport";
 
@@ -44,6 +44,12 @@ export async function GET(
       ORDER BY is_cover DESC, display_order ASC
     `).all(row.id) as ProductImage[];
 
+    const ownershipHistory = db.prepare(`
+      SELECT * FROM ownership_history
+      WHERE product_id = ?
+      ORDER BY order_index ASC, created_at ASC
+    `).all(row.id) as OwnershipRecord[];
+
     const product: Product = {
       id: row.id,
       title: row.title,
@@ -79,6 +85,7 @@ export async function GET(
         phone: viewer ? row.s_phone : null,
       },
       images,
+      ownership_history: ownershipHistory,
     };
 
     return NextResponse.json({ product, requiresLogin: !viewer });

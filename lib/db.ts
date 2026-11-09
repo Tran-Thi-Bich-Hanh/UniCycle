@@ -90,11 +90,26 @@ db.exec(`
     FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
   );
 
+  -- 6. Bảng Lịch sử Tuần hoàn Sở hữu (Chain of Ownership)
+  CREATE TABLE IF NOT EXISTS ownership_history (
+    id TEXT PRIMARY KEY,
+    product_id TEXT NOT NULL,
+    owner_name TEXT NOT NULL,
+    university TEXT,
+    cohort TEXT,
+    period TEXT,
+    notes TEXT,
+    order_index INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+  );
+
   -- Tạo index tối ưu truy vấn
   CREATE INDEX IF NOT EXISTS idx_products_category ON products (category_id);
   CREATE INDEX IF NOT EXISTS idx_products_seller ON products (seller_id);
   CREATE INDEX IF NOT EXISTS idx_products_status ON products (status);
   CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories (slug);
+  CREATE INDEX IF NOT EXISTS idx_ownership_product ON ownership_history (product_id);
 `);
 
 // Tự động khởi tạo dữ liệu mẫu (Seed) nếu database mới tạo
@@ -451,8 +466,108 @@ function ensureSeeded() {
   }
 }
 
+// Tự động kiểm tra và khởi tạo lịch sử tuần hoàn sở hữu (Chain of Ownership)
+function ensureOwnershipHistory() {
+  const countRow = db.prepare("SELECT COUNT(*) as count FROM ownership_history").get() as { count: number };
+  if (countRow && countRow.count > 0) return;
+
+  const now = new Date().toISOString();
+  const insertHistory = db.prepare(`
+    INSERT INTO ownership_history (id, product_id, owner_name, university, cohort, period, notes, order_index, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const sampleHistories = [
+    {
+      id: "own_ban_1",
+      product_id: "prod_ban_hoc_gap",
+      owner_name: "Hoàng Minh",
+      university: "ĐH Bách Khoa (ĐHQG TP.HCM)",
+      cohort: "K19 Kỹ thuật Máy tính",
+      period: "2022 - 2024",
+      notes: "Mua mới tại KTX Khu A, dùng học tập 2 năm.",
+      order_index: 1,
+    },
+    {
+      id: "own_ban_2",
+      product_id: "prod_ban_hoc_gap",
+      owner_name: "Nguyễn Văn An",
+      university: "ĐH Bách Khoa (ĐHQG TP.HCM)",
+      cohort: "K21 Cơ khí",
+      period: "2024 - Hiện tại",
+      notes: "Nhận lại từ anh khóa trên, mặt bàn còn rất mới, chân gập êm ru.",
+      order_index: 2,
+    },
+    {
+      id: "own_sach_1",
+      product_id: "prod_giao_trinh_toan",
+      owner_name: "Lê Quốc Tuấn",
+      university: "ĐH Khoa học Tự nhiên",
+      cohort: "K20 Công nghệ Thông tin",
+      period: "2022 - 2023",
+      notes: "Mua sách gốc tại NXB ĐHQG, đã qua môn Giải tích 1 đạt A.",
+      order_index: 1,
+    },
+    {
+      id: "own_sach_2",
+      product_id: "prod_giao_trinh_toan",
+      owner_name: "Trần Thị Mai",
+      university: "ĐH Kinh tế - Luật",
+      cohort: "K22 Tài chính",
+      period: "2023 - Hiện tại",
+      notes: "Bọc bìa nilon sạch sẽ, chỉ ghi chú bằng bút chì gôm được.",
+      order_index: 2,
+    },
+    {
+      id: "own_den_1",
+      product_id: "prod_den_hoc_rangdong",
+      owner_name: "Phạm Hải Đăng",
+      university: "ĐH Sư phạm Kỹ thuật",
+      cohort: "K21 Điện - Điện tử",
+      period: "2023 - 2024",
+      notes: "Đèn học chống cận 3 màu, dùng phòng trọ ôn thi cuối kỳ rất tốt.",
+      order_index: 1,
+    },
+    {
+      id: "own_den_2",
+      product_id: "prod_den_hoc_rangdong",
+      owner_name: "Nguyễn Văn An",
+      university: "ĐH Bách Khoa (ĐHQG TP.HCM)",
+      cohort: "K21 Cơ khí",
+      period: "2024 - Hiện tại",
+      notes: "Dùng tốt, sẵn sàng chuyền lại cho đàn em khóa sau.",
+      order_index: 2,
+    },
+    {
+      id: "own_quat_1",
+      product_id: "prod_quat_dung_senko",
+      owner_name: "Trần Văn Bình",
+      university: "ĐH Công nghệ Thông tin",
+      cohort: "K20 An toàn Thông tin",
+      period: "2022 - 2024",
+      notes: "Quạt Senko chính hãng, đã tra dầu bạc định kỳ, chạy cực êm.",
+      order_index: 1,
+    },
+    {
+      id: "own_quat_2",
+      product_id: "prod_quat_dung_senko",
+      owner_name: "Trần Thị Mai",
+      university: "ĐH Kinh tế - Luật",
+      cohort: "K22 Tài chính",
+      period: "2024 - Hiện tại",
+      notes: "Dùng mát mùa hè KTX, cánh quạt sạch sẽ không bám bụi.",
+      order_index: 2,
+    },
+  ];
+
+  sampleHistories.forEach((h) => {
+    insertHistory.run(h.id, h.product_id, h.owner_name, h.university, h.cohort, h.period, h.notes, h.order_index, now);
+  });
+}
+
 // Chạy seeder ngay khi module được load
 ensureSeeded();
+ensureOwnershipHistory();
 
 export default db;
 
@@ -493,6 +608,18 @@ export interface ProductImage {
   created_at: string;
 }
 
+export interface OwnershipRecord {
+  id: string;
+  product_id: string;
+  owner_name: string;
+  university?: string | null;
+  cohort?: string | null;
+  period?: string | null;
+  notes?: string | null;
+  order_index: number;
+  created_at: string;
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -519,5 +646,6 @@ export interface Product {
     phone: string | null;
   };
   images?: ProductImage[];
+  ownership_history?: OwnershipRecord[];
 }
 
