@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
+import { generatePassportHash } from "./passport";
 
 // Khởi tạo thư mục data và file SQLite cục bộ
 const dbDir = path.join(process.cwd(), "data");
@@ -207,6 +208,12 @@ function ensureSeeded() {
       seller_id: "usr_an_nguyen",
       pickup_location: "KTX Khu A ĐHQG (Tòa A15)",
       view_count: 42,
+      attributes: {
+        dimensions: "60 x 40 x 28 cm",
+        material: "Mặt gỗ ép viền cao su bo góc, chân sắt sơn tĩnh điện",
+        sturdiness: "Rất chắc chắn, gập mở êm ru",
+        defects: "Viền trầy nhẹ góc phải 1mm, chân gập còn mới nguyên",
+      },
       images: [
         "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800&auto=format&fit=crop&q=80",
         "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80",
@@ -223,6 +230,12 @@ function ensureSeeded() {
       seller_id: "usr_an_nguyen",
       pickup_location: "Cổng chính ĐH Bách Khoa Cơ sở Dĩ An",
       view_count: 89,
+      attributes: {
+        edition: "NXB ĐHQG TP.HCM 2023",
+        annotations: "Có ghi chú bút chì (gôm được)",
+        missing_pages: "Đầy đủ 100% trang, gáy chắc chắn",
+        book_cover: "Bọc nilon sạch sẽ",
+      },
       images: [
         "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=80",
         "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80",
@@ -239,6 +252,12 @@ function ensureSeeded() {
       seller_id: "usr_mai_tran",
       pickup_location: "KTX Khu B ĐHQG (Nhà B4)",
       view_count: 67,
+      attributes: {
+        brand_model: "Senko B102",
+        working_status: "Hoạt động hoàn hảo 100% như mới",
+        power: "28W (220V - 50Hz)",
+        accessories: "Dây nguồn zin nguyên bản kèm phích cắm đúc",
+      },
       images: [
         "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&auto=format&fit=crop&q=80",
       ],
@@ -254,6 +273,11 @@ function ensureSeeded() {
       seller_id: "usr_mai_tran",
       pickup_location: "KTX Khu B ĐHQG hoặc Cổng KHTN Linh Trung",
       view_count: 53,
+      attributes: {
+        brand_model: "Rạng Đông RD-RL-20.LED",
+        working_status: "Hoạt động hoàn hảo 100% như mới",
+        accessories: "Củ sạc và dây cắm chính hãng",
+      },
       images: [
         "https://images.unsplash.com/photo-1534349762230-e0cadf78f5da?w=800&auto=format&fit=crop&q=80",
       ],
@@ -269,6 +293,12 @@ function ensureSeeded() {
       seller_id: "usr_mai_tran",
       pickup_location: "Khu trọ hẻm 8 Hoàng Diệu 2, TP. Thủ Đức",
       view_count: 112,
+      attributes: {
+        dimensions: "1m x 2m x 5cm",
+        core_material: "Ruột bông ép Hàn Quốc chống lún",
+        hygiene_status: "Đã giặt sấy thơm tho, dùng được ngay",
+        usage_time: "Dùng 1 học kỳ (khoảng 4 tháng)",
+      },
       images: [
         "https://images.unsplash.com/photo-1615873968403-89e068629265?w=800&auto=format&fit=crop&q=80",
       ],
@@ -284,6 +314,11 @@ function ensureSeeded() {
       seller_id: "usr_an_nguyen",
       pickup_location: "KTX Khu A ĐHQG",
       view_count: 145,
+      attributes: {
+        origin: "Mua lại từ sinh viên K19 Bách Khoa",
+        defects: "Yên xe hơi bạc màu, khung xe và xích líp phanh tốt 100%",
+        accessories: "Kèm rổ sắt, chuông, gac-baga sau",
+      },
       images: [
         "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800&auto=format&fit=crop&q=80",
       ],
@@ -291,8 +326,8 @@ function ensureSeeded() {
   ];
 
   const insertProduct = db.prepare(`
-    INSERT INTO products (id, title, slug, description, price, condition, status, category_id, seller_id, pickup_location, view_count, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?, ?)
+    INSERT INTO products (id, title, slug, description, price, condition, status, category_id, seller_id, pickup_location, attributes, passport_hash, view_count, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertImg = db.prepare(`
@@ -301,6 +336,21 @@ function ensureSeeded() {
   `);
 
   for (const p of products) {
+    const attrJson = p.attributes ? JSON.stringify(p.attributes) : null;
+    const passportHash = generatePassportHash({
+      productId: p.id,
+      title: p.title,
+      categoryId: p.category_id,
+      sellerId: p.seller_id,
+      condition: p.condition,
+      price: p.price,
+      pickupLocation: p.pickup_location,
+      description: p.description,
+      images: p.images,
+      attributes: p.attributes || {},
+      createdAt: now,
+    });
+
     insertProduct.run(
       p.id,
       p.title,
@@ -311,6 +361,8 @@ function ensureSeeded() {
       p.category_id,
       p.seller_id,
       p.pickup_location,
+      attrJson,
+      passportHash,
       p.view_count,
       now,
       now
@@ -319,6 +371,83 @@ function ensureSeeded() {
     p.images.forEach((url, idx) => {
       insertImg.run(`${p.id}_img_${idx}`, p.id, url, idx === 0 ? 1 : 0, idx, now);
     });
+  }
+
+  // Tự động kiểm tra và nâng cấp dữ liệu cho các sản phẩm đã có trong DB nếu chưa có passport_hash
+  const sampleAttributesMap: Record<string, any> = {
+    prod_ban_hoc_gap: {
+      dimensions: "60 x 40 x 28 cm",
+      material: "Mặt gỗ ép viền cao su bo góc, chân sắt sơn tĩnh điện",
+      sturdiness: "Rất chắc chắn, gập mở êm ru",
+      defects: "Viền trầy nhẹ góc phải 1mm, chân gập còn mới nguyên",
+    },
+    prod_giao_trinh_toan: {
+      edition: "NXB ĐHQG TP.HCM 2023",
+      annotations: "Có ghi chú bút chì (gôm được)",
+      missing_pages: "Đầy đủ 100% trang, gáy chắc chắn",
+      book_cover: "Bọc nilon sạch sẽ",
+    },
+    prod_quat_ban_senko: {
+      brand_model: "Senko B102",
+      working_status: "Hoạt động hoàn hảo 100% như mới",
+      power: "28W (220V - 50Hz)",
+      accessories: "Dây nguồn zin nguyên bản kèm phích cắm đúc",
+    },
+    prod_den_chong_can: {
+      brand_model: "Rạng Đông RD-RL-20.LED",
+      working_status: "Hoạt động hoàn hảo 100% như mới",
+      accessories: "Củ sạc và dây cắm chính hãng",
+    },
+    prod_nem_gap_3: {
+      dimensions: "1m x 2m x 5cm",
+      core_material: "Ruột bông ép Hàn Quốc chống lún",
+      hygiene_status: "Đã giặt sấy thơm tho, dùng được ngay",
+      usage_time: "Dùng 1 học kỳ (khoảng 4 tháng)",
+    },
+    prod_xe_dap_mini: {
+      origin: "Mua lại từ sinh viên K19 Bách Khoa",
+      defects: "Yên xe hơi bạc màu, khung xe và xích líp phanh tốt 100%",
+      accessories: "Kèm rổ sắt, chuông, gac-baga sau",
+    },
+  };
+
+  const existingProds = db
+    .prepare(
+      "SELECT id, title, category_id, seller_id, condition, price, pickup_location, description, created_at, attributes, passport_hash FROM products"
+    )
+    .all() as any[];
+
+  for (const ep of existingProds) {
+    if (!ep.passport_hash || !ep.attributes) {
+      const attrs = ep.attributes ? JSON.parse(ep.attributes) : sampleAttributesMap[ep.id] || {};
+      const imgs = (
+        db
+          .prepare(
+            "SELECT url FROM product_images WHERE product_id = ? ORDER BY is_cover DESC, display_order ASC"
+          )
+          .all(ep.id) as any[]
+      ).map((i) => i.url);
+
+      const hash = generatePassportHash({
+        productId: ep.id,
+        title: ep.title,
+        categoryId: ep.category_id,
+        sellerId: ep.seller_id,
+        condition: ep.condition,
+        price: ep.price,
+        pickupLocation: ep.pickup_location,
+        description: ep.description,
+        images: imgs,
+        attributes: attrs,
+        createdAt: ep.created_at,
+      });
+
+      db.prepare("UPDATE products SET attributes = ?, passport_hash = ? WHERE id = ?").run(
+        JSON.stringify(attrs),
+        hash,
+        ep.id
+      );
+    }
   }
 }
 
