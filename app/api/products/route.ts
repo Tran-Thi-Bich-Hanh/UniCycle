@@ -254,6 +254,26 @@ export async function POST(request: Request) {
       });
     }
 
+    // Tự động khởi tạo bản ghi lịch sử sở hữu đầu tiên (Thế hệ 1)
+    const ownId = `own_${crypto.randomBytes(6).toString("hex")}`;
+    const originNote =
+      cleanAttributes.origin ||
+      cleanAttributes.usage_time ||
+      "Đăng bán và niêm phong cam kết gốc trên UniCycle.";
+    db.prepare(`
+      INSERT INTO ownership_history (id, product_id, owner_name, university, cohort, period, notes, order_index, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+    `).run(
+      ownId,
+      productId,
+      user.full_name || "Sinh viên",
+      user.university || "Đại học Quốc gia TP.HCM",
+      "Chủ sở hữu hiện tại",
+      `${new Date().getFullYear()} - Hiện tại`,
+      originNote,
+      now
+    );
+
     return NextResponse.json({
       success: true,
       productId,

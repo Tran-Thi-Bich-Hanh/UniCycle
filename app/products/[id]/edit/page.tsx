@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { ListingForm, ListingFormValues, ListingPayload } from "@/components/listing-form";
 import { Category, Product } from "@/lib/db";
+import { parseProductAttributes } from "@/lib/passport";
 
 export default function EditProductPage() {
   const params = useParams();
@@ -36,15 +37,6 @@ export default function EditProductPage() {
         if (prod.seller_id !== auth.user.id && auth.user.role !== "ADMIN") {
           throw new Error("Bạn không có quyền chỉnh sửa bài đăng này.");
         }
-        let parsedAttributes = {};
-        if (prod.attributes) {
-          try {
-            parsedAttributes = typeof prod.attributes === "string" ? JSON.parse(prod.attributes) : prod.attributes;
-          } catch {
-            parsedAttributes = {};
-          }
-        }
-
         setCategories(cat.categories || []);
         setInitial({
           title: prod.title,
@@ -55,7 +47,7 @@ export default function EditProductPage() {
           description: prod.description,
           images: (prod.images || []).map((i) => i.url),
           status: prod.status === "RESERVED" ? "ACTIVE" : prod.status,
-          attributes: parsedAttributes,
+          attributes: parseProductAttributes(prod.attributes),
         });
       })
       .catch((err: any) => setLoadError(err.message || "Lỗi tải thông tin bài đăng."));

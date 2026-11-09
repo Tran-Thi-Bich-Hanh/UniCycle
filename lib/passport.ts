@@ -286,3 +286,77 @@ export const CATEGORY_SPEC_CONFIG: Record<
   },
 };
 
+export interface DisplaySpecItem {
+  key: string;
+  label: string;
+  value: string;
+  isHighlight?: boolean;
+}
+
+/**
+ * Giải mã an toàn chuỗi JSON attributes từ DB thành Object
+ */
+export function parseProductAttributes(
+  raw: string | Record<string, any> | null | undefined
+): Record<string, any> {
+  if (!raw) return {};
+  if (typeof raw === "object") return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Trừu tượng hóa việc trích xuất danh sách thông số kỹ thuật hiển thị ra giao diện
+ * Tự động ánh xạ nhãn tiếng Việt theo danh mục mà UI không cần tự xử lý JSON
+ */
+export function extractDisplaySpecs(
+  categoryId: string,
+  rawAttributes: string | Record<string, any> | null | undefined
+): DisplaySpecItem[] {
+  const attrs = parseProductAttributes(rawAttributes);
+  const config = CATEGORY_SPEC_CONFIG[categoryId];
+  const items: DisplaySpecItem[] = [];
+  const usedKeys = new Set<string>();
+
+  if (config?.fields) {
+    for (const field of config.fields) {
+      usedKeys.add(field.key);
+      const val = attrs[field.key];
+      if (val && typeof val === "string" && val.trim() !== "") {
+        items.push({
+          key: field.key,
+          label: field.label,
+          value: val.trim(),
+          isHighlight: field.key === "defects",
+        });
+      }
+    }
+  }
+
+  const EXTRA_LABELS: Record<string, string> = {
+    defects: "Lưu ý ngoại hình",
+    book_cover: "Tình trạng bìa",
+    specs_note: "Ghi chú thêm",
+    origin: "Nguồn gốc",
+    usage_time: "Thời gian đã dùng",
+  };
+
+  for (const [k, v] of Object.entries(attrs)) {
+    if (!usedKeys.has(k) && v && typeof v === "string" && v.trim() !== "") {
+      items.push({
+        key: k,
+        label: EXTRA_LABELS[k] || k,
+        value: v.trim(),
+        isHighlight: k === "defects",
+      });
+    }
+  }
+
+  return items;
+}
+
+
