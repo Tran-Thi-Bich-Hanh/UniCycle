@@ -87,6 +87,10 @@ Bám sát bảng màu 5 sắc thái xanh chủ đạo:
   - Đặt nút bấm/badge mở Passport nổi bật trên trang `/products/[id]`.
 - [x] **Task 2.5: API Xác thực Độc lập (`/api/passport/verify`)**
   - Cung cấp endpoint tra cứu Passport nhanh cho thiết bị di động hoặc ví Web3.
+- [x] **Task 2.6: Tinh gọn UX & Trừu tượng hóa Kiến trúc (UX Simplification & Code Abstraction)**
+  - Đưa thông số cam kết ra trực tiếp trang chi tiết món đồ (`components/product-specs-card.tsx`).
+  - Trừu tượng hóa thuật ngữ kỹ thuật (`SHA-256`, `0x...`) khỏi giao diện chính; loại bỏ khối QR rườm rà; tự động hóa đối soát khi mở trang Passport.
+  - Chuẩn hóa hàm helper `extractDisplaySpecs` & `parseProductAttributes` trong `lib/passport.ts` để tái sử dụng xuyên suốt.
 
 #### **Tối ưu hóa UI/UX cho Người bán (Progressive Disclosure):**
 

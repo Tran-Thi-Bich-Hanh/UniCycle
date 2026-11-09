@@ -24,7 +24,7 @@ import {
 } from "@/components/icons";
 import { Product } from "@/lib/db";
 import { formatCurrencyVND, formatRelativeTime, CONDITION_LABELS, STATUS_LABELS } from "@/lib/utils";
-import { OwnershipTimeline } from "@/components/ownership-timeline";
+import { ProductSpecsCard, PassportTrustBanner } from "@/components/product-specs-card";
 
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=80";
@@ -219,18 +219,6 @@ export default function ProductDetailPage() {
                   {statusMeta?.label || product.status}
                 </span>
               )}
-
-              {product.passport_hash ? (
-                <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#001B48]/90 text-white text-[11px] font-mono backdrop-blur-md border border-[#97CADB]/40">
-                  <span className="w-2 h-2 rounded-full bg-[#018ABE]" />
-                  <span>Passport: {product.passport_hash.slice(0, 10)}...</span>
-                </div>
-              ) : (
-                <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 text-[#001B48] text-[11px] font-semibold backdrop-blur-md border border-[#D6E8EE]">
-                  <IconSparkles className="w-3.5 h-3.5 text-[#018ABE]" />
-                  <span>UniCycle Verified Item</span>
-                </div>
-              )}
             </div>
 
             {images.length > 1 && (
@@ -256,6 +244,13 @@ export default function ProductDetailPage() {
               </div>
             )}
 
+            {/* THÔNG SỐ KỸ THUẬT CAM KẾT THEO DANH MỤC */}
+            <ProductSpecsCard
+              productId={product.id}
+              categoryId={product.category_id}
+              attributes={product.attributes}
+            />
+
             <section className="bg-white rounded-2xl border border-[#D6E8EE] p-6 space-y-4 shadow-2xs">
               <h2 className="text-lg font-extrabold text-[#001B48] flex items-center gap-2">
                 <IconFileText className="w-5 h-5 text-[#018ABE]" />
@@ -276,15 +271,6 @@ export default function ProductDetailPage() {
                   Mã tin: <span className="font-mono text-[#001B48] font-bold">{product.id.slice(0, 8)}</span>
                 </div>
               </div>
-            </section>
-
-            {/* CÂY LỊCH SỬ TUẦN HOÀN SỞ HỮU (CHAIN OF OWNERSHIP) */}
-            <section className="bg-white rounded-2xl border border-[#D6E8EE] p-6 shadow-2xs space-y-4">
-              <OwnershipTimeline
-                history={product.ownership_history}
-                currentSellerName={product.seller?.full_name}
-                currentSellerUniversity={product.seller?.university || undefined}
-              />
             </section>
 
             <div className="bg-[#D6E8EE]/30 rounded-2xl border border-[#97CADB]/60 p-5 flex items-start gap-3.5">
@@ -339,46 +325,9 @@ export default function ProductDetailPage() {
                   <div className="text-xs text-[#02457A] font-medium mt-0.5">{product.pickup_location}</div>
                 </div>
               </div>
-            </section>
 
-            {/* CARD PASSPORT BẢO CHỨNG MINH BẠCH */}
-            <section className="bg-gradient-to-br from-[#001B48] via-[#02457A] to-[#001B48] rounded-2xl p-5 text-white shadow-md border-2 border-[#018ABE]/40 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-[#018ABE] text-white flex items-center justify-center shadow-xs">
-                    <IconShieldCheck className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-black tracking-widest text-[#97CADB] block">
-                      Bảo chứng sinh viên
-                    </span>
-                    <h3 className="text-sm font-extrabold text-white">UniCycle Passport</h3>
-                  </div>
-                </div>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#018ABE]/30 text-[#97CADB] text-[10px] font-extrabold border border-[#018ABE]/40">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Verified</span>
-                </span>
-              </div>
-
-              <p className="text-xs text-white/80 leading-relaxed">
-                Món đồ này đã được cấp Hộ chiếu số với dấu vân tay mật mã học SHA-256 (0x...), đảm bảo thông số kỹ thuật và ảnh gốc không bị thay đổi.
-              </p>
-
-              {product.passport_hash && (
-                <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 font-mono text-[11px] text-emerald-400 flex items-center justify-between gap-2">
-                  <span className="truncate">Hash: {product.passport_hash.slice(0, 18)}...{product.passport_hash.slice(-6)}</span>
-                  <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white/10 text-white/70 font-sans font-bold">SHA-256</span>
-                </div>
-              )}
-
-              <Link
-                href={`/products/${product.id}/passport`}
-                className="w-full py-2.5 px-4 rounded-xl font-extrabold text-xs bg-[#018ABE] hover:bg-white hover:text-[#001B48] text-white flex items-center justify-center gap-2 transition-all shadow-sm"
-              >
-                <IconShieldCheck className="w-4 h-4" />
-                <span>Xem Hộ chiếu số & Bảng cam kết gốc →</span>
-              </Link>
+              {/* Dải bảo chứng Hộ chiếu số tinh gọn */}
+              <PassportTrustBanner productId={product.id} />
             </section>
 
             <section className="bg-white rounded-2xl border border-[#D6E8EE] p-6 shadow-2xs space-y-5">

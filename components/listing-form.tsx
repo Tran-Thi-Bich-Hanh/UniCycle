@@ -454,15 +454,15 @@ export function ListingForm({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <SectionTitle icon={<IconShieldCheck className="w-5 h-5" />}>
-              UniCycle Passport • Thông số minh bạch
+              Thông số thực tế theo danh mục
             </SectionTitle>
             <p className="text-xs text-[#02457A] mt-1">
-              Checklist đặc thù theo danh mục giúp người mua tin tưởng bạn tuyệt đối khi hẹn gặp.
+              Chọn nhanh tình trạng thực tế để người mua nắm rõ ngay mà không cần nhắn hỏi nhiều lần.
             </p>
           </div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#001B48] text-white text-[11px] font-bold shrink-0 self-start sm:self-auto shadow-2xs">
-            <IconSparkles className="w-3.5 h-3.5 text-[#97CADB]" />
-            <span>Được băm SHA-256 (0x...)</span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#D6E8EE] text-[#001B48] border border-[#97CADB] text-[11px] font-bold shrink-0 self-start sm:self-auto">
+            <IconSparkles className="w-3.5 h-3.5 text-[#018ABE]" />
+            <span>Tự động cấp Hộ chiếu món đồ</span>
           </span>
         </div>
 
@@ -548,8 +548,8 @@ export function ListingForm({
             <IconShieldCheck className="w-4 h-4" />
           </div>
           <div>
-            <span className="font-bold text-[#001B48]">Bảo chứng bằng Hộ chiếu số: </span>
-            Các thông số bạn chọn cùng ảnh chụp sẽ được kết hợp tạo mã băm mật mã học SHA-256 (định dạng <code>0x...</code> 66 ký tự). Khi hẹn gặp tại KTX hoặc cổng trường, người mua có thể quét QR để kiểm tra tính toàn vẹn 100%.
+            <span className="font-bold text-[#001B48]">Mẹo thanh lý nhanh: </span>
+            Mô tả đúng tình trạng thực tế (kể cả vết trầy nhỏ nếu có) sẽ được hệ thống đóng dấu bảo chứng trên trang món đồ, giúp các bạn sinh viên khác tin tưởng chốt mua nhanh gấp 3 lần.
           </div>
         </div>
       </section>
