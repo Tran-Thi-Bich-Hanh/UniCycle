@@ -121,7 +121,7 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
   );
 
-  -- 8. Bảng Đơn Đặt cọc Giữ chỗ Smart Escrow (Lưu vết kèm Passport Hash)
+  -- 8. Bảng Đơn Đặt cọc Giữ chỗ Smart Escrow (Lưu vết kèm Passport Hash & Tự xử lý 2 chiều)
   CREATE TABLE IF NOT EXISTS escrow_orders (
     id TEXT PRIMARY KEY,
     product_id TEXT NOT NULL,
@@ -135,11 +135,52 @@ db.exec(`
     lock_tx_hash TEXT,
     settle_tx_hash TEXT,
     chain_mode TEXT DEFAULT 'ONCHAIN',
+    expires_at TEXT,
+    extended_count INTEGER DEFAULT 0,
+    meeting_note TEXT,
+    cancel_reason TEXT,
+    cancel_requested_by TEXT,
+    cancel_requested_at TEXT,
+    inspection_checked INTEGER DEFAULT 0,
     created_at TEXT NOT NULL,
     settled_at TEXT,
     FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
     FOREIGN KEY (buyer_id) REFERENCES users (id),
     FOREIGN KEY (seller_id) REFERENCES users (id)
+  );
+
+  -- 9. Bảng Yêu cầu Nạp điểm 2 bước (PENDING -> CONFIRMED / EXPIRED / CANCELLED)
+  CREATE TABLE IF NOT EXISTS topup_requests (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    reference_code TEXT UNIQUE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    tx_hash TEXT,
+    chain_mode TEXT DEFAULT 'ONCHAIN',
+    expires_at TEXT NOT NULL,
+    confirmed_at TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+  );
+
+  -- 10. Bảng Lịch sử Phiên bản Chỉnh sửa Sản phẩm (Minh bạch hóa UniCycle Passport)
+  CREATE TABLE IF NOT EXISTS product_revisions (
+    id TEXT PRIMARY KEY,
+    product_id TEXT NOT NULL,
+    editor_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL DEFAULT 1,
+    title TEXT NOT NULL,
+    price REAL NOT NULL,
+    condition TEXT NOT NULL,
+    pickup_location TEXT NOT NULL,
+    description TEXT NOT NULL,
+    specs_json TEXT,
+    data_hash TEXT NOT NULL,
+    change_summary TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+    FOREIGN KEY (editor_id) REFERENCES users (id)
   );
 
   -- Tạo index tối ưu truy vấn
@@ -152,6 +193,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_escrow_product ON escrow_orders (product_id);
   CREATE INDEX IF NOT EXISTS idx_escrow_buyer ON escrow_orders (buyer_id);
   CREATE INDEX IF NOT EXISTS idx_escrow_seller ON escrow_orders (seller_id);
+  CREATE INDEX IF NOT EXISTS idx_topup_user ON topup_requests (user_id);
+  CREATE INDEX IF NOT EXISTS idx_topup_status ON topup_requests (status);
+  CREATE INDEX IF NOT EXISTS idx_revisions_product ON product_revisions (product_id, revision_number);
 `);
 
 // Tự động khởi tạo dữ liệu mẫu (Seed) nếu database mới tạo
@@ -653,10 +697,218 @@ export function ensureUserWallet(userId: string): {
   };
 }
 
-// Chạy seeder ngay khi module được load
+/**
+ * Tự động nâng cấp Schema cho Phase 4:
+ * - Bổ sung các cột quản lý hạn giữ chỗ 48h, gia hạn +24h và tự xử lý hủy 2 chiều trong escrow_orders
+ * - Backfill hạn giữ chỗ 48h cho các đơn cũ nếu chưa có
+ * - Khởi tạo bản ghi Revision #1 trong product_revisions cho tất cả sản phẩm hiện có
+ */
+function ensurePhase4Schema() {
+  const escrowCols = db.prepare("PRAGMA table_info(escrow_orders)").all() as Array<{ name: string }>;
+  const existingColNames = new Set(escrowCols.map((c) => c.name));
+
+  const newEscrowColumns: Array<{ name: string; definition: string }> = [
+    { name: "expires_at", definition: "TEXT" },
+    { name: "extended_count", definition: "INTEGER DEFAULT 0" },
+    { name: "meeting_note", definition: "TEXT" },
+    { name: "cancel_reason", definition: "TEXT" },
+    { name: "cancel_requested_by", definition: "TEXT" },
+    { name: "cancel_requested_at", definition: "TEXT" },
+    { name: "inspection_checked", definition: "INTEGER DEFAULT 0" },
+  ];
+
+  for (const col of newEscrowColumns) {
+    if (!existingColNames.has(col.name)) {
+      db.exec(`ALTER TABLE escrow_orders ADD COLUMN ${col.name} ${col.definition};`);
+    }
+  }
+
+  // Backfill expires_at (+48h từ created_at) cho các đơn chưa có expires_at
+  const ordersWithoutExpiry = db
+    .prepare("SELECT id, created_at FROM escrow_orders WHERE expires_at IS NULL")
+    .all() as Array<{ id: string; created_at: string }>;
+
+  if (ordersWithoutExpiry.length > 0) {
+    const updateExpiry = db.prepare("UPDATE escrow_orders SET expires_at = ? WHERE id = ?");
+    for (const order of ordersWithoutExpiry) {
+      const createdMs = Date.parse(order.created_at) || Date.now();
+      const expiresIso = new Date(createdMs + 48 * 60 * 60 * 1000).toISOString();
+      updateExpiry.run(expiresIso, order.id);
+    }
+  }
+
+  // Khởi tạo Revision #1 cho các sản phẩm chưa có lịch sử phiên bản trong product_revisions
+  const productsWithoutRevision = db
+    .prepare(
+      `SELECT p.id, p.title, p.price, p.condition, p.pickup_location, p.description,
+              p.attributes, p.passport_hash, p.seller_id, p.created_at
+       FROM products p
+       LEFT JOIN product_revisions r ON p.id = r.product_id AND r.revision_number = 1
+       WHERE r.id IS NULL`
+    )
+    .all() as Array<{
+    id: string;
+    title: string;
+    price: number;
+    condition: string;
+    pickup_location: string;
+    description: string;
+    attributes: string | null;
+    passport_hash: string | null;
+    seller_id: string;
+    created_at: string;
+  }>;
+
+  if (productsWithoutRevision.length > 0) {
+    const insertRevision = db.prepare(
+      `INSERT INTO product_revisions
+        (id, product_id, editor_id, revision_number, title, price, condition, pickup_location, description, specs_json, data_hash, change_summary, created_at)
+       VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    for (const prod of productsWithoutRevision) {
+      const revId = `rev_${prod.id}_1`;
+      insertRevision.run(
+        revId,
+        prod.id,
+        prod.seller_id,
+        prod.title,
+        prod.price,
+        prod.condition,
+        prod.pickup_location,
+        prod.description,
+        prod.attributes,
+        prod.passport_hash || "",
+        "Khởi tạo hồ sơ UniCycle Passport khi đăng tin",
+        prod.created_at || new Date().toISOString()
+      );
+    }
+  }
+}
+
+/**
+ * Helper ghi nhận phiên bản mới vào bảng product_revisions mỗi khi sản phẩm được tạo mới hoặc cập nhật
+ */
+export function recordProductRevision(params: {
+  productId: string;
+  editorId: string;
+  title: string;
+  price: number;
+  condition: string;
+  pickupLocation: string;
+  description: string;
+  specsJson: string | null;
+  dataHash: string;
+  changeSummary?: string;
+}): ProductRevision {
+  const now = new Date().toISOString();
+  const latestRow = db
+    .prepare(
+      "SELECT COALESCE(MAX(revision_number), 0) as max_rev FROM product_revisions WHERE product_id = ?"
+    )
+    .get(params.productId) as { max_rev: number } | undefined;
+
+  const nextRevision = (latestRow?.max_rev ?? 0) + 1;
+  const revId = `rev_${crypto.randomBytes(8).toString("hex")}`;
+  const summary =
+    params.changeSummary ||
+    (nextRevision === 1
+      ? "Khởi tạo hồ sơ UniCycle Passport khi đăng tin"
+      : `Cập nhật thông tin bài đăng (Phiên bản #${nextRevision})`);
+
+  db.prepare(
+    `INSERT INTO product_revisions
+      (id, product_id, editor_id, revision_number, title, price, condition, pickup_location, description, specs_json, data_hash, change_summary, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    revId,
+    params.productId,
+    params.editorId,
+    nextRevision,
+    params.title,
+    params.price,
+    params.condition,
+    params.pickupLocation,
+    params.description,
+    params.specsJson,
+    params.dataHash,
+    summary,
+    now
+  );
+
+  return {
+    id: revId,
+    product_id: params.productId,
+    editor_id: params.editorId,
+    revision_number: nextRevision,
+    title: params.title,
+    price: params.price,
+    condition: params.condition,
+    pickup_location: params.pickupLocation,
+    description: params.description,
+    specs_json: params.specsJson,
+    data_hash: params.dataHash,
+    change_summary: summary,
+    created_at: now,
+  };
+}
+
+/**
+ * Helper tính toán chính xác 3 chỉ số số dư của người dùng (chuẩn ứng dụng ngân hàng số):
+ * - availableBalance: Số dư khả dụng hiện tại (sẵn sàng dùng để mua đồ)
+ * - lockedBalance: Số điểm đang được giữ trong các đơn đặt mua chờ gặp mặt (LOCKED / CANCEL_REQUESTED)
+ * - totalBalance = availableBalance + lockedBalance
+ * Đồng thời tự động đánh dấu EXPIRED cho các lệnh nạp PENDING đã quá hạn 15 phút.
+ */
+export function getUserWalletSummary(userId: string): UserWalletSummary | null {
+  const wallet = ensureUserWallet(userId);
+  if (!wallet) return null;
+
+  const now = new Date().toISOString();
+
+  // Tự động đóng các lệnh nạp điểm PENDING đã hết hạn
+  db.prepare(
+    "UPDATE topup_requests SET status = 'EXPIRED' WHERE user_id = ? AND status = 'PENDING' AND expires_at < ?"
+  ).run(userId, now);
+
+  const buyerLockRow = db
+    .prepare(
+      `SELECT COALESCE(SUM(amount), 0) as locked_total,
+              COUNT(*) as active_count
+       FROM escrow_orders
+       WHERE buyer_id = ? AND status IN ('LOCKED', 'CANCEL_REQUESTED')`
+    )
+    .get(userId) as { locked_total: number; active_count: number } | undefined;
+
+  const sellerLockRow = db
+    .prepare(
+      `SELECT COALESCE(SUM(amount), 0) as incoming_total,
+              COUNT(*) as incoming_count
+       FROM escrow_orders
+       WHERE seller_id = ? AND status IN ('LOCKED', 'CANCEL_REQUESTED')`
+    )
+    .get(userId) as { incoming_total: number; incoming_count: number } | undefined;
+
+  const availableBalance = Number(wallet.point_balance || 0);
+  const lockedBalance = Number(buyerLockRow?.locked_total || 0);
+  const totalBalance = availableBalance + lockedBalance;
+
+  return {
+    wallet_address: wallet.wallet_address,
+    availableBalance,
+    lockedBalance,
+    totalBalance,
+    activeEscrowCount: Number(buyerLockRow?.active_count || 0),
+    incomingLockedBalance: Number(sellerLockRow?.incoming_total || 0),
+    incomingEscrowCount: Number(sellerLockRow?.incoming_count || 0),
+  };
+}
+
+// Chạy seeder & migration ngay khi module được load
 ensureSeeded();
 ensureOwnershipHistory();
 ensurePhase3Wallets();
+ensurePhase4Schema();
 
 export default db;
 
@@ -676,6 +928,46 @@ export interface User {
   role: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserWalletSummary {
+  wallet_address: string;
+  availableBalance: number;
+  lockedBalance: number;
+  totalBalance: number;
+  activeEscrowCount: number;
+  incomingLockedBalance: number;
+  incomingEscrowCount: number;
+}
+
+export interface TopupRequest {
+  id: string;
+  user_id: string;
+  amount: number;
+  reference_code: string;
+  status: "PENDING" | "CONFIRMED" | "EXPIRED" | "CANCELLED";
+  tx_hash: string | null;
+  chain_mode: "ONCHAIN" | "SIMULATED";
+  expires_at: string;
+  confirmed_at: string | null;
+  created_at: string;
+}
+
+export interface ProductRevision {
+  id: string;
+  product_id: string;
+  editor_id: string;
+  revision_number: number;
+  title: string;
+  price: number;
+  condition: string;
+  pickup_location: string;
+  description: string;
+  specs_json: string | null;
+  data_hash: string;
+  change_summary: string;
+  created_at: string;
+  editor_name?: string;
 }
 
 export interface PointTransaction {
@@ -700,10 +992,17 @@ export interface EscrowOrder {
   seller_wallet: string;
   amount: number;
   passport_hash: string;
-  status: "LOCKED" | "RELEASED" | "REFUNDED";
+  status: "LOCKED" | "CANCEL_REQUESTED" | "RELEASED" | "COMPLETED" | "REFUNDED";
   lock_tx_hash: string | null;
   settle_tx_hash: string | null;
   chain_mode: "ONCHAIN" | "SIMULATED";
+  expires_at: string | null;
+  extended_count: number;
+  meeting_note: string | null;
+  cancel_reason: string | null;
+  cancel_requested_by: string | null;
+  cancel_requested_at: string | null;
+  inspection_checked: number;
   created_at: string;
   settled_at: string | null;
 }
