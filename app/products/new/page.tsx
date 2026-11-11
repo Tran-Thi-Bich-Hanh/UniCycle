@@ -68,12 +68,15 @@ export default function NewProductPage() {
               <span className="text-[#001B48] font-bold">Đăng tin thanh lý</span>
             </nav>
 
-            <div className="mb-8">
+            <div className="mb-6">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D6E8EE] text-[#001B48] text-xs font-extrabold border border-[#97CADB] mb-2">
+                Hồ sơ Chứng thực UniCycle Passport
+              </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
                 Đăng tin thanh lý đồ cũ
               </h1>
               <p className="text-sm text-[#02457A] mt-1 font-medium">
-                Chia sẻ sách vở, bàn ghế, đồ điện tử không dùng đến cho bạn bè cùng trường
+                Hoàn tất 3 bước gọn gàng để khởi tạo hồ sơ cam kết chất lượng và sẵn sàng giao dịch giữ tiền an toàn (Escrow)
               </p>
             </div>
 

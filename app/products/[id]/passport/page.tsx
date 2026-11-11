@@ -18,9 +18,15 @@ import {
   IconSparkles,
   IconTag,
   IconUser,
+  IconFileText,
   CategoryGlyph,
 } from "@/components/icons";
-import { formatCurrencyVND, CONDITION_LABELS } from "@/lib/utils";
+import {
+  formatCurrencyVND,
+  formatRelativeTime,
+  CONDITION_LABELS,
+  STATUS_LABELS,
+} from "@/lib/utils";
 import { extractDisplaySpecs } from "@/lib/passport";
 import { Product } from "@/lib/db";
 
@@ -40,13 +46,16 @@ export default function ProductPassportPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [verification, setVerification] = useState<VerificationState>({ status: "verifying" });
+  const [verification, setVerification] = useState<VerificationState>({
+    status: "verifying",
+  });
 
-  // Tự động tải thông tin sản phẩm & tự động đối soát tính toàn vẹn ngay khi mở trang
   const runVerify = async (productId: string) => {
     setVerification({ status: "verifying" });
     try {
-      const res = await fetch(`/api/passport/verify?id=${encodeURIComponent(productId)}`);
+      const res = await fetch(
+        `/api/passport/verify?id=${encodeURIComponent(productId)}`
+      );
       const data = await res.json();
       if (data.isValid) {
         setVerification({
@@ -72,7 +81,10 @@ export default function ProductPassportPage() {
     setLoading(true);
     fetch(`/api/products/${id}`)
       .then((res) => {
-        if (!res.ok) throw new Error("Không tìm thấy thông tin sản phẩm hoặc Hộ chiếu.");
+        if (!res.ok)
+          throw new Error(
+            "Không tìm thấy thông tin sản phẩm hoặc hồ sơ UniCycle Passport."
+          );
         return res.json();
       })
       .then((data) => {
@@ -81,7 +93,9 @@ export default function ProductPassportPage() {
         runVerify(data.product.id);
       })
       .catch((err) => {
-        setLoadError(err.message || "Lỗi tải dữ liệu Hộ chiếu số.");
+        setLoadError(
+          err.message || "Lỗi tải dữ liệu hồ sơ UniCycle Passport."
+        );
         setLoading(false);
       });
   }, [id]);
@@ -100,7 +114,12 @@ export default function ProductPassportPage() {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
-  const specs = product ? extractDisplaySpecs(product.category_id, product.attributes) : [];
+  const specs = product
+    ? extractDisplaySpecs(product.category_id, product.attributes)
+    : [];
+  const revisions = product?.revisions || [];
+  const latestRevisionNumber =
+    revisions.length > 0 ? revisions[0].revision_number : 1;
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#001B48]">
@@ -116,7 +135,10 @@ export default function ProductPassportPage() {
             Trang chủ
           </Link>
           <span aria-hidden="true">/</span>
-          <Link href="/products" className="hover:text-[#018ABE] transition-colors">
+          <Link
+            href="/products"
+            className="hover:text-[#018ABE] transition-colors"
+          >
             Đồ sinh viên
           </Link>
           <span aria-hidden="true">/</span>
@@ -131,7 +153,7 @@ export default function ProductPassportPage() {
               <span aria-hidden="true">/</span>
             </>
           )}
-          <span className="text-[#001B48] font-bold">Hộ chiếu món đồ</span>
+          <span className="text-[#001B48] font-bold">UniCycle Passport</span>
         </nav>
 
         {loading ? (
@@ -140,7 +162,7 @@ export default function ProductPassportPage() {
             role="status"
           >
             <div className="w-8 h-8 border-3 border-[#018ABE] border-t-transparent rounded-full animate-spin" />
-            <span>Đang mở hồ sơ Hộ chiếu món đồ...</span>
+            <span>Đang tải hồ sơ chứng thực UniCycle Passport...</span>
           </div>
         ) : loadError || !product ? (
           <div
@@ -148,7 +170,9 @@ export default function ProductPassportPage() {
             className="p-8 rounded-3xl bg-red-50 border border-red-200 text-center max-w-md mx-auto my-12"
           >
             <IconAlert className="w-10 h-10 text-red-500 mx-auto mb-3" />
-            <h2 className="text-lg font-bold text-red-800">Không tìm thấy Hộ chiếu</h2>
+            <h2 className="text-lg font-bold text-red-800">
+              Không tìm thấy hồ sơ UniCycle Passport
+            </h2>
             <p className="text-xs text-red-600 mt-1">{loadError}</p>
             <Link
               href="/products"
@@ -159,14 +183,18 @@ export default function ProductPassportPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* THANH ĐIỀU HƯỚNG TRÊN CÙNG */}
+            {/* HEADER ĐIỀU HƯỚNG */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D6E8EE] text-[#001B48] text-[11px] font-extrabold mb-2">
+                  <IconShieldCheck className="w-3.5 h-3.5 text-[#018ABE]" />
+                  <span>Hồ sơ Chứng thực Sản phẩm • Phiên bản #{latestRevisionNumber}</span>
+                </div>
                 <h1 className="text-2xl sm:text-3xl font-black text-[#001B48] tracking-tight">
-                  Hộ chiếu & Lý lịch Món đồ
+                  UniCycle Passport
                 </h1>
                 <p className="text-xs sm:text-sm text-[#02457A] mt-1 font-medium">
-                  Bản lưu trữ nguyên bản thông số cam kết và hành trình chuyền tay qua các khóa sinh viên.
+                  Chứng thực thông số cam kết, lịch sử phiên bản bài đăng và hành trình chuyền tay qua các khóa sinh viên.
                 </p>
               </div>
 
@@ -183,257 +211,416 @@ export default function ProductPassportPage() {
                   onClick={handleCopyLink}
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold transition-all shadow-2xs cursor-pointer"
                 >
-                  {copiedLink ? <IconCheck className="w-3.5 h-3.5" /> : <IconCopy className="w-3.5 h-3.5" />}
-                  <span>{copiedLink ? "Đã chép link!" : "Chia sẻ"}</span>
+                  {copiedLink ? (
+                    <IconCheck className="w-3.5 h-3.5" />
+                  ) : (
+                    <IconCopy className="w-3.5 h-3.5" />
+                  )}
+                  <span>{copiedLink ? "Đã chép link!" : "Chia sẻ Passport"}</span>
                 </button>
               </div>
             </div>
 
-            {/* BANNER TRẠNG THÁI ĐỐI SOÁT TỰ ĐỘNG (AUTO-VERIFIED STATUS) */}
-            <div
-              role="status"
-              aria-live="polite"
-              className={`p-4 sm:p-5 rounded-2xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
-                verification.status === "verifying"
-                  ? "bg-[#D6E8EE]/30 border-[#97CADB] text-[#001B48]"
-                  : verification.status === "success"
-                  ? "bg-emerald-50/80 border-emerald-300 text-emerald-950"
-                  : "bg-red-50 border-red-300 text-red-950"
-              }`}
-            >
-              <div className="flex items-start sm:items-center gap-3.5">
-                {verification.status === "verifying" ? (
-                  <div className="w-9 h-9 rounded-xl bg-[#018ABE]/15 flex items-center justify-center shrink-0">
-                    <div className="w-4 h-4 border-2 border-[#018ABE] border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : verification.status === "success" ? (
-                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <IconShieldCheck className="w-5 h-5" />
-                  </div>
-                ) : (
-                  <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0">
-                    <IconAlert className="w-5 h-5" />
-                  </div>
-                )}
-
-                <div>
-                  <h2 className="text-sm font-black">
-                    {verification.status === "verifying"
-                      ? "Đang tự động kiểm tra tính nguyên bản..."
-                      : verification.status === "success"
-                      ? "Đã xác thực tự động: Thông số & Hình ảnh nguyên bản 100%"
-                      : "Cảnh báo: Thông tin bài đăng có dấu hiệu sai lệch so với bản niêm phong"}
-                  </h2>
-                  <p className="text-xs opacity-85 mt-0.5">
-                    {verification.status === "success"
-                      ? "Mọi cam kết bên dưới hoàn toàn trùng khớp với thời điểm người bán niêm phong tin đăng."
-                      : "Hệ thống đang đối chiếu chữ ký số của món đồ."}
-                  </p>
-                </div>
-              </div>
-
-              {verification.status !== "verifying" && (
-                <button
-                  type="button"
-                  onClick={() => runVerify(product.id)}
-                  className="text-xs font-extrabold px-3.5 py-2 rounded-xl bg-white/90 hover:bg-white text-[#001B48] border border-current/20 shrink-0 self-start sm:self-auto cursor-pointer transition-colors"
-                >
-                  Kiểm tra lại
-                </button>
-              )}
-            </div>
-
-            {/* THẺ HỘ CHIẾU SỐ SINH VIÊN (TINH GỌN, THân THIỆN) */}
-            <div className="relative rounded-3xl overflow-hidden shadow-lg border border-[#018ABE]/30 bg-gradient-to-br from-[#001B48] via-[#02457A] to-[#001B48] text-white p-6 sm:p-8 space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-5 border-b border-white/15">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#018ABE] flex items-center justify-center text-white shadow-sm">
-                    <IconSchool className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] tracking-widest font-black uppercase text-[#97CADB] block">
-                      Chứng nhận đồ cũ sinh viên
-                    </span>
-                    <span className="text-sm sm:text-base font-extrabold tracking-wide">
-                      UNICYCLE PASSPORT #{product.id.slice(-6).toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-
-                <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold text-[#97CADB]">
-                  Niêm phong ngày {new Date(product.created_at).toLocaleDateString("vi-VN")}
-                </span>
-              </div>
-
-              {/* Tóm tắt món đồ & Người bán */}
-              <div className="flex flex-col sm:flex-row items-start gap-5">
-                {product.images && product.images.length > 0 ? (
-                  <img
-                    src={product.images[0].url}
-                    alt={product.title}
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-white/20 shrink-0 shadow-md"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-2xl bg-white/10 flex items-center justify-center border-2 border-white/20 shrink-0">
-                    <CategoryGlyph name={product.category?.icon} className="w-10 h-10 text-[#97CADB]" />
-                  </div>
-                )}
-
-                <div className="flex-1 min-w-0 space-y-3">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <span className="px-2.5 py-0.5 rounded-md bg-[#018ABE] text-white text-[11px] font-extrabold">
-                        {product.category?.name || "Đồ sinh viên"}
-                      </span>
-                      <span className="px-2.5 py-0.5 rounded-md bg-white/15 text-[#97CADB] text-[11px] font-bold">
-                        {CONDITION_LABELS[product.condition]?.label || product.condition}
-                      </span>
+            {/* =================================================================
+                PHẦN 1: TÓM TẮT ĐỘ TIN CẬY & THÔNG SỐ CAM KẾT NGƯỜI BÁN
+               ================================================================= */}
+            <section className="space-y-5" aria-label="Phần 1: Tóm tắt độ tin cậy và cam kết">
+              {/* Banner xác minh toàn vẹn dữ liệu */}
+              <div
+                role="status"
+                aria-live="polite"
+                className={`p-4 sm:p-5 rounded-2xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
+                  verification.status === "verifying"
+                    ? "bg-[#D6E8EE]/30 border-[#97CADB] text-[#001B48]"
+                    : verification.status === "success"
+                    ? "bg-[#D6E8EE]/40 border-[#018ABE] text-[#001B48]"
+                    : "bg-red-50 border-red-300 text-red-950"
+                }`}
+              >
+                <div className="flex items-start sm:items-center gap-3.5">
+                  {verification.status === "verifying" ? (
+                    <div className="w-9 h-9 rounded-xl bg-[#018ABE]/15 flex items-center justify-center shrink-0">
+                      <div className="w-4 h-4 border-2 border-[#018ABE] border-t-transparent rounded-full animate-spin" />
                     </div>
-                    <h2 className="text-lg sm:text-xl font-black text-white leading-snug">
-                      {product.title}
+                  ) : verification.status === "success" ? (
+                    <div className="w-9 h-9 rounded-xl bg-[#02457A] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <IconShieldCheck className="w-5 h-5" />
+                    </div>
+                  ) : (
+                    <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0">
+                      <IconAlert className="w-5 h-5" />
+                    </div>
+                  )}
+
+                  <div>
+                    <h2 className="text-sm font-black">
+                      {verification.status === "verifying"
+                        ? "Đang đối soát chữ ký số SHA-256 của bài đăng..."
+                        : verification.status === "success"
+                        ? "Dữ liệu được xác minh toàn vẹn (SHA-256 & Avalanche Fuji)"
+                        : "Cảnh báo: Dữ liệu hiện tại không khớp với chữ ký số đã lưu"}
                     </h2>
-                    <div className="mt-1 text-xl font-black text-[#97CADB]">
-                      {product.price === 0 ? "Tặng miễn phí" : formatCurrencyVND(product.price)}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 rounded-xl bg-white/10 border border-white/10">
-                      <span className="text-[10px] uppercase font-bold text-[#97CADB] block mb-0.5">
-                        Sinh viên đăng bán
-                      </span>
-                      <div className="font-bold text-white flex items-center gap-1.5">
-                        <IconUser className="w-3.5 h-3.5 text-[#018ABE]" />
-                        <span>{product.seller?.full_name || "Sinh viên"}</span>
-                      </div>
-                      <span className="text-[11px] text-white/75 block mt-0.5">
-                        {product.seller?.university || "Đại học Quốc gia TP.HCM"}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-white/10 border border-white/10">
-                      <span className="text-[10px] uppercase font-bold text-[#97CADB] block mb-0.5">
-                        Điểm hẹn giao nhận
-                      </span>
-                      <div className="font-bold text-white flex items-center gap-1.5">
-                        <IconMapPin className="w-3.5 h-3.5 text-[#018ABE]" />
-                        <span className="truncate">{product.pickup_location}</span>
-                      </div>
-                      <span className="text-[11px] text-white/75 block mt-0.5">
-                        Giao dịch trực tiếp tại trường
-                      </span>
-                    </div>
+                    <p className="text-xs text-[#02457A] mt-0.5">
+                      {verification.status === "success"
+                        ? `Toàn bộ thông số, giá bán và mô tả hiện tại khớp hoàn toàn với Phiên bản #${latestRevisionNumber} trên hệ thống.`
+                        : "Phát hiện sự khác biệt giữa dữ liệu bài đăng và mã băm lưu trữ."}
+                    </p>
                   </div>
                 </div>
-              </div>
 
-              {/* Thu gọn Chi tiết kỹ thuật mật mã học (Technical Abstraction) */}
-              <details className="group pt-4 border-t border-white/15 text-xs">
-                <summary className="cursor-pointer list-none flex items-center justify-between text-[#97CADB] hover:text-white font-bold select-none">
-                  <span className="inline-flex items-center gap-1.5">
-                    <IconSparkles className="w-4 h-4 text-[#018ABE]" />
-                    <span>Thông số kỹ thuật bảo mật & Web3 Smart Contract (Dành cho hệ thống)</span>
-                  </span>
-                  <span className="text-[11px] underline group-open:hidden">Mở xem mã băm</span>
-                  <span className="text-[11px] underline hidden group-open:inline">Thu gọn</span>
-                </summary>
-                <div className="mt-3 p-3.5 rounded-xl bg-black/35 border border-white/10 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-white/75">
-                      Mã vân tay dữ liệu (SHA-256 / Avalanche bytes32):
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleCopyHash}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#97CADB] hover:text-white cursor-pointer"
-                    >
-                      {copiedHash ? <IconCheck className="w-3.5 h-3.5 text-emerald-400" /> : <IconCopy className="w-3.5 h-3.5" />}
-                      <span>{copiedHash ? "Đã sao chép" : "Sao chép mã"}</span>
-                    </button>
-                  </div>
-                  <div className="font-mono text-[11px] text-emerald-400 break-all select-all">
-                    {product.passport_hash || "Chưa tạo mã"}
-                  </div>
-                </div>
-              </details>
-            </div>
-
-            {/* BẢNG CAM KẾT THÔNG SỐ GỐC */}
-            <section className="rounded-3xl border border-[#D6E8EE] p-6 sm:p-8 bg-white shadow-2xs space-y-5">
-              <div>
-                <h2 className="text-base sm:text-lg font-extrabold text-[#001B48] flex items-center gap-2">
-                  <IconTag className="w-5 h-5 text-[#018ABE]" />
-                  <span>Bảng thông số người bán đã cam kết</span>
-                </h2>
-                <p className="text-xs text-[#02457A] mt-0.5">
-                  Dùng bảng này để kiểm tra nhanh tình trạng món đồ khi hai bạn gặp nhau nhận hàng.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {specs.map((item) => (
-                  <div
-                    key={item.key}
-                    className={`p-4 rounded-2xl border flex items-start justify-between gap-3 ${
-                      item.isHighlight
-                        ? "bg-amber-50/50 border-amber-200"
-                        : "bg-[#D6E8EE]/20 border-[#D6E8EE]"
-                    }`}
+                {verification.status !== "verifying" && (
+                  <button
+                    type="button"
+                    onClick={() => runVerify(product.id)}
+                    className="text-xs font-extrabold px-3.5 py-2 rounded-xl bg-white hover:bg-[#D6E8EE]/40 text-[#001B48] border border-[#97CADB] shrink-0 self-start sm:self-auto cursor-pointer transition-colors"
                   >
+                    Xác minh lại
+                  </button>
+                )}
+              </div>
+
+              {/* Thẻ Chứng nhận UniCycle Passport */}
+              <div className="relative rounded-3xl overflow-hidden shadow-md border border-[#018ABE]/30 bg-gradient-to-br from-[#001B48] via-[#02457A] to-[#001B48] text-white p-6 sm:p-7 space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/15">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#018ABE] flex items-center justify-center text-white shadow-sm">
+                      <IconShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] tracking-widest font-black uppercase text-[#97CADB] block">
+                        Hồ sơ Chứng thực Sản phẩm Sinh viên
+                      </span>
+                      <span className="text-sm sm:text-base font-extrabold tracking-wide">
+                        UNICYCLE PASSPORT #{product.id.slice(-6).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-full bg-[#018ABE]/40 border border-[#97CADB]/40 text-xs font-bold text-white">
+                      {STATUS_LABELS[product.status]?.label || product.status}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold text-[#97CADB]">
+                      Cấp ngày {new Date(product.created_at).toLocaleDateString("vi-VN")}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start gap-5">
+                  {product.images && product.images.length > 0 ? (
+                    <img
+                      src={product.images[0].url}
+                      alt={product.title}
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-white/20 shrink-0 shadow-md"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-2xl bg-white/10 flex items-center justify-center border-2 border-white/20 shrink-0">
+                      <CategoryGlyph
+                        name={product.category?.icon}
+                        className="w-10 h-10 text-[#97CADB]"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex-1 min-w-0 space-y-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span className="px-2.5 py-0.5 rounded-md bg-[#018ABE] text-white text-[11px] font-extrabold">
+                          {product.category?.name || "Đồ sinh viên"}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-md bg-white/15 text-[#97CADB] text-[11px] font-bold">
+                          {CONDITION_LABELS[product.condition]?.label ||
+                            product.condition}
+                        </span>
+                      </div>
+                      <h2 className="text-lg sm:text-xl font-black text-white leading-snug">
+                        {product.title}
+                      </h2>
+                      <div className="mt-1 text-xl font-black text-[#97CADB]">
+                        {product.price === 0
+                          ? "Tặng miễn phí"
+                          : formatCurrencyVND(product.price)}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div className="p-3 rounded-xl bg-white/10 border border-white/10">
+                        <span className="text-[10px] uppercase font-bold text-[#97CADB] block mb-0.5">
+                          Người bán cam kết
+                        </span>
+                        <div className="font-bold text-white flex items-center gap-1.5">
+                          <IconUser className="w-3.5 h-3.5 text-[#018ABE]" />
+                          <span>{product.seller?.full_name || "Sinh viên"}</span>
+                        </div>
+                        <span className="text-[11px] text-white/75 block mt-0.5">
+                          {product.seller?.university ||
+                            "Đại học Quốc gia TP.HCM"}
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-white/10 border border-white/10">
+                        <span className="text-[10px] uppercase font-bold text-[#97CADB] block mb-0.5">
+                          Điểm hẹn kiểm tra hàng
+                        </span>
+                        <div className="font-bold text-white flex items-center gap-1.5">
+                          <IconMapPin className="w-3.5 h-3.5 text-[#018ABE]" />
+                          <span className="truncate">
+                            {product.pickup_location}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-white/75 block mt-0.5">
+                          Đối chiếu trực tiếp trước khi giải ngân Escrow
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bảng thông số kỹ thuật cam kết */}
+              <div className="rounded-3xl border border-[#D6E8EE] p-6 sm:p-7 bg-white shadow-2xs space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#001B48] flex items-center gap-2">
+                      <IconTag className="w-5 h-5 text-[#018ABE]" />
+                      <span>1. Bảng thông số kỹ thuật người bán cam kết</span>
+                    </h3>
+                    <p className="text-xs text-[#02457A] mt-0.5">
+                      Người mua sử dụng bảng này để đối chiếu trực tiếp khi gặp mặt nhận đồ tại KTX/Trường.
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-[#D6E8EE]/60 text-[#001B48] text-xs font-bold">
+                    {specs.length + 2} tiêu chí kiểm tra
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {specs.map((item) => (
+                    <div
+                      key={item.key}
+                      className={`p-4 rounded-2xl border flex items-start justify-between gap-3 ${
+                        item.isHighlight
+                          ? "bg-amber-50/50 border-amber-200"
+                          : "bg-[#D6E8EE]/20 border-[#D6E8EE]"
+                      }`}
+                    >
+                      <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-[#02457A]">
+                          {item.label}
+                        </div>
+                        <div className="text-sm font-extrabold text-[#001B48] mt-1">
+                          {item.value}
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#02457A] bg-white px-2 py-0.5 rounded-md border border-[#97CADB] shrink-0">
+                        <IconCheck className="w-3 h-3 text-[#018ABE]" />
+                        <span>Cam kết</span>
+                      </span>
+                    </div>
+                  ))}
+
+                  <div className="p-4 rounded-2xl border border-[#D6E8EE] bg-[#D6E8EE]/20 flex items-start justify-between gap-3">
                     <div>
                       <div className="text-[11px] font-bold uppercase tracking-wider text-[#02457A]">
-                        {item.label}
+                        Phân loại tình trạng
                       </div>
-                      <div className="text-sm font-extrabold text-[#001B48] mt-1">{item.value}</div>
+                      <div className="text-sm font-extrabold text-[#001B48] mt-1">
+                        {CONDITION_LABELS[product.condition]?.label ||
+                          product.condition}{" "}
+                        — {CONDITION_LABELS[product.condition]?.desc}
+                      </div>
                     </div>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0">
-                      <IconCheck className="w-3 h-3" />
-                      <span>Đã cam kết</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#02457A] bg-white px-2 py-0.5 rounded-md border border-[#97CADB] shrink-0">
+                      <IconCheck className="w-3 h-3 text-[#018ABE]" />
+                      <span>Cam kết</span>
                     </span>
                   </div>
-                ))}
 
-                <div className="p-4 rounded-2xl border border-[#D6E8EE] bg-[#D6E8EE]/20 flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#02457A]">
-                      Tình trạng chung
+                  <div className="p-4 rounded-2xl border border-[#D6E8EE] bg-[#D6E8EE]/20 flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#02457A]">
+                        Cập nhật gần nhất
+                      </div>
+                      <div className="text-sm font-extrabold text-[#001B48] mt-1 flex items-center gap-1.5">
+                        <IconClock className="w-4 h-4 text-[#018ABE]" />
+                        <span>
+                          {new Date(
+                            product.updated_at || product.created_at
+                          ).toLocaleString("vi-VN")}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-sm font-extrabold text-[#001B48] mt-1">
-                      {CONDITION_LABELS[product.condition]?.label || product.condition} —{" "}
-                      {CONDITION_LABELS[product.condition]?.desc}
-                    </div>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#02457A] bg-white px-2 py-0.5 rounded-md border border-[#97CADB] shrink-0">
+                      <span>Phiên bản #{latestRevisionNumber}</span>
+                    </span>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0">
-                    <IconCheck className="w-3 h-3" />
-                    <span>Đã cam kết</span>
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-2xl border border-[#D6E8EE] bg-[#D6E8EE]/20 flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#02457A]">
-                      Thời gian niêm phong
-                    </div>
-                    <div className="text-sm font-extrabold text-[#001B48] mt-1 flex items-center gap-1.5">
-                      <IconClock className="w-4 h-4 text-[#018ABE]" />
-                      <span>{new Date(product.created_at).toLocaleString("vi-VN")}</span>
-                    </div>
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0">
-                    <IconCheck className="w-3 h-3" />
-                    <span>Gốc</span>
-                  </span>
                 </div>
               </div>
             </section>
 
-            {/* CÂY LỊCH SỬ TUẦN HOÀN SỞ HỮU (ĐẶT TẠI ĐÂY ĐỂ KHÔNG LẶP VỚI TRANG CHI TIẾT) */}
-            <section className="rounded-3xl border border-[#D6E8EE] p-6 sm:p-8 bg-white shadow-2xs">
-              <OwnershipTimeline
-                history={product.ownership_history}
-                currentSellerName={product.seller?.full_name}
-                currentSellerUniversity={product.seller?.university || undefined}
-              />
+            {/* =================================================================
+                PHẦN 2: LỊCH SỬ PHIÊN BẢN BÀI ĐĂNG (PRODUCT_REVISIONS) & SỞ HỮU
+               ================================================================= */}
+            <section
+              className="rounded-3xl border border-[#D6E8EE] p-6 sm:p-7 bg-white shadow-2xs space-y-6"
+              aria-label="Phần 2: Lịch sử phiên bản chỉnh sửa và tuần hoàn sở hữu"
+            >
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#001B48] flex items-center gap-2">
+                      <IconFileText className="w-5 h-5 text-[#018ABE]" />
+                      <span>2. Lịch sử phiên bản bài đăng (Chống sửa đổi ngầm)</span>
+                    </h3>
+                    <p className="text-xs text-[#02457A] mt-0.5">
+                      Mỗi lần người bán cập nhật giá hoặc thông số khi đang rao bán đều được lưu vết công khai. Khi đã có người giữ chỗ (Escrow), bài đăng tự động khóa chỉnh sửa.
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-[#D6E8EE] text-[#001B48] text-xs font-extrabold">
+                    {revisions.length || 1} phiên bản
+                  </span>
+                </div>
+
+                {revisions.length > 0 ? (
+                  <div className="divide-y divide-[#D6E8EE] rounded-2xl border border-[#D6E8EE] overflow-hidden">
+                    {revisions.map((rev, idx) => (
+                      <div
+                        key={rev.id}
+                        className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                          idx === 0 ? "bg-[#D6E8EE]/25" : "bg-white"
+                        }`}
+                      >
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[11px] font-extrabold ${
+                                idx === 0
+                                  ? "bg-[#02457A] text-white"
+                                  : "bg-[#D6E8EE] text-[#001B48]"
+                              }`}
+                            >
+                              Phiên bản #{rev.revision_number}
+                              {idx === 0 ? " (Hiện tại)" : ""}
+                            </span>
+                            <span className="text-xs font-bold text-[#001B48]">
+                              {rev.change_summary}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-[#02457A] flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                            <span>
+                              Giá niêm yết:{" "}
+                              <strong className="text-[#001B48]">
+                                {formatCurrencyVND(rev.price)}
+                              </strong>
+                            </span>
+                            <span>•</span>
+                            <span>{formatRelativeTime(rev.created_at)}</span>
+                            {rev.editor_name && (
+                              <>
+                                <span>•</span>
+                                <span>Bởi: {rev.editor_name}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {rev.data_hash && (
+                          <div className="text-[11px] font-mono text-[#02457A] bg-white px-2.5 py-1 rounded-lg border border-[#D6E8EE] shrink-0">
+                            Hash: {rev.data_hash.slice(0, 10)}...
+                            {rev.data_hash.slice(-6)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-[#D6E8EE]/20 border border-[#D6E8EE] text-xs text-[#02457A]">
+                    Phiên bản #1 (Gốc): Bài đăng chưa từng chỉnh sửa kể từ khi đăng bán.
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-6 border-t border-[#D6E8EE]">
+                <OwnershipTimeline
+                  history={product.ownership_history}
+                  currentSellerName={product.seller?.full_name}
+                  currentSellerUniversity={
+                    product.seller?.university || undefined
+                  }
+                />
+              </div>
+            </section>
+
+            {/* =================================================================
+                PHẦN 3: BẰNG CHỨNG KỸ THUẬT SỐ CHUYÊN SÂU (SHA-256 & ON-CHAIN)
+               ================================================================= */}
+            <section
+              className="rounded-3xl border border-[#D6E8EE] p-6 bg-[#D6E8EE]/20 space-y-3"
+              aria-label="Phần 3: Bằng chứng kỹ thuật số"
+            >
+              <details className="group">
+                <summary className="cursor-pointer list-none flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm font-extrabold text-[#001B48] select-none">
+                  <span className="inline-flex items-center gap-2">
+                    <IconSparkles className="w-4 h-4 text-[#018ABE]" />
+                    <span>
+                      3. Chi tiết chữ ký số SHA-256 & Đối soát Smart Contract (Dành cho kiểm chứng kỹ thuật)
+                    </span>
+                  </span>
+                  <span className="text-xs font-bold text-[#018ABE] underline group-open:hidden">
+                    Mở chi tiết mã băm
+                  </span>
+                  <span className="text-xs font-bold text-[#018ABE] underline hidden group-open:inline">
+                    Thu gọn
+                  </span>
+                </summary>
+
+                <div className="mt-4 p-4 rounded-2xl bg-white border border-[#97CADB] space-y-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-bold text-[#02457A]">
+                      Mã băm dữ liệu chuẩn Canonical SHA-256 (bytes32):
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyHash}
+                      className="inline-flex items-center gap-1 text-xs font-extrabold text-[#018ABE] hover:text-[#02457A] cursor-pointer"
+                    >
+                      {copiedHash ? (
+                        <IconCheck className="w-3.5 h-3.5" />
+                      ) : (
+                        <IconCopy className="w-3.5 h-3.5" />
+                      )}
+                      <span>
+                        {copiedHash ? "Đã sao chép mã băm" : "Sao chép mã băm"}
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-[#001B48] text-[#97CADB] font-mono text-[11px] break-all select-all">
+                    {product.passport_hash || "Chưa khởi tạo"}
+                  </div>
+
+                  {verification.computedHash && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11px] text-[#02457A]">
+                      <div className="p-2.5 rounded-lg bg-[#D6E8EE]/30">
+                        <span className="block font-bold text-[#001B48]">
+                          Hash lưu trữ trên DB:
+                        </span>
+                        <code className="font-mono break-all">
+                          {verification.storedHash}
+                        </code>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[#D6E8EE]/30">
+                        <span className="block font-bold text-[#001B48]">
+                          Hash tính toán trực tiếp từ bài đăng:
+                        </span>
+                        <code className="font-mono break-all">
+                          {verification.computedHash}
+                        </code>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </details>
             </section>
           </div>
         )}
