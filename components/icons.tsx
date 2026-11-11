@@ -259,6 +259,24 @@ export const IconSearchOff = ({ className }: IconProps) => (
   </Svg>
 );
 
+export const IconLock = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+  </Svg>
+);
+
+export const IconExternalLink = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+  </Svg>
+);
+
+export const IconRefresh = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+  </Svg>
+);
+
 /** Hiển thị icon danh mục: tên icon (Book, Zap...) -> SVG; nếu không khớp -> icon gói hàng. */
 export function CategoryGlyph({ name, className = "w-4 h-4" }: { name?: string | null; className?: string }) {
   return <CategoryIcon name={name || "Package"} className={className} />;
