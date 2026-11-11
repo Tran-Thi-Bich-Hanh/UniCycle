@@ -8,7 +8,7 @@ import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
 import { Product, Category } from "@/lib/db";
 import { formatCurrencyVND, CONDITION_LABELS } from "@/lib/utils";
-import { CategoryGlyph, IconPackage, IconSearchOff, IconSparkles, IconX } from "@/components/icons";
+import { CategoryGlyph, IconMapPin, IconSearchOff, IconSparkles, IconX } from "@/components/icons";
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Mới đăng nhất" },
@@ -17,13 +17,26 @@ const SORT_OPTIONS = [
   { value: "views", label: "Xem nhiều nhất" },
 ];
 
+const STATUS_OPTIONS = [
+  { value: "ACTIVE", label: "Còn hàng" },
+  { value: "RESERVED", label: "Đang giữ chỗ" },
+  { value: "ALL", label: "Tất cả trạng thái" },
+];
+
 const PRICE_PRESETS = [
   { label: "Tất cả mức giá", min: "", max: "" },
+  { label: "Dưới 100k", min: "", max: "100000" },
+  { label: "100k - 500k", min: "100000", max: "500000" },
+  { label: "Trên 500k", min: "500000", max: "" },
   { label: "Dưới 50k", min: "", max: "50000" },
   { label: "50k - 200k", min: "50000", max: "200000" },
-  { label: "200k - 500k", min: "200000", max: "500000" },
-  { label: "500k - 1 triệu", min: "500000", max: "1000000" },
-  { label: "Trên 1 triệu", min: "1000000", max: "" },
+];
+
+const CAMPUS_QUICK_CHIPS = [
+  { label: "KTX Khu A", keyword: "Khu A" },
+  { label: "KTX Khu B", keyword: "Khu B" },
+  { label: "Bách Khoa", keyword: "Bách Khoa" },
+  { label: "KHTN", keyword: "Khoa học Tự nhiên" },
 ];
 
 /** Trả về danh sách trang gọn: luôn có trang đầu/cuối và 1 trang kề trang hiện tại. */
@@ -41,7 +54,7 @@ function pageWindow(current: number, total: number): (number | "gap")[] {
 function ProductsExplorer() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   // Params from URL
   const currentSearch = searchParams.get("search") || "";
@@ -49,6 +62,7 @@ function ProductsExplorer() {
   const currentCondition = searchParams.get("condition") || "";
   const currentMinPrice = searchParams.get("minPrice") || "";
   const currentMaxPrice = searchParams.get("maxPrice") || "";
+  const currentStatus = searchParams.get("status") || "ACTIVE";
   const currentSort = searchParams.get("sort") || "newest";
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
 
@@ -120,23 +134,21 @@ function ProductsExplorer() {
     const nextParams = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, val]) => {
-      if (val === null || val === "" || val === undefined) {
+      if (val === null || val === "" || val === undefined || (key === "status" && val === "ACTIVE")) {
         nextParams.delete(key);
       } else {
         nextParams.set(key, val);
       }
     });
 
-    // Reset to page 1 whenever filters change (unless updating page itself)
     const isPageChange = "page" in updates;
     if (!isPageChange) {
       nextParams.delete("page");
     }
 
-    const url = `/products?${nextParams.toString()}`;
+    const qs = nextParams.toString();
+    const url = qs ? `/products?${qs}` : "/products";
     startTransition(() => {
-      // Đổi bộ lọc dùng replace để nút Back không bị "kẹt" qua từng lần tick checkbox;
-      // đổi trang vẫn push để Back quay lại trang trước.
       if (isPageChange) {
         router.push(url, { scroll: false });
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -171,9 +183,16 @@ function ProductsExplorer() {
   };
 
   const handlePricePreset = (min: string, max: string) => {
-    setMinPriceInput(min);
-    setMaxPriceInput(max);
-    updateFilters({ minPrice: min || null, maxPrice: max || null });
+    const isSame = currentMinPrice === min && currentMaxPrice === max;
+    if (isSame) {
+      setMinPriceInput("");
+      setMaxPriceInput("");
+      updateFilters({ minPrice: null, maxPrice: null });
+    } else {
+      setMinPriceInput(min);
+      setMaxPriceInput(max);
+      updateFilters({ minPrice: min || null, maxPrice: max || null });
+    }
   };
 
   const handleApplyCustomPrice = (e: React.FormEvent) => {
@@ -196,6 +215,7 @@ function ProductsExplorer() {
   const activeFilterCount =
     (currentSearch ? 1 : 0) +
     (currentCategory ? 1 : 0) +
+    (currentStatus !== "ACTIVE" ? 1 : 0) +
     (currentCondition ? currentCondition.split(",").filter(Boolean).length : 0) +
     (currentMinPrice || currentMaxPrice ? 1 : 0);
 
@@ -230,7 +250,7 @@ function ProductsExplorer() {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
                 {currentSearch ? (
                   <>
-                    Kết quả tìm kiếm cho <span className="text-[#018ABE]">"{currentSearch}"</span>
+                    Kết quả tìm kiếm cho <span className="text-[#018ABE]">&ldquo;{currentSearch}&rdquo;</span>
                   </>
                 ) : activeCategoryObj ? (
                   activeCategoryObj.name
@@ -241,7 +261,7 @@ function ProductsExplorer() {
               <p className="text-sm text-[#02457A] mt-1 font-medium">
                 Tìm thấy{" "}
                 <span className="font-extrabold text-[#001B48]">{loading ? "..." : total}</span> món
-                đồ trao đổi uy tín trong cộng đồng sinh viên
+                đồ có Hồ sơ Chứng thực UniCycle Passport & bảo vệ giữ chỗ Escrow
               </p>
             </div>
 
@@ -273,31 +293,127 @@ function ProductsExplorer() {
             </div>
           </div>
 
+          {/* Thanh Lọc Nhanh (Quick Filter Bar): Trạng thái, Khoảng giá sinh viên & Khu vực KTX */}
+          <div className="mt-4 p-3 rounded-2xl bg-[#D6E8EE]/25 border border-[#D6E8EE] flex flex-wrap items-center gap-2">
+            {/* Trạng thái */}
+            <div className="inline-flex items-center rounded-xl bg-white p-1 border border-[#D6E8EE]">
+              {STATUS_OPTIONS.map((st) => {
+                const active = currentStatus === st.value;
+                return (
+                  <button
+                    key={st.value}
+                    type="button"
+                    onClick={() => updateFilters({ status: st.value })}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-colors cursor-pointer ${
+                      active
+                        ? "bg-[#001B48] text-white"
+                        : "text-[#02457A] hover:bg-[#D6E8EE]/50"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <span className="hidden sm:inline text-[#97CADB]">|</span>
+
+            {/* Khoảng giá nhanh cho sinh viên */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {PRICE_PRESETS.slice(1, 4).map((preset) => {
+                const active =
+                  currentMinPrice === preset.min && currentMaxPrice === preset.max;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => handlePricePreset(preset.min, preset.max)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      active
+                        ? "bg-[#018ABE] text-white border-[#018ABE]"
+                        : "bg-white text-[#001B48] border-[#D6E8EE] hover:border-[#018ABE]"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <span className="hidden md:inline text-[#97CADB]">|</span>
+
+            {/* Khu vực KTX / Trường nhanh */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {CAMPUS_QUICK_CHIPS.map((chip) => {
+                const active = currentSearch.toLowerCase() === chip.keyword.toLowerCase();
+                return (
+                  <button
+                    key={chip.label}
+                    type="button"
+                    onClick={() => {
+                      const nextVal = active ? "" : chip.keyword;
+                      setKeywordInput(nextVal);
+                      updateFilters({ search: nextVal || null });
+                    }}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      active
+                        ? "bg-[#02457A] text-white border-[#02457A]"
+                        : "bg-white text-[#02457A] border-[#D6E8EE] hover:border-[#018ABE]"
+                    }`}
+                  >
+                    <IconMapPin className="w-3 h-3 text-[#018ABE]" />
+                    <span>{chip.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Thanh chip bộ lọc đang hoạt động (Active filters pill) */}
           {activeFilterCount > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-[#D6E8EE]/60">
+            <div className="mt-3 flex flex-wrap items-center gap-2 pt-2">
               <span className="text-xs font-semibold text-[#02457A]">Đang lọc:</span>
+
+              {currentStatus !== "ACTIVE" && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#D6E8EE] text-[#001B48] border border-[#97CADB]">
+                  Trạng thái: {STATUS_OPTIONS.find((s) => s.value === currentStatus)?.label || currentStatus}
+                  <button
+                    onClick={() => updateFilters({ status: "ACTIVE" })}
+                    aria-label="Xóa bộ lọc trạng thái"
+                    className="p-0.5 rounded-full hover:text-red-600 transition-colors"
+                  >
+                    <IconX className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              )}
 
               {currentSearch && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#D6E8EE] text-[#001B48] border border-[#97CADB]">
-                  Từ khóa: "{currentSearch}"
+                  Từ khóa: &ldquo;{currentSearch}&rdquo;
                   <button
                     onClick={() => {
                       setKeywordInput("");
                       updateFilters({ search: null });
                     }}
-                    aria-label="Xóa bộ lọc từ khóa" className="p-0.5 rounded-full hover:text-red-600 transition-colors"
-                  ><IconX className="w-3.5 h-3.5" /></button>
+                    aria-label="Xóa bộ lọc từ khóa"
+                    className="p-0.5 rounded-full hover:text-red-600 transition-colors"
+                  >
+                    <IconX className="w-3.5 h-3.5" />
+                  </button>
                 </span>
               )}
 
               {activeCategoryObj && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#D6E8EE] text-[#001B48] border border-[#97CADB]">
-                  <CategoryGlyph name={activeCategoryObj.icon} className="w-3.5 h-3.5 text-[#018ABE]" /> {activeCategoryObj.name}
+                  <CategoryGlyph name={activeCategoryObj.icon} className="w-3.5 h-3.5 text-[#018ABE]" />{" "}
+                  {activeCategoryObj.name}
                   <button
                     onClick={() => updateFilters({ category: null })}
-                    aria-label="Xóa bộ lọc danh mục" className="p-0.5 rounded-full hover:text-red-600 transition-colors"
-                  ><IconX className="w-3.5 h-3.5" /></button>
+                    aria-label="Xóa bộ lọc danh mục"
+                    className="p-0.5 rounded-full hover:text-red-600 transition-colors"
+                  >
+                    <IconX className="w-3.5 h-3.5" />
+                  </button>
                 </span>
               )}
 
@@ -309,8 +425,11 @@ function ProductsExplorer() {
                   {CONDITION_LABELS[cond]?.label || cond}
                   <button
                     onClick={() => handleConditionToggle(cond)}
-                    aria-label="Bỏ lọc tình trạng" className="p-0.5 rounded-full hover:text-red-600 transition-colors"
-                  ><IconX className="w-3.5 h-3.5" /></button>
+                    aria-label="Bỏ lọc tình trạng"
+                    className="p-0.5 rounded-full hover:text-red-600 transition-colors"
+                  >
+                    <IconX className="w-3.5 h-3.5" />
+                  </button>
                 </span>
               ))}
 
@@ -327,8 +446,11 @@ function ProductsExplorer() {
                       setMaxPriceInput("");
                       updateFilters({ minPrice: null, maxPrice: null });
                     }}
-                    aria-label="Xóa bộ lọc khoảng giá" className="p-0.5 rounded-full hover:text-red-600 transition-colors"
-                  ><IconX className="w-3.5 h-3.5" /></button>
+                    aria-label="Xóa bộ lọc khoảng giá"
+                    className="p-0.5 rounded-full hover:text-red-600 transition-colors"
+                  >
+                    <IconX className="w-3.5 h-3.5" />
+                  </button>
                 </span>
               )}
 
@@ -369,12 +491,12 @@ function ProductsExplorer() {
             {/* Tìm kiếm từ khóa */}
             <div>
               <label className="block text-xs font-bold text-[#001B48] uppercase tracking-wider mb-2">
-                Tìm từ khóa
+                Tìm từ khóa / Khu vực
               </label>
               <form onSubmit={handleSearchSubmit} className="relative">
                 <input
                   type="text"
-                  placeholder="Giáo trình, tai nghe..."
+                  placeholder="Giáo trình, Khu A..."
                   aria-label="Tìm từ khóa"
                   value={keywordInput}
                   onChange={(e) => setKeywordInput(e.target.value)}
@@ -451,7 +573,7 @@ function ProductsExplorer() {
             {/* Tình trạng sản phẩm */}
             <div>
               <label className="block text-xs font-bold text-[#001B48] uppercase tracking-wider mb-2.5">
-                Tình trạng
+                Tình trạng hàng
               </label>
               <div className="space-y-2">
                 {Object.entries(CONDITION_LABELS).map(([code, meta]) => {
@@ -477,9 +599,8 @@ function ProductsExplorer() {
             {/* Khoảng giá */}
             <div>
               <label className="block text-xs font-bold text-[#001B48] uppercase tracking-wider mb-2.5">
-                Khoảng giá (VND)
+                Khoảng giá sinh viên
               </label>
-              {/* Presets */}
               <div className="grid grid-cols-2 gap-1.5 mb-3">
                 {PRICE_PRESETS.slice(1).map((preset) => {
                   const isPresetActive =
@@ -697,6 +818,32 @@ function ProductsExplorer() {
 
             {/* Scrollable Filters */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {/* Trạng thái */}
+              <div>
+                <label className="block text-xs font-bold text-[#001B48] uppercase mb-2">
+                  Trạng thái món đồ
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {STATUS_OPTIONS.map((st) => (
+                    <button
+                      key={st.value}
+                      type="button"
+                      onClick={() => {
+                        updateFilters({ status: st.value });
+                        setMobileFilterOpen(false);
+                      }}
+                      className={`px-2 py-2 rounded-xl text-[11px] font-bold border ${
+                        currentStatus === st.value
+                          ? "bg-[#001B48] text-white border-[#001B48]"
+                          : "bg-white text-[#02457A] border-[#D6E8EE]"
+                      }`}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Từ khóa */}
               <div>
                 <label className="block text-xs font-bold text-[#001B48] uppercase mb-2">
@@ -851,4 +998,3 @@ export default function ProductsPage() {
     </Suspense>
   );
 }
-
