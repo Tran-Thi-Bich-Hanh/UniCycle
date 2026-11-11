@@ -126,7 +126,7 @@ Chúng ta sẽ làm lần lượt từng task một, kiểm tra chạy tốt r�
   - Tạo API `POST /api/escrow` và `PATCH /api/escrow/[id]` xử lý khóa điểm `UNIP` kèm `passport_hash`, giải ngân cho người bán khi nhận đồ hoặc hoàn điểm khi hủy kèo.
   - Khóa chỉnh sửa bài đăng tại `PUT /api/products/[id]` khi món đồ đang ở trạng thái `RESERVED`, và tự động ghi tên người mua mới vào bảng `ownership_history` ngay khi giải ngân thành công.
 
-- [ ] **Task 3.5: Giao diện Ví UniCycle (`/wallet`), Nạp MoMo Test & Khung Đặt cọc trên trang sản phẩm**
+- [x] **Task 3.5: Giao diện Ví UniCycle (`/wallet`), Nạp MoMo Test & Khung Đặt cọc trên trang sản phẩm**
   - Cập nhật `components/navbar.tsx` hiển thị số dư `UNIP` của sinh viên.
   - Xây dựng trang `app/wallet/page.tsx` cho phép xem ví riêng `0x...`, nạp điểm qua MoMo Test và tra cứu biên lai Blockchain trên Snowtrace.
   - Tạo component `components/escrow-action-card.tsx` và gắn vào trang `app/products/[id]/page.tsx` để người mua và người bán thao tác đặt cọc, xác nhận nhận hàng trực quan.
