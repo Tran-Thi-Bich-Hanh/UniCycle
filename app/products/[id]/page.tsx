@@ -25,6 +25,7 @@ import {
 import { Product } from "@/lib/db";
 import { formatCurrencyVND, formatRelativeTime, CONDITION_LABELS, STATUS_LABELS } from "@/lib/utils";
 import { ProductSpecsCard, PassportTrustBanner } from "@/components/product-specs-card";
+import { EscrowActionCard } from "@/components/escrow-action-card";
 
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=80";
@@ -42,6 +43,7 @@ export default function ProductDetailPage() {
   const [authLoaded, setAuthLoaded] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
   const { toast, show, dismiss } = useToast();
 
   useEffect(() => {
@@ -80,7 +82,7 @@ export default function ProductDetailPage() {
       })
       .catch((err) => setError(err.message || "Đã xảy ra lỗi khi tải bài đăng."))
       .finally(() => setLoading(false));
-  }, [id, authLoaded, currentUser?.id]);
+  }, [id, authLoaded, currentUser?.id, refreshTick]);
 
   const handleCopyPhone = async (phone: string) => {
     try {
@@ -281,7 +283,7 @@ export default function ProductDetailPage() {
                 <h3 className="text-sm font-bold text-[#001B48]">Quy tắc an toàn sinh viên UniCycle</h3>
                 <p className="text-xs text-[#02457A] leading-relaxed">
                   Luôn hẹn gặp trực tiếp tại nơi công cộng trong khuôn viên trường (cổng trường, KTX, thư viện).
-                  Kiểm tra kỹ đồ trước khi thanh toán. <strong>Tuyệt đối không chuyển tiền cọc trước</strong>.
+                  Sử dụng <strong>Đặt cọc giữ chỗ trên UniCycle</strong> để khóa điểm an toàn, chỉ bấm xác nhận thanh toán sau khi đã kiểm tra đúng đồ.
                 </p>
               </div>
             </div>
@@ -330,6 +332,17 @@ export default function ProductDetailPage() {
               <PassportTrustBanner productId={product.id} />
             </section>
 
+            {/* Khung Đặt cọc giữ chỗ Smart Escrow bằng đồng UNIP */}
+            <EscrowActionCard
+              productId={product.id}
+              price={product.price}
+              productStatus={product.status}
+              sellerId={product.seller_id}
+              currentUserId={currentUser?.id || null}
+              onEscrowUpdated={() => setRefreshTick((t) => t + 1)}
+              onNotify={(msg, type) => show(msg, type ? { type } : undefined)}
+            />
+
             <section className="bg-white rounded-2xl border border-[#D6E8EE] p-6 shadow-2xs space-y-5">
               <h2 className="text-sm font-extrabold text-[#001B48] uppercase tracking-wider">Người bán</h2>
 
@@ -356,7 +369,7 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
-              {product.status !== "ACTIVE" ? (
+              {product.status === "SOLD" || product.status === "HIDDEN" ? (
                 <div className="p-4 rounded-xl bg-[#D6E8EE]/40 text-center text-xs font-bold text-[#001B48] border border-[#97CADB]/60">
                   Món đồ này hiện đã ngừng giao dịch ({statusMeta?.label || product.status}).
                 </div>
@@ -419,22 +432,28 @@ export default function ProductDetailPage() {
             {isOwner && (
               <section className="bg-[#D6E8EE]/40 rounded-2xl border-2 border-[#018ABE] p-5 space-y-3">
                 <div className="text-xs font-extrabold text-[#001B48]">Bạn là chủ bài đăng này</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    disabled={updatingStatus}
-                    onClick={() => changeStatus(product.status === "ACTIVE" ? "SOLD" : "ACTIVE")}
-                    className="py-2.5 px-3 rounded-xl text-xs font-bold bg-[#02457A] text-white hover:bg-[#001B48] transition-colors disabled:opacity-50"
-                  >
-                    {product.status === "ACTIVE" ? "Đánh dấu đã bán" : "Mở bán lại"}
-                  </button>
-                  <Link
-                    href={`/products/${product.id}/edit`}
-                    className="py-2.5 px-3 rounded-xl text-xs font-bold text-center bg-white text-[#001B48] border border-[#97CADB] hover:bg-white/80 transition-colors"
-                  >
-                    Chỉnh sửa tin
-                  </Link>
-                </div>
+                {product.status === "RESERVED" ? (
+                  <p className="text-xs text-[#02457A] bg-white/80 rounded-xl p-3 border border-[#97CADB]">
+                    Bài đăng đang có người đặt cọc giữ chỗ nên tạm khóa chỉnh sửa để đảm bảo đúng cam kết với người mua.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={updatingStatus}
+                      onClick={() => changeStatus(product.status === "ACTIVE" ? "SOLD" : "ACTIVE")}
+                      className="py-2.5 px-3 rounded-xl text-xs font-bold bg-[#02457A] text-white hover:bg-[#001B48] transition-colors disabled:opacity-50"
+                    >
+                      {product.status === "ACTIVE" ? "Đánh dấu đã bán" : "Mở bán lại"}
+                    </button>
+                    <Link
+                      href={`/products/${product.id}/edit`}
+                      className="py-2.5 px-3 rounded-xl text-xs font-bold text-center bg-white text-[#001B48] border border-[#97CADB] hover:bg-white/80 transition-colors"
+                    >
+                      Chỉnh sửa tin
+                    </Link>
+                  </div>
+                )}
                 <Link href="/profile/my-listings" className="block text-center text-xs font-semibold text-[#02457A] hover:text-[#018ABE]">
                   Quản lý tất cả tin đăng →
                 </Link>

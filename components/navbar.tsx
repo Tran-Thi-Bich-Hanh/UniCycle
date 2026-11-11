@@ -10,6 +10,7 @@ import {
   IconLogOut,
   IconSparkles,
   IconSchool,
+  IconWallet,
 } from "./icons";
 import UniCycleLogo from "./logo";
 
@@ -19,6 +20,7 @@ interface CurrentUser {
   fullName: string;
   avatarUrl: string | null;
   university: string | null;
+  pointBalance: number;
 }
 
 export function Navbar() {
@@ -30,20 +32,27 @@ export function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.user) {
-          setCurrentUser({
-            id: data.user.id,
-            email: data.user.email,
-            fullName: data.user.full_name,
-            avatarUrl: data.user.avatar_url,
-            university: data.user.university,
-          });
-        }
-      })
-      .catch(() => {});
+    const loadUser = () => {
+      fetch("/api/auth/me")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) {
+            setCurrentUser({
+              id: data.user.id,
+              email: data.user.email,
+              fullName: data.user.full_name,
+              avatarUrl: data.user.avatar_url,
+              university: data.user.university,
+              pointBalance: Number(data.user.point_balance || 0),
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    loadUser();
+    window.addEventListener("unicycle:wallet-updated", loadUser);
+    return () => window.removeEventListener("unicycle:wallet-updated", loadUser);
   }, []);
 
   useEffect(() => {
@@ -138,6 +147,20 @@ export function Navbar() {
               <span>Đăng tin</span>
             </Link>
 
+            {currentUser && (
+              <Link
+                href="/wallet"
+                aria-current={isActive("/wallet") ? "page" : undefined}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold bg-[#D6E8EE]/70 hover:bg-[#D6E8EE] text-[#001B48] border border-[#97CADB] transition-colors"
+                title="Ví UniCycle (1 VNĐ = 1 UNIP)"
+              >
+                <IconWallet className="w-3.5 h-3.5 text-[#018ABE]" />
+                <span role="status" aria-atomic="true">
+                  {currentUser.pointBalance.toLocaleString("vi-VN")} UNIP
+                </span>
+              </Link>
+            )}
+
             {/* Auth User Menu */}
             {currentUser ? (
               <div className="relative" ref={menuRef}>
@@ -168,6 +191,20 @@ export function Navbar() {
                         </p>
                       )}
                     </div>
+
+                    <Link
+                      href="/wallet"
+                      onClick={() => setShowDropdown(false)}
+                      className="flex items-center justify-between px-4 py-2 text-xs font-bold text-[#001B48] hover:bg-[#D6E8EE]/50 transition-colors"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <IconWallet className="w-4 h-4 text-[#018ABE]" />
+                        <span>Ví UniCycle</span>
+                      </span>
+                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-[#D6E8EE] text-[#02457A]">
+                        {currentUser.pointBalance.toLocaleString("vi-VN")} UNIP
+                      </span>
+                    </Link>
 
                     <Link
                       href="/profile/my-listings"
@@ -247,13 +284,22 @@ export function Navbar() {
             Tất cả đồ cũ
           </Link>
           {currentUser && (
-            <Link
-              href="/profile/my-listings"
-              aria-current={isActive("/profile") ? "page" : undefined}
-              className={`shrink-0 ${navLink("/profile")}`}
-            >
-              Tin của tôi
-            </Link>
+            <>
+              <Link
+                href="/wallet"
+                aria-current={isActive("/wallet") ? "page" : undefined}
+                className={`shrink-0 ${navLink("/wallet")}`}
+              >
+                Ví UniCycle ({currentUser.pointBalance.toLocaleString("vi-VN")} UNIP)
+              </Link>
+              <Link
+                href="/profile/my-listings"
+                aria-current={isActive("/profile") ? "page" : undefined}
+                className={`shrink-0 ${navLink("/profile")}`}
+              >
+                Tin của tôi
+              </Link>
+            </>
           )}
         </nav>
       </div>

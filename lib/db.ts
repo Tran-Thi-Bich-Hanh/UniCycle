@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import { generatePassportHash } from "./passport";
+import { generateStudentWallet } from "./blockchain";
 
 // Khởi tạo thư mục data và file SQLite cục bộ
 const dbDir = path.join(process.cwd(), "data");
@@ -31,6 +32,7 @@ db.exec(`
     avatar_url TEXT,
     bio TEXT,
     wallet_address TEXT,
+    point_balance INTEGER DEFAULT 0,
     role TEXT DEFAULT 'USER',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -104,12 +106,52 @@ db.exec(`
     FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
   );
 
+  -- 7. Bảng Lịch sử Giao dịch Điểm UniPoint (1 VNĐ = 1 UNIP)
+  CREATE TABLE IF NOT EXISTS point_transactions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    direction TEXT NOT NULL,
+    reference_id TEXT,
+    description TEXT NOT NULL,
+    tx_hash TEXT,
+    chain_mode TEXT DEFAULT 'ONCHAIN',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+  );
+
+  -- 8. Bảng Đơn Đặt cọc Giữ chỗ Smart Escrow (Lưu vết kèm Passport Hash)
+  CREATE TABLE IF NOT EXISTS escrow_orders (
+    id TEXT PRIMARY KEY,
+    product_id TEXT NOT NULL,
+    buyer_id TEXT NOT NULL,
+    seller_id TEXT NOT NULL,
+    buyer_wallet TEXT NOT NULL,
+    seller_wallet TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    passport_hash TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'LOCKED',
+    lock_tx_hash TEXT,
+    settle_tx_hash TEXT,
+    chain_mode TEXT DEFAULT 'ONCHAIN',
+    created_at TEXT NOT NULL,
+    settled_at TEXT,
+    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+    FOREIGN KEY (buyer_id) REFERENCES users (id),
+    FOREIGN KEY (seller_id) REFERENCES users (id)
+  );
+
   -- Tạo index tối ưu truy vấn
   CREATE INDEX IF NOT EXISTS idx_products_category ON products (category_id);
   CREATE INDEX IF NOT EXISTS idx_products_seller ON products (seller_id);
   CREATE INDEX IF NOT EXISTS idx_products_status ON products (status);
   CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories (slug);
   CREATE INDEX IF NOT EXISTS idx_ownership_product ON ownership_history (product_id);
+  CREATE INDEX IF NOT EXISTS idx_point_tx_user ON point_transactions (user_id);
+  CREATE INDEX IF NOT EXISTS idx_escrow_product ON escrow_orders (product_id);
+  CREATE INDEX IF NOT EXISTS idx_escrow_buyer ON escrow_orders (buyer_id);
+  CREATE INDEX IF NOT EXISTS idx_escrow_seller ON escrow_orders (seller_id);
 `);
 
 // Tự động khởi tạo dữ liệu mẫu (Seed) nếu database mới tạo
@@ -565,9 +607,56 @@ function ensureOwnershipHistory() {
   });
 }
 
+// Tự động nâng cấp cột point_balance và cấp địa chỉ ví riêng (0x...) cho toàn bộ sinh viên
+function ensurePhase3Wallets() {
+  const userCols = db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
+  const hasPointBalance = userCols.some((c) => c.name === "point_balance");
+  if (!hasPointBalance) {
+    db.exec("ALTER TABLE users ADD COLUMN point_balance INTEGER DEFAULT 0;");
+  }
+
+  const usersWithoutWallet = db
+    .prepare("SELECT id, wallet_address FROM users WHERE wallet_address IS NULL OR wallet_address = ''")
+    .all() as Array<{ id: string; wallet_address: string | null }>;
+
+  if (usersWithoutWallet.length > 0) {
+    const updateWallet = db.prepare("UPDATE users SET wallet_address = ? WHERE id = ?");
+    for (const u of usersWithoutWallet) {
+      const { address } = generateStudentWallet();
+      updateWallet.run(address, u.id);
+    }
+  }
+}
+
+/**
+ * Đảm bảo một tài khoản sinh viên luôn có địa chỉ ví EVM riêng (0x...) và trả về thông tin ví
+ */
+export function ensureUserWallet(userId: string): {
+  wallet_address: string;
+  point_balance: number;
+} | null {
+  const row = db
+    .prepare("SELECT id, wallet_address, point_balance FROM users WHERE id = ?")
+    .get(userId) as { id: string; wallet_address: string | null; point_balance: number | null } | undefined;
+
+  if (!row) return null;
+
+  let walletAddress = row.wallet_address;
+  if (!walletAddress) {
+    walletAddress = generateStudentWallet().address;
+    db.prepare("UPDATE users SET wallet_address = ? WHERE id = ?").run(walletAddress, userId);
+  }
+
+  return {
+    wallet_address: walletAddress,
+    point_balance: row.point_balance ?? 0,
+  };
+}
+
 // Chạy seeder ngay khi module được load
 ensureSeeded();
 ensureOwnershipHistory();
+ensurePhase3Wallets();
 
 export default db;
 
@@ -583,9 +672,40 @@ export interface User {
   avatar_url: string | null;
   bio: string | null;
   wallet_address: string | null;
+  point_balance: number;
   role: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface PointTransaction {
+  id: string;
+  user_id: string;
+  type: "MOMO_TOPUP" | "ESCROW_LOCK" | "ESCROW_RELEASE" | "ESCROW_REFUND";
+  amount: number;
+  direction: "IN" | "OUT";
+  reference_id: string | null;
+  description: string;
+  tx_hash: string | null;
+  chain_mode: "ONCHAIN" | "SIMULATED";
+  created_at: string;
+}
+
+export interface EscrowOrder {
+  id: string;
+  product_id: string;
+  buyer_id: string;
+  seller_id: string;
+  buyer_wallet: string;
+  seller_wallet: string;
+  amount: number;
+  passport_hash: string;
+  status: "LOCKED" | "RELEASED" | "REFUNDED";
+  lock_tx_hash: string | null;
+  settle_tx_hash: string | null;
+  chain_mode: "ONCHAIN" | "SIMULATED";
+  created_at: string;
+  settled_at: string | null;
 }
 
 export interface Category {

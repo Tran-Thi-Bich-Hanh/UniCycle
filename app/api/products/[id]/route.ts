@@ -119,6 +119,17 @@ export async function PUT(
       return NextResponse.json({ error: "Bạn không có quyền chỉnh sửa bài đăng này" }, { status: 403 });
     }
 
+    // Chặn chỉnh sửa thông tin khi món đồ đang có người đặt cọc giữ chỗ (RESERVED) trên Smart Contract
+    if (existing.status === "RESERVED") {
+      return NextResponse.json(
+        {
+          error:
+            "Món đồ đang trong trạng thái giữ chỗ đặt cọc (Smart Escrow). Không thể chỉnh sửa thông số hay đổi trạng thái để bảo toàn mã băm Sổ đỏ (Passport Hash).",
+        },
+        { status: 409 }
+      );
+    }
+
     const { title, description, price, condition, categoryId, pickupLocation, status, images, attributes } = body;
     const now = new Date().toISOString();
 
@@ -214,6 +225,16 @@ export async function DELETE(
 
     if (existing.seller_id !== user.id && user.role !== "ADMIN") {
       return NextResponse.json({ error: "Bạn không có quyền xóa bài đăng này" }, { status: 403 });
+    }
+
+    if (existing.status === "RESERVED") {
+      return NextResponse.json(
+        {
+          error:
+            "Không thể gỡ bài đăng khi món đồ đang được giữ cọc trên Smart Contract. Hãy hoàn trả cọc trước khi gỡ bài.",
+        },
+        { status: 409 }
+      );
     }
 
     // Đổi trạng thái sang HIDDEN
