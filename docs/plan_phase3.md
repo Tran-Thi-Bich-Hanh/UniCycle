@@ -122,7 +122,7 @@ Chúng ta sẽ làm lần lượt từng task một, kiểm tra chạy tốt r�
   - Tạo API `GET /api/wallet` trả về địa chỉ ví riêng, số dư `UNIP` và lịch sử biến động.
   - Tạo API `POST /api/wallet/topup` xử lý nạp tiền qua MoMo môi trường test (`20k`, `50k`, `100k`, `200k`, `500k`), gọi Ví Chủ đúc đồng `UNIP` trên Avalanche Fuji và lưu mã giao dịch `tx_hash`.
 
-- [ ] **Task 3.4: API Đặt cọc mua đồ (Escrow), Giải ngân/Hoàn tiền & Tự động sang tên Sổ đỏ**
+- [x] **Task 3.4: API Đặt cọc mua đồ (Escrow), Giải ngân/Hoàn tiền & Tự động sang tên Sổ đỏ**
   - Tạo API `POST /api/escrow` và `PATCH /api/escrow/[id]` xử lý khóa điểm `UNIP` kèm `passport_hash`, giải ngân cho người bán khi nhận đồ hoặc hoàn điểm khi hủy kèo.
   - Khóa chỉnh sửa bài đăng tại `PUT /api/products/[id]` khi món đồ đang ở trạng thái `RESERVED`, và tự động ghi tên người mua mới vào bảng `ownership_history` ngay khi giải ngân thành công.
 
