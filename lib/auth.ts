@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
-import db, { User } from "./db";
+import db, { User, ensureUserWallet } from "./db";
 
 const JWT_SECRET = process.env.JWT_SECRET || "unicycle_student_secret_key_2026_secure_key";
 const COOKIE_NAME = "unicycle_session";
@@ -97,8 +97,10 @@ export async function getSessionUser(): Promise<Omit<User, "password_hash"> | nu
     const payload = verifyToken(token);
     if (!payload?.userId) return null;
 
+    ensureUserWallet(payload.userId);
+
     const query = db.prepare(`
-      SELECT id, email, full_name, phone, university, campus_location, avatar_url, bio, wallet_address, role, created_at, updated_at
+      SELECT id, email, full_name, phone, university, campus_location, avatar_url, bio, wallet_address, point_balance, role, created_at, updated_at
       FROM users WHERE id = ?
     `);
     const user = query.get(payload.userId) as Omit<User, "password_hash"> | undefined;

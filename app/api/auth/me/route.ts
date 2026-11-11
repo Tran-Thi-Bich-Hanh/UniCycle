@@ -39,7 +39,7 @@ export async function PUT(request: Request) {
     );
 
     const updatedUser = db.prepare(`
-      SELECT id, email, full_name, phone, university, campus_location, avatar_url, bio, wallet_address, role, created_at, updated_at
+      SELECT id, email, full_name, phone, university, campus_location, avatar_url, bio, wallet_address, point_balance, role, created_at, updated_at
       FROM users WHERE id = ?
     `).get(user.id);
 

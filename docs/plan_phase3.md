@@ -113,7 +113,7 @@ Chúng ta sẽ làm lần lượt từng task một, kiểm tra chạy tốt r�
   - Tạo file `contracts/UniCyclePoint.sol` dùng thư viện OpenZeppelin (`ERC20`, `Ownable`), cấu hình tỷ lệ `1 VNĐ = 1 UNIP`, kèm các hàm đúc điểm khi nạp MoMo (`mintTopup`), khóa tiền cọc kèm mã băm Sổ đỏ (`lockEscrow`), giải ngân (`releaseEscrow`) và hoàn tiền (`refundEscrow`).
   - Tạo file hướng dẫn chi tiết từng bước thao tác trên Remix IDE và cấu hình `.env.example`.
 
-- [ ] **Task 3.2: Xây dựng tầng kết nối Blockchain & Tự động cấp Ví riêng cho Sinh viên (`lib/blockchain.ts`)**
+- [x] **Task 3.2: Xây dựng tầng kết nối Blockchain & Tự động cấp Ví riêng cho Sinh viên (`lib/blockchain.ts`)**
   - Cài đặt thư viện `ethers` v6 và tạo file ABI tại `lib/contracts/unipoint-abi.ts`.
   - Cập nhật `lib/db.ts`: bổ sung cột `point_balance` cho bảng `users`, tự tạo địa chỉ ví riêng `0x...` cho các tài khoản sinh viên mẫu, và tạo 2 bảng `point_transactions`, `escrow_orders`.
   - Viết `lib/blockchain.ts` để Ví Chủ tự động tạo ví mới cho sinh viên và gọi hợp đồng trên mạng Avalanche Fuji.

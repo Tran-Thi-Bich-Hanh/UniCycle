@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import db from "@/lib/db";
 import { hashPassword, createToken, COOKIE_NAME } from "@/lib/auth";
+import { generateStudentWallet } from "@/lib/blockchain";
 
 export async function POST(request: Request) {
   try {
@@ -37,10 +38,11 @@ export async function POST(request: Request) {
     const passwordHash = hashPassword(password);
     const now = new Date().toISOString();
     const avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}`;
+    const { address: walletAddress } = generateStudentWallet();
 
     const insert = db.prepare(`
-      INSERT INTO users (id, email, password_hash, full_name, phone, university, campus_location, avatar_url, role, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'USER', ?, ?)
+      INSERT INTO users (id, email, password_hash, full_name, phone, university, campus_location, avatar_url, wallet_address, point_balance, role, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'USER', ?, ?)
     `);
 
     insert.run(
@@ -52,6 +54,7 @@ export async function POST(request: Request) {
       university || null,
       campusLocation || null,
       avatarUrl,
+      walletAddress,
       now,
       now
     );
@@ -73,6 +76,8 @@ export async function POST(request: Request) {
         university: university || null,
         campusLocation: campusLocation || null,
         avatarUrl,
+        walletAddress,
+        pointBalance: 0,
       },
     });
 
