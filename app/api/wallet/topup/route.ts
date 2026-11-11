@@ -1,18 +1,33 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { getSessionUser } from "@/lib/auth";
-import db, { ensureUserWallet } from "@/lib/db";
+import db, { ensureUserWallet, getUserWalletSummary, TopupRequest } from "@/lib/db";
 import { mintPointsOnChain } from "@/lib/blockchain";
 
 const MIN_TOPUP_VND = 10000;
 const MAX_TOPUP_VND = 5000000;
+const TOPUP_TTL_MINUTES = 15;
+
+function generateUniqueReferenceCode(): string {
+  for (let i = 0; i < 10; i++) {
+    const code = `UC-${crypto.randomInt(100000, 999999)}`;
+    const existing = db
+      .prepare("SELECT id FROM topup_requests WHERE reference_code = ?")
+      .get(code);
+    if (!existing) return code;
+  }
+  return `UC-${Date.now().toString().slice(-6)}`;
+}
 
 /**
  * POST /api/wallet/topup
- * Hỗ trợ 2 chế độ:
- * 1. action = "INIT": Khởi tạo phiên thanh toán MoMo Test (trả về mã đơn MoMo Test & nội dung QR)
- * 2. action = "CONFIRM" (mặc định): Xác nhận thanh toán MoMo Test thành công (tiền VNĐ về Ví Chủ dự án)
- *    -> Ví Chủ tự động gọi Smart Contract đúc (mint) đúng số UNIP (1 VNĐ = 1 UNIP) vào ví riêng của sinh viên.
+ * Quy trình nạp điểm 2 bước chuẩn ngân hàng số (PENDING -> CONFIRMED / EXPIRED / CANCELLED):
+ * 1. action = "CREATE_INTENT" | "INIT":
+ *    Khởi tạo lệnh nạp PENDING trong bảng topup_requests kèm mã đối soát UC-XXXXXX và hạn 15 phút.
+ * 2. action = "CONFIRM_TOPUP" | "CONFIRM":
+ *    Kiểm tra lệnh nạp PENDING còn hiệu lực -> Ví Chủ mint UNIP trên Avalanche Fuji -> Cộng vào số dư khả dụng.
+ * 3. action = "CANCEL_TOPUP" | "CANCEL":
+ *    Hủy lệnh nạp đang chờ.
  */
 export async function POST(request: Request) {
   const user = await getSessionUser();
@@ -25,20 +40,9 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const rawAmount = Number(body.amount);
-    const action = (body.action || "CONFIRM").toUpperCase();
-
-    if (!Number.isFinite(rawAmount) || rawAmount < MIN_TOPUP_VND || rawAmount > MAX_TOPUP_VND) {
-      return NextResponse.json(
-        {
-          error: `Số tiền nạp phải từ ${MIN_TOPUP_VND.toLocaleString("vi-VN")}đ đến ${MAX_TOPUP_VND.toLocaleString("vi-VN")}đ.`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const cleanAmount = Math.round(rawAmount);
+    const action = String(body.action || "CONFIRM").trim().toUpperCase();
     const walletInfo = ensureUserWallet(user.id);
+
     if (!walletInfo) {
       return NextResponse.json(
         { error: "Không thể khởi tạo địa chỉ ví cho tài khoản này." },
@@ -46,38 +50,213 @@ export async function POST(request: Request) {
       );
     }
 
-    const momoOrderId =
-      typeof body.momoOrderId === "string" && body.momoOrderId.trim()
-        ? body.momoOrderId.trim()
-        : `MOMO_TEST_${Date.now()}_${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+    const now = new Date();
+    const nowIso = now.toISOString();
 
-    // Bước 1: Khởi tạo đơn MoMo Test để hiển thị giao diện QR / Cổng thanh toán MoMo Sandbox
-    if (action === "INIT") {
+    // Tự động đóng các lệnh nạp đã quá hạn 15 phút của người dùng này
+    db.prepare(
+      "UPDATE topup_requests SET status = 'EXPIRED' WHERE user_id = ? AND status = 'PENDING' AND expires_at < ?"
+    ).run(user.id, nowIso);
+
+    // =========================================================================
+    // 1. HỦY LỆNH NẠP ĐANG CHỜ (CANCEL_TOPUP / CANCEL)
+    // =========================================================================
+    if (action === "CANCEL_TOPUP" || action === "CANCEL") {
+      const requestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
+      const referenceCode =
+        typeof body.referenceCode === "string"
+          ? body.referenceCode.trim()
+          : typeof body.momoOrderId === "string"
+          ? body.momoOrderId.trim()
+          : "";
+
+      if (requestId) {
+        db.prepare(
+          "UPDATE topup_requests SET status = 'CANCELLED' WHERE id = ? AND user_id = ? AND status = 'PENDING'"
+        ).run(requestId, user.id);
+      } else if (referenceCode) {
+        db.prepare(
+          "UPDATE topup_requests SET status = 'CANCELLED' WHERE reference_code = ? AND user_id = ? AND status = 'PENDING'"
+        ).run(referenceCode, user.id);
+      } else {
+        db.prepare(
+          "UPDATE topup_requests SET status = 'CANCELLED' WHERE user_id = ? AND status = 'PENDING'"
+        ).run(user.id);
+      }
+
       return NextResponse.json({
         success: true,
+        message: "Đã hủy mã nạp điểm đang chờ.",
+      });
+    }
+
+    // =========================================================================
+    // 2. BƯỚC 1: TẠO MÃ NẠP ĐIỂM (CREATE_INTENT / INIT)
+    // =========================================================================
+    if (action === "CREATE_INTENT" || action === "INIT") {
+      const rawAmount = Number(body.amount);
+      if (
+        !Number.isFinite(rawAmount) ||
+        rawAmount < MIN_TOPUP_VND ||
+        rawAmount > MAX_TOPUP_VND
+      ) {
+        return NextResponse.json(
+          {
+            error: `Số tiền nạp phải từ ${MIN_TOPUP_VND.toLocaleString("vi-VN")}đ đến ${MAX_TOPUP_VND.toLocaleString("vi-VN")}đ.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      if (Math.round(rawAmount) % 1000 !== 0) {
+        return NextResponse.json(
+          {
+            error: "Số tiền nạp phải là bội số của 1.000đ (ví dụ: 15.000đ, 50.000đ).",
+          },
+          { status: 400 }
+        );
+      }
+
+      const cleanAmount = Math.round(rawAmount);
+
+      // Hủy các lệnh PENDING cũ trước khi tạo mã nạp mới để tránh nhầm lẫn mã chuyển khoản
+      db.prepare(
+        "UPDATE topup_requests SET status = 'CANCELLED' WHERE user_id = ? AND status = 'PENDING'"
+      ).run(user.id);
+
+      const requestId = `top_${crypto.randomBytes(8).toString("hex")}`;
+      const referenceCode = generateUniqueReferenceCode();
+      const expiresAt = new Date(now.getTime() + TOPUP_TTL_MINUTES * 60 * 1000).toISOString();
+
+      db.prepare(
+        `INSERT INTO topup_requests
+          (id, user_id, amount, reference_code, status, tx_hash, chain_mode, expires_at, confirmed_at, created_at)
+         VALUES (?, ?, ?, ?, 'PENDING', NULL, 'ONCHAIN', ?, NULL, ?)`
+      ).run(requestId, user.id, cleanAmount, referenceCode, expiresAt, nowIso);
+
+      return NextResponse.json({
+        success: true,
+        topupRequest: {
+          id: requestId,
+          userId: user.id,
+          amountVnd: cleanAmount,
+          amountUnip: cleanAmount,
+          referenceCode,
+          status: "PENDING",
+          recipientWallet: walletInfo.wallet_address,
+          merchantName: "Quỹ Bảo Chứng Điểm UniCycle",
+          expiresAt,
+          createdAt: nowIso,
+        },
         momoSession: {
-          momoOrderId,
-          partnerCode: "MOMO_UNICYCLE_SANDBOX",
-          merchantName: "Ví Chủ Quỹ Bảo Chứng UniCycle",
+          requestId,
+          momoOrderId: referenceCode,
+          partnerCode: "UNICYCLE_CAMPUS_TOPUP",
+          merchantName: "Quỹ Bảo Chứng Điểm UniCycle",
           amountVnd: cleanAmount,
           amountUnip: cleanAmount,
           recipientWallet: walletInfo.wallet_address,
-          transferNote: `NAP UNIP ${user.id.slice(0, 8).toUpperCase()}`,
-          createdAt: new Date().toISOString(),
+          transferNote: referenceCode,
+          expiresAt,
+          createdAt: nowIso,
         },
       });
     }
 
-    // Bước 2: Xác nhận thanh toán MoMo Test thành công & Đúc đồng UNIP trên Avalanche Fuji
+    // =========================================================================
+    // 3. BƯỚC 2: XÁC NHẬN ĐÃ CHUYỂN KHOẢN & CỘNG ĐIỂM (CONFIRM_TOPUP / CONFIRM)
+    // =========================================================================
+    const requestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
+    const inputReference =
+      typeof body.referenceCode === "string" && body.referenceCode.trim()
+        ? body.referenceCode.trim()
+        : typeof body.momoOrderId === "string" && body.momoOrderId.trim()
+        ? body.momoOrderId.trim()
+        : "";
+
+    let pendingReq: TopupRequest | undefined;
+
+    if (requestId) {
+      pendingReq = db
+        .prepare("SELECT * FROM topup_requests WHERE id = ? AND user_id = ?")
+        .get(requestId, user.id) as TopupRequest | undefined;
+    } else if (inputReference) {
+      pendingReq = db
+        .prepare("SELECT * FROM topup_requests WHERE reference_code = ? AND user_id = ?")
+        .get(inputReference, user.id) as TopupRequest | undefined;
+    } else {
+      pendingReq = db
+        .prepare(
+          "SELECT * FROM topup_requests WHERE user_id = ? AND status = 'PENDING' ORDER BY created_at DESC LIMIT 1"
+        )
+        .get(user.id) as TopupRequest | undefined;
+    }
+
+    let cleanAmount: number;
+    let finalReferenceCode: string;
+    let finalRequestId: string | null = null;
+
+    if (pendingReq) {
+      if (pendingReq.status === "CONFIRMED") {
+        return NextResponse.json(
+          { error: "Mã nạp điểm này đã được xác nhận và cộng điểm trước đó." },
+          { status: 409 }
+        );
+      }
+
+      if (pendingReq.status === "CANCELLED") {
+        return NextResponse.json(
+          { error: "Mã nạp điểm này đã bị hủy. Vui lòng tạo mã nạp mới." },
+          { status: 400 }
+        );
+      }
+
+      if (
+        pendingReq.status === "EXPIRED" ||
+        Date.parse(pendingReq.expires_at) < now.getTime()
+      ) {
+        db.prepare("UPDATE topup_requests SET status = 'EXPIRED' WHERE id = ?").run(
+          pendingReq.id
+        );
+        return NextResponse.json(
+          {
+            error: "Mã nạp điểm đã hết hạn hiệu lực (15 phút). Vui lòng tạo mã nạp mới.",
+          },
+          { status: 400 }
+        );
+      }
+
+      cleanAmount = Number(pendingReq.amount);
+      finalReferenceCode = pendingReq.reference_code;
+      finalRequestId = pendingReq.id;
+    } else {
+      // Fallback tương thích nếu client gửi trực tiếp amount + momoOrderId
+      const rawAmount = Number(body.amount);
+      if (
+        !Number.isFinite(rawAmount) ||
+        rawAmount < MIN_TOPUP_VND ||
+        rawAmount > MAX_TOPUP_VND
+      ) {
+        return NextResponse.json(
+          {
+            error: `Số tiền nạp phải từ ${MIN_TOPUP_VND.toLocaleString("vi-VN")}đ đến ${MAX_TOPUP_VND.toLocaleString("vi-VN")}đ.`,
+          },
+          { status: 400 }
+        );
+      }
+      cleanAmount = Math.round(rawAmount);
+      finalReferenceCode = inputReference || generateUniqueReferenceCode();
+    }
+
     const existingTx = db
       .prepare(
         "SELECT id FROM point_transactions WHERE reference_id = ? AND type = 'MOMO_TOPUP'"
       )
-      .get(momoOrderId);
+      .get(finalReferenceCode);
 
     if (existingTx) {
       return NextResponse.json(
-        { error: "Mã giao dịch MoMo Test này đã được cộng điểm trước đó." },
+        { error: "Mã đối soát nạp điểm này đã được cộng điểm trước đó." },
         { status: 409 }
       );
     }
@@ -86,18 +265,48 @@ export async function POST(request: Request) {
     const chainResult = await mintPointsOnChain({
       userWallet: walletInfo.wallet_address,
       amount: cleanAmount,
-      momoOrderId,
+      momoOrderId: finalReferenceCode,
     });
 
-    const now = new Date().toISOString();
     const txId = `ptx_${crypto.randomBytes(8).toString("hex")}`;
-    const description = `Nạp ${cleanAmount.toLocaleString("vi-VN")}đ qua MoMo (+${cleanAmount.toLocaleString("vi-VN")} UNIP)`;
+    const description = `Nạp điểm vào ví (${finalReferenceCode}): +${cleanAmount.toLocaleString("vi-VN")} UNIP`;
 
-    db.exec("BEGIN");
+    db.exec("BEGIN IMMEDIATE");
     try {
+      if (finalRequestId) {
+        const updateReq = db
+          .prepare(
+            `UPDATE topup_requests
+             SET status = 'CONFIRMED', tx_hash = ?, chain_mode = ?, confirmed_at = ?
+             WHERE id = ? AND status = 'PENDING'`
+          )
+          .run(chainResult.txHash, chainResult.mode, nowIso, finalRequestId);
+
+        if (updateReq.changes === 0) {
+          throw new Error("TOPUP_ALREADY_PROCESSED");
+        }
+      } else {
+        const autoReqId = `top_${crypto.randomBytes(8).toString("hex")}`;
+        db.prepare(
+          `INSERT INTO topup_requests
+            (id, user_id, amount, reference_code, status, tx_hash, chain_mode, expires_at, confirmed_at, created_at)
+           VALUES (?, ?, ?, ?, 'CONFIRMED', ?, ?, ?, ?, ?)`
+        ).run(
+          autoReqId,
+          user.id,
+          cleanAmount,
+          finalReferenceCode,
+          chainResult.txHash,
+          chainResult.mode,
+          nowIso,
+          nowIso,
+          nowIso
+        );
+      }
+
       db.prepare(
         "UPDATE users SET point_balance = COALESCE(point_balance, 0) + ?, updated_at = ? WHERE id = ?"
-      ).run(cleanAmount, now, user.id);
+      ).run(cleanAmount, nowIso, user.id);
 
       db.prepare(
         `INSERT INTO point_transactions
@@ -107,45 +316,52 @@ export async function POST(request: Request) {
         txId,
         user.id,
         cleanAmount,
-        momoOrderId,
+        finalReferenceCode,
         description,
         chainResult.txHash,
         chainResult.mode,
-        now
+        nowIso
       );
 
       db.exec("COMMIT");
-    } catch (dbErr) {
+    } catch (dbErr: any) {
       db.exec("ROLLBACK");
+      if (dbErr?.message === "TOPUP_ALREADY_PROCESSED") {
+        return NextResponse.json(
+          { error: "Lệnh nạp điểm này vừa được xử lý." },
+          { status: 409 }
+        );
+      }
       throw dbErr;
     }
 
-    const updatedUser = db
-      .prepare("SELECT point_balance, wallet_address FROM users WHERE id = ?")
-      .get(user.id) as { point_balance: number; wallet_address: string };
+    const summary = getUserWalletSummary(user.id);
 
     return NextResponse.json({
       success: true,
-      message: `Đã nạp thành công ${cleanAmount.toLocaleString("vi-VN")} UNIP vào ví của bạn!`,
+      message: `Đã xác nhận nạp thành công +${cleanAmount.toLocaleString("vi-VN")} UNIP (Mã: ${finalReferenceCode})!`,
       topup: {
         id: txId,
-        momoOrderId,
+        momoOrderId: finalReferenceCode,
+        referenceCode: finalReferenceCode,
         amountVnd: cleanAmount,
         mintedUnip: cleanAmount,
-        newBalance: updatedUser.point_balance,
-        walletAddress: updatedUser.wallet_address,
+        newBalance: summary?.availableBalance ?? 0,
+        availableBalance: summary?.availableBalance ?? 0,
+        lockedBalance: summary?.lockedBalance ?? 0,
+        totalBalance: summary?.totalBalance ?? 0,
+        walletAddress: summary?.wallet_address ?? walletInfo.wallet_address,
         txHash: chainResult.txHash,
         chainMode: chainResult.mode,
         explorerUrl: chainResult.explorerUrl,
-        createdAt: now,
+        createdAt: nowIso,
       },
     });
   } catch (err: any) {
     console.error("[POST /api/wallet/topup] Error:", err);
     return NextResponse.json(
-      { error: "Đã xảy ra lỗi khi xử lý nạp điểm MoMo Test." },
+      { error: "Đã xảy ra lỗi khi xử lý nạp điểm vào Ví UniCycle." },
       { status: 500 }
     );
   }
 }
-

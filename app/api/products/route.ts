@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import db, { Product, ProductImage } from "@/lib/db";
+import db, { Product, ProductImage, recordProductRevision } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
 import { generatePassportHash } from "@/lib/passport";
@@ -273,6 +273,19 @@ export async function POST(request: Request) {
       originNote,
       now
     );
+
+    recordProductRevision({
+      productId,
+      editorId: user.id,
+      title: title.trim(),
+      price: Number(price),
+      condition,
+      pickupLocation: pickupLocation.trim(),
+      description: description.trim(),
+      specsJson: JSON.stringify(cleanAttributes),
+      dataHash: passportHash,
+      changeSummary: "Khởi tạo hồ sơ UniCycle Passport khi đăng tin",
+    });
 
     return NextResponse.json({
       success: true,

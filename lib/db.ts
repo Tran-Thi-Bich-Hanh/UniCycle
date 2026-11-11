@@ -1066,5 +1066,6 @@ export interface Product {
   };
   images?: ProductImage[];
   ownership_history?: OwnershipRecord[];
+  revisions?: ProductRevision[];
 }
 

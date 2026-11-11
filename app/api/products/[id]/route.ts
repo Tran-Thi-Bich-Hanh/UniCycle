@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import db, { Product, ProductImage, OwnershipRecord } from "@/lib/db";
+import db, {
+  Product,
+  ProductImage,
+  OwnershipRecord,
+  ProductRevision,
+  recordProductRevision,
+} from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { generatePassportHash } from "@/lib/passport";
 
@@ -14,11 +20,13 @@ export async function GET(
     const viewer = await getSessionUser();
 
     // Tăng lượt xem (không tính lượt xem của chính chủ tin)
-    const owner = db.prepare("SELECT seller_id FROM products WHERE id = ? OR slug = ?").get(id, id) as
-      | { seller_id: string }
-      | undefined;
+    const owner = db
+      .prepare("SELECT seller_id FROM products WHERE id = ? OR slug = ?")
+      .get(id, id) as { seller_id: string } | undefined;
     if (owner && owner.seller_id !== viewer?.id) {
-      db.prepare("UPDATE products SET view_count = view_count + 1 WHERE id = ? OR slug = ?").run(id, id);
+      db.prepare(
+        "UPDATE products SET view_count = view_count + 1 WHERE id = ? OR slug = ?"
+      ).run(id, id);
     }
 
     const querySql = `
@@ -35,20 +43,37 @@ export async function GET(
 
     const row = db.prepare(querySql).get(id, id) as any;
     if (!row) {
-      return NextResponse.json({ error: "Không tìm thấy sản phẩm" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Không tìm thấy sản phẩm" },
+        { status: 404 }
+      );
     }
 
-    const images = db.prepare(`
-      SELECT * FROM product_images 
-      WHERE product_id = ? 
-      ORDER BY is_cover DESC, display_order ASC
-    `).all(row.id) as ProductImage[];
+    const images = db
+      .prepare(
+        `SELECT * FROM product_images 
+         WHERE product_id = ? 
+         ORDER BY is_cover DESC, display_order ASC`
+      )
+      .all(row.id) as ProductImage[];
 
-    const ownershipHistory = db.prepare(`
-      SELECT * FROM ownership_history
-      WHERE product_id = ?
-      ORDER BY order_index ASC, created_at ASC
-    `).all(row.id) as OwnershipRecord[];
+    const ownershipHistory = db
+      .prepare(
+        `SELECT * FROM ownership_history
+         WHERE product_id = ?
+         ORDER BY order_index ASC, created_at ASC`
+      )
+      .all(row.id) as OwnershipRecord[];
+
+    const revisions = db
+      .prepare(
+        `SELECT r.*, u.full_name as editor_name
+         FROM product_revisions r
+         LEFT JOIN users u ON r.editor_id = u.id
+         WHERE r.product_id = ?
+         ORDER BY r.revision_number DESC`
+      )
+      .all(row.id) as ProductRevision[];
 
     const product: Product = {
       id: row.id,
@@ -86,6 +111,7 @@ export async function GET(
       },
       images,
       ownership_history: ownershipHistory,
+      revisions,
     };
 
     return NextResponse.json({ product, requiresLogin: !viewer });
@@ -95,7 +121,7 @@ export async function GET(
   }
 }
 
-// PUT /api/products/[id] - Chỉnh sửa thông tin bài đăng hoặc cập nhật trạng thái
+// PUT /api/products/[id] - Chỉnh sửa thông tin bài đăng & lưu lịch sử phiên bản UniCycle Passport
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -111,26 +137,53 @@ export async function PUT(
 
     const existing = db.prepare("SELECT * FROM products WHERE id = ?").get(id) as any;
     if (!existing) {
-      return NextResponse.json({ error: "Không tìm thấy bài đăng" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Không tìm thấy bài đăng" },
+        { status: 404 }
+      );
     }
 
-    // Chỉ người bán hoặc ADMIN mới có quyền chỉnh sửa
+    // Chỉ người bán sở hữu bài đăng mới có quyền chỉnh sửa
     if (existing.seller_id !== user.id && user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Bạn không có quyền chỉnh sửa bài đăng này" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Bạn không có quyền chỉnh sửa bài đăng này" },
+        { status: 403 }
+      );
     }
 
-    // Chặn chỉnh sửa thông tin khi món đồ đang có người đặt cọc giữ chỗ (RESERVED) trên Smart Contract
+    // Chặn chỉnh sửa thông tin khi món đồ đang có người giữ chỗ (RESERVED) hoặc đã bán (SOLD)
     if (existing.status === "RESERVED") {
       return NextResponse.json(
         {
           error:
-            "Món đồ đang trong trạng thái giữ chỗ đặt cọc (Smart Escrow). Không thể chỉnh sửa thông số hay đổi trạng thái để bảo toàn mã băm Sổ đỏ (Passport Hash).",
+            "Món đồ đang trong trạng thái giữ chỗ (Escrow). Không thể chỉnh sửa thông số hay giá bán để bảo toàn tính toàn vẹn của UniCycle Passport.",
         },
         { status: 409 }
       );
     }
 
-    const { title, description, price, condition, categoryId, pickupLocation, status, images, attributes } = body;
+    if (existing.status === "SOLD") {
+      return NextResponse.json(
+        {
+          error:
+            "Món đồ này đã hoàn tất giao dịch nên hồ sơ UniCycle Passport đã được niêm phong vĩnh viễn.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const {
+      title,
+      description,
+      price,
+      condition,
+      categoryId,
+      pickupLocation,
+      status,
+      images,
+      attributes,
+      changeSummary,
+    } = body;
     const now = new Date().toISOString();
 
     // 1. Cập nhật danh sách ảnh nếu có truyền mảng images
@@ -143,16 +196,31 @@ export async function PUT(
         VALUES (?, ?, ?, ?, ?, ?)
       `);
       finalImages.forEach((url: string, index: number) => {
-        insertImg.run(`img_${crypto.randomBytes(6).toString("hex")}`, id, url, index === 0 ? 1 : 0, index, now);
+        insertImg.run(
+          `img_${crypto.randomBytes(6).toString("hex")}`,
+          id,
+          url,
+          index === 0 ? 1 : 0,
+          index,
+          now
+        );
       });
     } else {
-      const existingImgs = db.prepare("SELECT url FROM product_images WHERE product_id = ? ORDER BY is_cover DESC, display_order ASC").all(id) as { url: string }[];
+      const existingImgs = db
+        .prepare(
+          "SELECT url FROM product_images WHERE product_id = ? ORDER BY is_cover DESC, display_order ASC"
+        )
+        .all(id) as { url: string }[];
       finalImages = existingImgs.map((i) => i.url);
     }
 
     // 2. Chuẩn hóa attributes
     let finalAttributes: Record<string, any> = {};
-    if (attributes !== undefined && typeof attributes === "object" && attributes !== null) {
+    if (
+      attributes !== undefined &&
+      typeof attributes === "object" &&
+      attributes !== null
+    ) {
       finalAttributes = attributes;
     } else if (existing.attributes) {
       try {
@@ -162,20 +230,55 @@ export async function PUT(
       }
     }
 
-    // 3. Tự động tính toán lại mã băm Hộ chiếu số SHA-256 (0x...)
+    const nextTitle = (title !== undefined ? String(title) : existing.title).trim();
+    const nextDescription = (
+      description !== undefined ? String(description) : existing.description
+    ).trim();
+    const nextPrice = Number(price !== undefined ? price : existing.price);
+    const nextCondition = condition !== undefined ? condition : existing.condition;
+    const nextCategoryId = categoryId !== undefined ? categoryId : existing.category_id;
+    const nextPickupLocation = (
+      pickupLocation !== undefined ? String(pickupLocation) : existing.pickup_location
+    ).trim();
+    const nextStatus = status !== undefined ? status : existing.status;
+    const nextSpecsJson = JSON.stringify(finalAttributes);
+
+    // 3. Tự động tính toán lại mã băm UniCycle Passport SHA-256 (0x...)
     const newPassportHash = generatePassportHash({
       productId: id,
-      title: (title !== undefined ? title : existing.title).trim(),
-      categoryId: categoryId !== undefined ? categoryId : existing.category_id,
+      title: nextTitle,
+      categoryId: nextCategoryId,
       sellerId: existing.seller_id,
-      condition: condition !== undefined ? condition : existing.condition,
-      price: Number(price !== undefined ? price : existing.price),
-      pickupLocation: (pickupLocation !== undefined ? pickupLocation : existing.pickup_location).trim(),
-      description: (description !== undefined ? description : existing.description).trim(),
+      condition: nextCondition,
+      price: nextPrice,
+      pickupLocation: nextPickupLocation,
+      description: nextDescription,
       images: finalImages,
       attributes: finalAttributes,
       createdAt: existing.created_at,
     });
+
+    // 4. Tổng hợp tóm tắt thay đổi để hiển thị minh bạch trên trang UniCycle Passport
+    const changedFields: string[] = [];
+    if (nextTitle !== existing.title) changedFields.push("tiêu đề");
+    if (nextPrice !== Number(existing.price)) {
+      changedFields.push(
+        `giá bán (${Number(existing.price).toLocaleString("vi-VN")}đ → ${nextPrice.toLocaleString("vi-VN")}đ)`
+      );
+    }
+    if (nextCondition !== existing.condition) changedFields.push("tình trạng");
+    if (nextPickupLocation !== existing.pickup_location)
+      changedFields.push("điểm giao dịch");
+    if (nextDescription !== existing.description) changedFields.push("mô tả");
+    if (nextSpecsJson !== (existing.attributes || "{}"))
+      changedFields.push("thông số kỹ thuật");
+
+    const computedSummary =
+      typeof changeSummary === "string" && changeSummary.trim()
+        ? changeSummary.trim()
+        : changedFields.length > 0
+        ? `Cập nhật ${changedFields.join(", ")}`
+        : "Cập nhật thông tin bài đăng";
 
     const update = db.prepare(`
       UPDATE products
@@ -186,20 +289,38 @@ export async function PUT(
     `);
 
     update.run(
-      title !== undefined ? title : existing.title,
-      description !== undefined ? description : existing.description,
-      price !== undefined ? Number(price) : existing.price,
-      condition !== undefined ? condition : existing.condition,
-      categoryId !== undefined ? categoryId : existing.category_id,
-      pickupLocation !== undefined ? pickupLocation : existing.pickup_location,
-      status !== undefined ? status : existing.status,
-      JSON.stringify(finalAttributes),
+      nextTitle,
+      nextDescription,
+      nextPrice,
+      nextCondition,
+      nextCategoryId,
+      nextPickupLocation,
+      nextStatus,
+      nextSpecsJson,
       newPassportHash,
       now,
       id
     );
 
-    return NextResponse.json({ success: true, message: "Cập nhật bài đăng thành công!", passportHash: newPassportHash });
+    const newRevision = recordProductRevision({
+      productId: id,
+      editorId: user.id,
+      title: nextTitle,
+      price: nextPrice,
+      condition: nextCondition,
+      pickupLocation: nextPickupLocation,
+      description: nextDescription,
+      specsJson: nextSpecsJson,
+      dataHash: newPassportHash,
+      changeSummary: computedSummary,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Cập nhật bài đăng và ghi nhận phiên bản mới trên UniCycle Passport thành công!",
+      passportHash: newPassportHash,
+      revision: newRevision,
+    });
   } catch (err: any) {
     console.error("Update product error:", err);
     return NextResponse.json({ error: "Lỗi cập nhật sản phẩm" }, { status: 500 });
@@ -220,18 +341,24 @@ export async function DELETE(
     const { id } = await params;
     const existing = db.prepare("SELECT * FROM products WHERE id = ?").get(id) as any;
     if (!existing) {
-      return NextResponse.json({ error: "Không tìm thấy bài đăng" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Không tìm thấy bài đăng" },
+        { status: 404 }
+      );
     }
 
     if (existing.seller_id !== user.id && user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Bạn không có quyền xóa bài đăng này" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Bạn không có quyền xóa bài đăng này" },
+        { status: 403 }
+      );
     }
 
     if (existing.status === "RESERVED") {
       return NextResponse.json(
         {
           error:
-            "Không thể gỡ bài đăng khi món đồ đang được giữ cọc trên Smart Contract. Hãy hoàn trả cọc trước khi gỡ bài.",
+            "Không thể gỡ bài đăng khi món đồ đang được giữ chỗ trong Escrow. Hãy hoàn trả điểm giữ chỗ trước khi gỡ bài.",
         },
         { status: 409 }
       );
@@ -243,9 +370,11 @@ export async function DELETE(
       id
     );
 
-    return NextResponse.json({ success: true, message: "Đã ẩn bài đăng thành công." });
+    return NextResponse.json({
+      success: true,
+      message: "Đã ẩn bài đăng thành công.",
+    });
   } catch (err: any) {
     return NextResponse.json({ error: "Lỗi xóa bài đăng" }, { status: 500 });
   }
 }
-
