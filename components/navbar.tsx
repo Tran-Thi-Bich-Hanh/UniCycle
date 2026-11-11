@@ -134,13 +134,29 @@ export function Navbar() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#D6E8EE] shadow-2xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <UniCycleLogo className="h-11 w-auto max-w-[130px] group-hover:scale-105 transition-transform" />
-            <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold bg-[#D6E8EE]/80 text-[#001B48] border border-[#97CADB]/60 rounded-md">
-              Chợ sinh viên
-            </span>
-          </Link>
+          {/* Home icon + Logo */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/"
+              aria-label="Về trang chủ"
+              aria-current={isActive("/") ? "page" : undefined}
+              title="Về trang chủ"
+              className={`w-9 h-9 rounded-xl inline-flex items-center justify-center border transition-colors ${
+                isActive("/")
+                  ? "bg-[#D6E8EE] text-[#001B48] border-[#97CADB]"
+                  : "bg-white text-[#02457A] border-[#D6E8EE] hover:bg-[#D6E8EE]/50 hover:text-[#018ABE] hover:border-[#97CADB]"
+              }`}
+            >
+              <IconHome className="w-4.5 h-4.5" />
+            </Link>
+
+            <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+              <UniCycleLogo className="h-11 w-auto max-w-[130px] group-hover:scale-105 transition-transform" />
+              <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold bg-[#D6E8EE]/80 text-[#001B48] border border-[#97CADB]/60 rounded-md">
+                Chợ sinh viên
+              </span>
+            </Link>
+          </div>
 
           {/* Search bar */}
           <form
@@ -164,18 +180,7 @@ export function Navbar() {
           </form>
 
           {/* Navigation links & Actions */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            <Link
-              href="/"
-              aria-label="Về trang chủ"
-              aria-current={isActive("/") ? "page" : undefined}
-              title="Về trang chủ"
-              className={`inline-flex items-center gap-1.5 shrink-0 ${navLink("/")}`}
-            >
-              <IconHome className="w-4 h-4 shrink-0" />
-              <span className="hidden lg:inline">Trang chủ</span>
-            </Link>
-
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <Link
               href="/products"
               aria-current={isActive("/products") ? "page" : undefined}
