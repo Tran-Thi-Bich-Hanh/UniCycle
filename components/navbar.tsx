@@ -12,6 +12,7 @@ import {
   IconSchool,
   IconWallet,
   IconLock,
+  IconHome,
 } from "./icons";
 import UniCycleLogo from "./logo";
 
@@ -163,11 +164,22 @@ export function Navbar() {
           </form>
 
           {/* Navigation links & Actions */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <Link
+              href="/"
+              aria-label="Về trang chủ"
+              aria-current={isActive("/") ? "page" : undefined}
+              title="Về trang chủ"
+              className={`inline-flex items-center gap-1.5 shrink-0 ${navLink("/")}`}
+            >
+              <IconHome className="w-4 h-4 shrink-0" />
+              <span className="hidden lg:inline">Trang chủ</span>
+            </Link>
+
             <Link
               href="/products"
               aria-current={isActive("/products") ? "page" : undefined}
-              className={`hidden lg:inline-flex items-center ${navLink("/products")}`}
+              className={`hidden lg:inline-flex items-center shrink-0 ${navLink("/products")}`}
             >
               Khám phá đồ cũ
             </Link>
