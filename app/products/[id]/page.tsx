@@ -283,7 +283,7 @@ export default function ProductDetailPage() {
                 <h3 className="text-sm font-bold text-[#001B48]">Quy tắc an toàn sinh viên UniCycle</h3>
                 <p className="text-xs text-[#02457A] leading-relaxed">
                   Luôn hẹn gặp trực tiếp tại nơi công cộng trong khuôn viên trường (cổng trường, KTX, thư viện).
-                  Sử dụng <strong>Đặt cọc Smart Escrow (UNIP)</strong> để giữ chỗ an toàn và chỉ bấm giải ngân sau khi đã kiểm tra đồ khớp với Sổ đỏ.
+                  Sử dụng <strong>Đặt cọc giữ chỗ trên UniCycle</strong> để khóa điểm an toàn, chỉ bấm xác nhận thanh toán sau khi đã kiểm tra đúng đồ.
                 </p>
               </div>
             </div>
@@ -434,7 +434,7 @@ export default function ProductDetailPage() {
                 <div className="text-xs font-extrabold text-[#001B48]">Bạn là chủ bài đăng này</div>
                 {product.status === "RESERVED" ? (
                   <p className="text-xs text-[#02457A] bg-white/80 rounded-xl p-3 border border-[#97CADB]">
-                    Bài đăng đang được giữ chỗ qua Smart Escrow nên tạm khóa chỉnh sửa để bảo toàn mã băm Sổ đỏ.
+                    Bài đăng đang có người đặt cọc giữ chỗ nên tạm khóa chỉnh sửa để đảm bảo đúng cam kết với người mua.
                   </p>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">

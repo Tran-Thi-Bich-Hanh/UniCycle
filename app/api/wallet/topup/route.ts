@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
     const now = new Date().toISOString();
     const txId = `ptx_${crypto.randomBytes(8).toString("hex")}`;
-    const description = `Nạp ${cleanAmount.toLocaleString("vi-VN")}đ qua MoMo Test (+${cleanAmount.toLocaleString("vi-VN")} UNIP)`;
+    const description = `Nạp ${cleanAmount.toLocaleString("vi-VN")}đ qua MoMo (+${cleanAmount.toLocaleString("vi-VN")} UNIP)`;
 
     db.exec("BEGIN");
     try {
