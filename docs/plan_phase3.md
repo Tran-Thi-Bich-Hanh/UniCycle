@@ -118,7 +118,7 @@ Chúng ta sẽ làm lần lượt từng task một, kiểm tra chạy tốt r�
   - Cập nhật `lib/db.ts`: bổ sung cột `point_balance` cho bảng `users`, tự tạo địa chỉ ví riêng `0x...` cho các tài khoản sinh viên mẫu, và tạo 2 bảng `point_transactions`, `escrow_orders`.
   - Viết `lib/blockchain.ts` để Ví Chủ tự động tạo ví mới cho sinh viên và gọi hợp đồng trên mạng Avalanche Fuji.
 
-- [ ] **Task 3.3: API Ví sinh viên & Cổng nạp tiền MoMo môi trường Test**
+- [x] **Task 3.3: API Ví sinh viên & Cổng nạp tiền MoMo môi trường Test**
   - Tạo API `GET /api/wallet` trả về địa chỉ ví riêng, số dư `UNIP` và lịch sử biến động.
   - Tạo API `POST /api/wallet/topup` xử lý nạp tiền qua MoMo môi trường test (`20k`, `50k`, `100k`, `200k`, `500k`), gọi Ví Chủ đúc đồng `UNIP` trên Avalanche Fuji và lưu mã giao dịch `tx_hash`.
 
