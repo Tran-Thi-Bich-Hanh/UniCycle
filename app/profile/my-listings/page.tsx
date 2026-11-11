@@ -6,18 +6,40 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Toast, useToast } from "@/components/toast";
-import { IconClock, IconEdit, IconEye, IconMapPin, IconPackage } from "@/components/icons";
+import {
+  IconClock,
+  IconEdit,
+  IconEye,
+  IconMapPin,
+  IconPackage,
+  IconLock,
+  IconWallet,
+  IconArrowRight,
+  IconShieldCheck,
+} from "@/components/icons";
 import { Product } from "@/lib/db";
-import { formatCurrencyVND, formatRelativeTime, CONDITION_LABELS, STATUS_LABELS } from "@/lib/utils";
+import {
+  formatCurrencyVND,
+  formatRelativeTime,
+  CONDITION_LABELS,
+  STATUS_LABELS,
+} from "@/lib/utils";
 
-type TabType = "ALL" | "ACTIVE" | "SOLD" | "HIDDEN";
+type TabType = "ACTIVE" | "RESERVED" | "SOLD" | "HIDDEN" | "ALL";
 
 export default function MyListingsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("ACTIVE");
   const [products, setProducts] = useState<Product[]>([]);
-  const [counts, setCounts] = useState<{ active: number; sold: number; hidden: number; total: number }>({
+  const [counts, setCounts] = useState<{
+    active: number;
+    reserved: number;
+    sold: number;
+    hidden: number;
+    total: number;
+  }>({
     active: 0,
+    reserved: 0,
     sold: 0,
     hidden: 0,
     total: 0,
@@ -40,7 +62,13 @@ export default function MyListingsPage() {
         if (!data) return;
         setProducts(data.products || []);
         if (data.counts) {
-          setCounts(data.counts);
+          setCounts({
+            active: data.counts.active || 0,
+            reserved: data.counts.reserved || 0,
+            sold: data.counts.sold || 0,
+            hidden: data.counts.hidden || 0,
+            total: data.counts.total || 0,
+          });
         }
       })
       .catch((err) => console.error(err))
@@ -57,7 +85,6 @@ export default function MyListingsPage() {
     ACTIVE: "Tin đã được mở bán lại.",
   };
 
-  // Update status (ACTIVE, SOLD, HIDDEN) - có thông báo và cho phép hoàn tác
   const handleUpdateStatus = async (
     product: Product,
     newStatus: "ACTIVE" | "SOLD" | "HIDDEN",
@@ -71,14 +98,22 @@ export default function MyListingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Không thể cập nhật trạng thái");
       fetchListings();
-      show(isUndo ? "Đã hoàn tác." : STATUS_MESSAGES[newStatus], isUndo ? {} : {
-        actionLabel: "Hoàn tác",
-        onAction: () => handleUpdateStatus(product, previousStatus, true),
+      show(
+        isUndo ? "Đã hoàn tác." : STATUS_MESSAGES[newStatus],
+        isUndo
+          ? {}
+          : {
+              actionLabel: "Hoàn tác",
+              onAction: () => handleUpdateStatus(product, previousStatus, true),
+            }
+      );
+    } catch (err: any) {
+      show(err.message || "Không thể cập nhật trạng thái, hãy thử lại.", {
+        type: "error",
       });
-    } catch (err) {
-      show("Không thể cập nhật trạng thái, hãy thử lại.", { type: "error" });
     } finally {
       setActionLoadingId(null);
     }
@@ -95,37 +130,68 @@ export default function MyListingsPage() {
             Trang chủ
           </Link>
           <span>/</span>
-          <Link href="/profile" className="hover:text-[#018ABE] transition-colors">
-            Tài khoản
+          <Link
+            href="/profile"
+            className="hover:text-[#018ABE] transition-colors"
+          >
+            Hồ sơ
           </Link>
           <span>/</span>
           <span className="text-[#001B48] font-bold">Quản lý tin đăng</span>
         </nav>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
               Quản lý tin đăng thanh lý
             </h1>
             <p className="text-sm text-[#02457A] mt-1 font-medium">
-              Theo dõi tình trạng bài đăng, số lượt xem và chuyển đổi trạng thái khi đã bán
+              Theo dõi tình trạng bài đăng, đơn đang giữ chỗ (Escrow) và hồ sơ UniCycle Passport
             </p>
           </div>
-          <Link
-            href="/products/new"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-[#018ABE] text-white hover:bg-[#02457A] transition-colors shadow-2xs shrink-0"
-          >
-            + Đăng tin mới
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/wallet?tab=ESCROWS"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#D6E8EE]/60 text-[#001B48] hover:bg-[#D6E8EE] transition-colors"
+            >
+              <IconWallet className="w-3.5 h-3.5 text-[#018ABE]" />
+              <span>Ví & Đơn Escrow</span>
+            </Link>
+            <Link
+              href="/products/new"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-[#018ABE] text-white hover:bg-[#02457A] transition-colors shadow-2xs"
+            >
+              + Đăng tin mới
+            </Link>
+          </div>
         </div>
+
+        {/* Thông báo nổi bật nếu có đơn đang được khách giữ chỗ */}
+        {counts.reserved > 0 && activeTab !== "RESERVED" && (
+          <div className="mb-6 p-4 rounded-2xl bg-[#D6E8EE]/50 border border-[#018ABE] flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-[#001B48]">
+              <IconLock className="w-4 h-4 text-[#018ABE]" />
+              <span>
+                Bạn đang có <strong>{counts.reserved} món đồ</strong> được sinh viên khác giữ chỗ qua Escrow!
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("RESERVED")}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-[#02457A] text-white hover:bg-[#001B48] transition-colors cursor-pointer"
+            >
+              Xem đơn giữ chỗ →
+            </button>
+          </div>
+        )}
 
         {/* TABS TRẠNG THÁI */}
         <div className="flex items-center gap-2 border-b border-[#D6E8EE] mb-6 overflow-x-auto pb-1">
           <button
             type="button"
             onClick={() => setActiveTab("ACTIVE")}
-            className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
               activeTab === "ACTIVE"
                 ? "border-[#018ABE] text-[#018ABE]"
                 : "border-transparent text-[#02457A] hover:text-[#001B48]"
@@ -134,7 +200,9 @@ export default function MyListingsPage() {
             <span>Đang đăng bán</span>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full ${
-                activeTab === "ACTIVE" ? "bg-[#018ABE] text-white" : "bg-[#D6E8EE] text-[#001B48]"
+                activeTab === "ACTIVE"
+                  ? "bg-[#018ABE] text-white"
+                  : "bg-[#D6E8EE] text-[#001B48]"
               }`}
             >
               {counts.active}
@@ -143,17 +211,40 @@ export default function MyListingsPage() {
 
           <button
             type="button"
+            onClick={() => setActiveTab("RESERVED")}
+            className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+              activeTab === "RESERVED"
+                ? "border-[#018ABE] text-[#018ABE]"
+                : "border-transparent text-[#02457A] hover:text-[#001B48]"
+            }`}
+          >
+            <span>Đang giữ chỗ (Escrow)</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full ${
+                activeTab === "RESERVED"
+                  ? "bg-[#018ABE] text-white"
+                  : "bg-[#D6E8EE] text-[#001B48]"
+              }`}
+            >
+              {counts.reserved}
+            </span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab("SOLD")}
-            className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
               activeTab === "SOLD"
                 ? "border-[#018ABE] text-[#018ABE]"
                 : "border-transparent text-[#02457A] hover:text-[#001B48]"
             }`}
           >
-            <span>Đã bán / Đã thanh lý</span>
+            <span>Đã thanh lý</span>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full ${
-                activeTab === "SOLD" ? "bg-[#018ABE] text-white" : "bg-[#D6E8EE] text-[#001B48]"
+                activeTab === "SOLD"
+                  ? "bg-[#018ABE] text-white"
+                  : "bg-[#D6E8EE] text-[#001B48]"
               }`}
             >
               {counts.sold}
@@ -163,7 +254,7 @@ export default function MyListingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab("HIDDEN")}
-            className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
               activeTab === "HIDDEN"
                 ? "border-[#018ABE] text-[#018ABE]"
                 : "border-transparent text-[#02457A] hover:text-[#001B48]"
@@ -172,7 +263,9 @@ export default function MyListingsPage() {
             <span>Tạm ẩn</span>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full ${
-                activeTab === "HIDDEN" ? "bg-[#018ABE] text-white" : "bg-[#D6E8EE] text-[#001B48]"
+                activeTab === "HIDDEN"
+                  ? "bg-[#018ABE] text-white"
+                  : "bg-[#D6E8EE] text-[#001B48]"
               }`}
             >
               {counts.hidden}
@@ -182,7 +275,7 @@ export default function MyListingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab("ALL")}
-            className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
               activeTab === "ALL"
                 ? "border-[#018ABE] text-[#018ABE]"
                 : "border-transparent text-[#02457A] hover:text-[#001B48]"
@@ -191,7 +284,9 @@ export default function MyListingsPage() {
             <span>Tất cả tin</span>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full ${
-                activeTab === "ALL" ? "bg-[#018ABE] text-white" : "bg-[#D6E8EE] text-[#001B48]"
+                activeTab === "ALL"
+                  ? "bg-[#018ABE] text-white"
+                  : "bg-[#D6E8EE] text-[#001B48]"
               }`}
             >
               {counts.total}
@@ -278,63 +373,100 @@ export default function MyListingsPage() {
                       </div>
 
                       <div className="flex items-center gap-3 text-xs text-[#02457A]">
-                        <span className="inline-flex items-center gap-1"><IconClock className="w-3.5 h-3.5" /> {formatRelativeTime(product.created_at)}</span>
-                        <span className="inline-flex items-center gap-1"><IconEye className="w-3.5 h-3.5" /> {product.view_count}</span>
-                        <span className="inline-flex items-center gap-1 truncate"><IconMapPin className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{product.pickup_location}</span></span>
+                        <span className="inline-flex items-center gap-1">
+                          <IconClock className="w-3.5 h-3.5" />{" "}
+                          {formatRelativeTime(product.created_at)}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <IconEye className="w-3.5 h-3.5" />{" "}
+                          {product.view_count}
+                        </span>
+                        <span className="inline-flex items-center gap-1 truncate">
+                          <IconMapPin className="w-3.5 h-3.5 shrink-0" />{" "}
+                          <span className="truncate">
+                            {product.pickup_location}
+                          </span>
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Phải: Cụm nút hành động */}
                   <div className="flex sm:flex-col gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#D6E8EE]">
-                    {/* Nút chuyển Đã bán / Mở bán lại */}
-                    {product.status === "ACTIVE" ? (
-                      <button
-                        type="button"
-                        disabled={isActionLoading}
-                        onClick={() => handleUpdateStatus(product, "SOLD")}
-                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#02457A] hover:bg-[#001B48] text-white transition-colors text-center disabled:opacity-50"
-                      >
-                        {isActionLoading ? "..." : "Đã bán"}
-                      </button>
+                    {product.status === "RESERVED" ? (
+                      <>
+                        <Link
+                          href={`/products/${product.id}`}
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#02457A] text-white hover:bg-[#001B48] transition-colors"
+                        >
+                          <span>Xử lý đơn giữ chỗ</span>
+                          <IconArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                        <Link
+                          href={`/products/${product.id}/passport`}
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-[#D6E8EE]/50 text-[#001B48] hover:bg-[#D6E8EE] transition-colors"
+                        >
+                          <IconShieldCheck className="w-3.5 h-3.5 text-[#018ABE]" />
+                          <span>Xem Passport</span>
+                        </Link>
+                      </>
                     ) : (
-                      <button
-                        type="button"
-                        disabled={isActionLoading}
-                        onClick={() => handleUpdateStatus(product, "ACTIVE")}
-                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#018ABE] hover:bg-[#02457A] text-white transition-colors text-center disabled:opacity-50"
-                      >
-                        {isActionLoading ? "..." : "Mở bán lại"}
-                      </button>
-                    )}
+                      <>
+                        {product.status === "ACTIVE" ? (
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() => handleUpdateStatus(product, "SOLD")}
+                            className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#02457A] hover:bg-[#001B48] text-white transition-colors text-center disabled:opacity-50 cursor-pointer"
+                          >
+                            {isActionLoading ? "..." : "Đã bán"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() =>
+                              handleUpdateStatus(product, "ACTIVE")
+                            }
+                            className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#018ABE] hover:bg-[#02457A] text-white transition-colors text-center disabled:opacity-50 cursor-pointer"
+                          >
+                            {isActionLoading ? "..." : "Mở bán lại"}
+                          </button>
+                        )}
 
-                    {/* Sửa tin */}
-                    <Link
-                      href={`/products/${product.id}/edit`}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#001B48] border border-[#97CADB] hover:bg-[#D6E8EE]/40 transition-colors text-center"
-                    >
-                      <IconEdit className="w-3.5 h-3.5" /> Chỉnh sửa
-                    </Link>
+                        {product.status === "ACTIVE" && (
+                          <Link
+                            href={`/products/${product.id}/edit`}
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#001B48] border border-[#97CADB] hover:bg-[#D6E8EE]/40 transition-colors text-center"
+                          >
+                            <IconEdit className="w-3.5 h-3.5" /> Chỉnh sửa
+                          </Link>
+                        )}
 
-                    {/* Ẩn tin / Bỏ ẩn */}
-                    {product.status !== "HIDDEN" ? (
-                      <button
-                        type="button"
-                        disabled={isActionLoading}
-                        onClick={() => handleUpdateStatus(product, "HIDDEN")}
-                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-[11px] font-medium text-[#02457A] hover:text-red-600 transition-colors text-center"
-                      >
-                        Tạm ẩn
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isActionLoading}
-                        onClick={() => handleUpdateStatus(product, "ACTIVE")}
-                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-[11px] font-medium text-[#018ABE] hover:underline transition-colors text-center"
-                      >
-                        Bỏ ẩn
-                      </button>
+                        {product.status !== "HIDDEN" ? (
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() =>
+                              handleUpdateStatus(product, "HIDDEN")
+                            }
+                            className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-[11px] font-medium text-[#02457A] hover:text-red-600 transition-colors text-center cursor-pointer"
+                          >
+                            Tạm ẩn
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() =>
+                              handleUpdateStatus(product, "ACTIVE")
+                            }
+                            className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-[11px] font-medium text-[#018ABE] hover:underline transition-colors text-center cursor-pointer"
+                          >
+                            Bỏ ẩn
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -349,6 +481,8 @@ export default function MyListingsPage() {
             <h3 className="text-lg font-bold text-[#001B48]">
               {activeTab === "ACTIVE"
                 ? "Bạn chưa có món đồ nào đang đăng bán"
+                : activeTab === "RESERVED"
+                ? "Hiện chưa có món đồ nào đang được giữ chỗ"
                 : activeTab === "SOLD"
                 ? "Chưa có món đồ nào được đánh dấu đã bán"
                 : activeTab === "HIDDEN"
@@ -356,7 +490,8 @@ export default function MyListingsPage() {
                 : "Bạn chưa có bài đăng nào"}
             </h3>
             <p className="text-xs text-[#02457A] max-w-sm mt-1 mb-6">
-              Bạn có sách cũ, quạt điện, bàn gấp hay đồ KTX không dùng nữa? Hãy pass lại cho bạn bè cùng trường nhé!
+              Bạn có sách cũ, quạt điện, bàn gấp hay đồ KTX không dùng nữa? Hãy
+              pass lại cho bạn bè cùng trường nhé!
             </p>
             <Link
               href="/products/new"
@@ -373,4 +508,3 @@ export default function MyListingsPage() {
     </div>
   );
 }
-

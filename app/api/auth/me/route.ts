@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import db from "@/lib/db";
+import db, { getUserWalletSummary } from "@/lib/db";
 
 export async function GET() {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ user: null });
   }
-  return NextResponse.json({ user });
+  const walletSummary = getUserWalletSummary(user.id);
+  return NextResponse.json({
+    user: {
+      ...user,
+      point_balance: walletSummary?.availableBalance ?? user.point_balance ?? 0,
+      locked_balance: walletSummary?.lockedBalance ?? 0,
+      total_balance: walletSummary?.totalBalance ?? user.point_balance ?? 0,
+      active_escrow_count: walletSummary?.activeEscrowCount ?? 0,
+      incoming_escrow_count: walletSummary?.incomingEscrowCount ?? 0,
+    },
+  });
 }
 
 export async function PUT(request: Request) {

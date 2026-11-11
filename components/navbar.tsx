@@ -11,6 +11,7 @@ import {
   IconSparkles,
   IconSchool,
   IconWallet,
+  IconLock,
 } from "./icons";
 import UniCycleLogo from "./logo";
 
@@ -21,6 +22,9 @@ interface CurrentUser {
   avatarUrl: string | null;
   university: string | null;
   pointBalance: number;
+  lockedBalance: number;
+  activeEscrowCount: number;
+  incomingEscrowCount: number;
 }
 
 export function Navbar() {
@@ -44,7 +48,12 @@ export function Navbar() {
               avatarUrl: data.user.avatar_url,
               university: data.user.university,
               pointBalance: Number(data.user.point_balance || 0),
+              lockedBalance: Number(data.user.locked_balance || 0),
+              activeEscrowCount: Number(data.user.active_escrow_count || 0),
+              incomingEscrowCount: Number(data.user.incoming_escrow_count || 0),
             });
+          } else {
+            setCurrentUser(null);
           }
         })
         .catch(() => {});
@@ -58,9 +67,11 @@ export function Navbar() {
   useEffect(() => {
     if (!showDropdown) return;
     const onDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowDropdown(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setShowDropdown(false);
     };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setShowDropdown(false);
+    const onKey = (e: KeyboardEvent) =>
+      e.key === "Escape" && setShowDropdown(false);
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
@@ -70,7 +81,10 @@ export function Navbar() {
   }, [showDropdown]);
 
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+    href === "/"
+      ? pathname === "/"
+      : pathname === href || pathname.startsWith(href + "/");
+
   const navLink = (href: string) =>
     `text-xs font-semibold px-3 py-2 rounded-lg transition-colors ${
       isActive(href)
@@ -87,13 +101,33 @@ export function Navbar() {
     }
   };
 
+  const isProtectedPath =
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/wallet") ||
+    pathname === "/products/new" ||
+    pathname.endsWith("/edit");
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setCurrentUser(null);
     setShowDropdown(false);
-    router.push("/login");
-    router.refresh();
+    window.dispatchEvent(new Event("unicycle:wallet-updated"));
+
+    if (isProtectedPath) {
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+    } else {
+      router.refresh();
+    }
   };
+
+  const authRedirectQuery =
+    pathname && pathname !== "/" && pathname !== "/login" && pathname !== "/register"
+      ? `?redirect=${encodeURIComponent(pathname)}`
+      : "";
+
+  const totalPendingEscrows =
+    (currentUser?.activeEscrowCount || 0) +
+    (currentUser?.incomingEscrowCount || 0);
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#D6E8EE] shadow-2xs">
@@ -129,19 +163,19 @@ export function Navbar() {
           </form>
 
           {/* Navigation links & Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <Link
               href="/products"
               aria-current={isActive("/products") ? "page" : undefined}
               className={`hidden lg:inline-flex items-center ${navLink("/products")}`}
             >
-              Tất cả đồ cũ
+              Khám phá đồ cũ
             </Link>
 
             {/* Post listing button */}
             <Link
               href="/products/new"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-gradient-to-r from-[#02457A] to-[#018ABE] hover:from-[#001B48] hover:to-[#02457A] shadow-sm shadow-[#018ABE]/25 hover:shadow-md transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold text-white bg-gradient-to-r from-[#02457A] to-[#018ABE] hover:from-[#001B48] hover:to-[#02457A] shadow-sm shadow-[#018ABE]/25 hover:shadow-md transition-all active:scale-95 cursor-pointer"
             >
               <IconPlus className="w-3.5 h-3.5" />
               <span>Đăng tin</span>
@@ -152,12 +186,22 @@ export function Navbar() {
                 href="/wallet"
                 aria-current={isActive("/wallet") ? "page" : undefined}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold bg-[#D6E8EE]/70 hover:bg-[#D6E8EE] text-[#001B48] border border-[#97CADB] transition-colors"
-                title="Ví UniCycle (1 VNĐ = 1 UNIP)"
+                title={
+                  currentUser.lockedBalance > 0
+                    ? `Khả dụng: ${currentUser.pointBalance.toLocaleString("vi-VN")} UNIP • Đang giữ chỗ: ${currentUser.lockedBalance.toLocaleString("vi-VN")} UNIP`
+                    : "Ví UniCycle (1 VNĐ = 1 UNIP)"
+                }
               >
                 <IconWallet className="w-3.5 h-3.5 text-[#018ABE]" />
                 <span role="status" aria-atomic="true">
                   {currentUser.pointBalance.toLocaleString("vi-VN")} UNIP
                 </span>
+                {totalPendingEscrows > 0 && (
+                  <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#02457A] text-white">
+                    <IconLock className="w-2.5 h-2.5" />
+                    <span>{totalPendingEscrows}</span>
+                  </span>
+                )}
               </Link>
             )}
 
@@ -171,7 +215,10 @@ export function Navbar() {
                   aria-expanded={showDropdown}
                 >
                   <img
-                    src={currentUser.avatarUrl || "https://api.dicebear.com/7.x/initials/svg?seed=SV"}
+                    src={
+                      currentUser.avatarUrl ||
+                      "https://api.dicebear.com/7.x/initials/svg?seed=SV"
+                    }
                     alt={currentUser.fullName}
                     className="w-8 h-8 rounded-full object-cover bg-[#D6E8EE] border border-[#97CADB]"
                   />
@@ -181,30 +228,63 @@ export function Navbar() {
                 </button>
 
                 {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-[#D6E8EE] py-2 z-50">
-                    <div className="px-4 py-2 border-b border-[#D6E8EE]/60">
-                      <p className="text-xs font-bold text-[#001B48] truncate">{currentUser.fullName}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-[#D6E8EE] py-2 z-50">
+                    <div className="px-4 py-2.5 border-b border-[#D6E8EE]/60">
+                      <p className="text-xs font-bold text-[#001B48] truncate">
+                        {currentUser.fullName}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        {currentUser.email}
+                      </p>
                       {currentUser.university && (
                         <p className="text-[10px] text-[#018ABE] font-semibold mt-1 truncate">
-                          <IconSchool className="w-3 h-3 inline -mt-0.5 mr-1" />{currentUser.university}
+                          <IconSchool className="w-3 h-3 inline -mt-0.5 mr-1" />
+                          {currentUser.university}
                         </p>
                       )}
                     </div>
 
-                    <Link
-                      href="/wallet"
-                      onClick={() => setShowDropdown(false)}
-                      className="flex items-center justify-between px-4 py-2 text-xs font-bold text-[#001B48] hover:bg-[#D6E8EE]/50 transition-colors"
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <IconWallet className="w-4 h-4 text-[#018ABE]" />
-                        <span>Ví UniCycle</span>
-                      </span>
-                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-[#D6E8EE] text-[#02457A]">
-                        {currentUser.pointBalance.toLocaleString("vi-VN")} UNIP
-                      </span>
-                    </Link>
+                    <div className="px-3 py-2 border-b border-[#D6E8EE]/60">
+                      <Link
+                        href="/wallet"
+                        onClick={() => setShowDropdown(false)}
+                        className="block p-2.5 rounded-xl bg-[#D6E8EE]/35 hover:bg-[#D6E8EE]/60 transition-colors space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-xs font-extrabold text-[#001B48]">
+                          <span className="inline-flex items-center gap-1.5">
+                            <IconWallet className="w-3.5 h-3.5 text-[#018ABE]" />
+                            <span>Khả dụng</span>
+                          </span>
+                          <span>
+                            {currentUser.pointBalance.toLocaleString("vi-VN")} UNIP
+                          </span>
+                        </div>
+                        {currentUser.lockedBalance > 0 && (
+                          <div className="flex items-center justify-between text-[11px] text-[#02457A]">
+                            <span>Đang giữ trong Escrow:</span>
+                            <span className="font-bold">
+                              {currentUser.lockedBalance.toLocaleString("vi-VN")} UNIP
+                            </span>
+                          </div>
+                        )}
+                      </Link>
+                    </div>
+
+                    {totalPendingEscrows > 0 && (
+                      <Link
+                        href="/wallet?tab=ESCROWS"
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center justify-between px-4 py-2 text-xs font-bold text-[#02457A] hover:bg-[#D6E8EE]/50 transition-colors"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <IconLock className="w-4 h-4 text-[#018ABE]" />
+                          <span>Đơn đang giữ chỗ</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#018ABE] text-white">
+                          {totalPendingEscrows}
+                        </span>
+                      </Link>
+                    )}
 
                     <Link
                       href="/profile/my-listings"
@@ -239,13 +319,13 @@ export function Navbar() {
             ) : (
               <div className="flex items-center gap-2">
                 <Link
-                  href="/login"
+                  href={`/login${authRedirectQuery}`}
                   className="text-xs font-bold text-[#02457A] hover:text-[#018ABE] px-3 py-2 rounded-lg hover:bg-[#D6E8EE]/40 transition-colors cursor-pointer"
                 >
                   Đăng nhập
                 </Link>
                 <Link
-                  href="/register"
+                  href={`/register${authRedirectQuery}`}
                   className="hidden sm:inline-flex text-xs font-bold text-[#001B48] bg-[#D6E8EE] hover:bg-[#97CADB]/50 px-3 py-2 rounded-lg transition-colors border border-[#97CADB]/60 cursor-pointer"
                 >
                   Đăng ký
@@ -276,12 +356,23 @@ export function Navbar() {
         </div>
 
         {/* Mobile quick navigation */}
-        <nav aria-label="Điều hướng chính" className="flex items-center gap-1 pb-2 lg:hidden overflow-x-auto -mx-1 px-1">
-          <Link href="/" aria-current={isActive("/") ? "page" : undefined} className={`shrink-0 ${navLink("/")}`}>
+        <nav
+          aria-label="Điều hướng chính"
+          className="flex items-center gap-1 pb-2 lg:hidden overflow-x-auto -mx-1 px-1"
+        >
+          <Link
+            href="/"
+            aria-current={isActive("/") ? "page" : undefined}
+            className={`shrink-0 ${navLink("/")}`}
+          >
             Trang chủ
           </Link>
-          <Link href="/products" aria-current={isActive("/products") ? "page" : undefined} className={`shrink-0 ${navLink("/products")}`}>
-            Tất cả đồ cũ
+          <Link
+            href="/products"
+            aria-current={isActive("/products") ? "page" : undefined}
+            className={`shrink-0 ${navLink("/products")}`}
+          >
+            Khám phá đồ cũ
           </Link>
           {currentUser && (
             <>
@@ -290,7 +381,7 @@ export function Navbar() {
                 aria-current={isActive("/wallet") ? "page" : undefined}
                 className={`shrink-0 ${navLink("/wallet")}`}
               >
-                Ví UniCycle ({currentUser.pointBalance.toLocaleString("vi-VN")} UNIP)
+                Ví ({currentUser.pointBalance.toLocaleString("vi-VN")} UNIP)
               </Link>
               <Link
                 href="/profile/my-listings"
