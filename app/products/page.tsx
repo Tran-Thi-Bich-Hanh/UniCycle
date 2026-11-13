@@ -8,7 +8,7 @@ import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
 import { Product, Category } from "@/lib/db";
 import { formatCurrencyVND, CONDITION_LABELS } from "@/lib/utils";
-import { CategoryGlyph, IconMapPin, IconSearchOff, IconSparkles, IconX } from "@/components/icons";
+import { CategoryGlyph, IconSearchOff, IconSparkles, IconX } from "@/components/icons";
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Mới đăng nhất" },
@@ -30,13 +30,6 @@ const PRICE_PRESETS = [
   { label: "Trên 500k", min: "500000", max: "" },
   { label: "Dưới 50k", min: "", max: "50000" },
   { label: "50k - 200k", min: "50000", max: "200000" },
-];
-
-const CAMPUS_QUICK_CHIPS = [
-  { label: "KTX Khu A", keyword: "Khu A" },
-  { label: "KTX Khu B", keyword: "Khu B" },
-  { label: "Bách Khoa", keyword: "Bách Khoa" },
-  { label: "KHTN", keyword: "Khoa học Tự nhiên" },
 ];
 
 /** Trả về danh sách trang gọn: luôn có trang đầu/cuối và 1 trang kề trang hiện tại. */
@@ -255,14 +248,9 @@ function ProductsExplorer() {
                 ) : activeCategoryObj ? (
                   activeCategoryObj.name
                 ) : (
-                  "Tất cả đồ dùng sinh viên"
+                  "Tất cả đồ dùng"
                 )}
               </h1>
-              <p className="text-sm text-[#02457A] mt-1 font-medium">
-                Tìm thấy{" "}
-                <span className="font-extrabold text-[#001B48]">{loading ? "..." : total}</span> món
-                đồ có Hồ sơ Chứng thực UniCycle Passport & bảo vệ giữ chỗ Escrow
-              </p>
             </div>
 
             {/* Mobile Filter Button */}
@@ -290,82 +278,6 @@ function ProductsExplorer() {
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
-
-          {/* Thanh Lọc Nhanh (Quick Filter Bar): Trạng thái, Khoảng giá sinh viên & Khu vực KTX */}
-          <div className="mt-4 p-3 rounded-2xl bg-[#D6E8EE]/25 border border-[#D6E8EE] flex flex-wrap items-center gap-2">
-            {/* Trạng thái */}
-            <div className="inline-flex items-center rounded-xl bg-white p-1 border border-[#D6E8EE]">
-              {STATUS_OPTIONS.map((st) => {
-                const active = currentStatus === st.value;
-                return (
-                  <button
-                    key={st.value}
-                    type="button"
-                    onClick={() => updateFilters({ status: st.value })}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-colors cursor-pointer ${
-                      active
-                        ? "bg-[#001B48] text-white"
-                        : "text-[#02457A] hover:bg-[#D6E8EE]/50"
-                    }`}
-                  >
-                    {st.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <span className="hidden sm:inline text-[#97CADB]">|</span>
-
-            {/* Khoảng giá nhanh cho sinh viên */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {PRICE_PRESETS.slice(1, 4).map((preset) => {
-                const active =
-                  currentMinPrice === preset.min && currentMaxPrice === preset.max;
-                return (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() => handlePricePreset(preset.min, preset.max)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      active
-                        ? "bg-[#018ABE] text-white border-[#018ABE]"
-                        : "bg-white text-[#001B48] border-[#D6E8EE] hover:border-[#018ABE]"
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <span className="hidden md:inline text-[#97CADB]">|</span>
-
-            {/* Khu vực KTX / Trường nhanh */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {CAMPUS_QUICK_CHIPS.map((chip) => {
-                const active = currentSearch.toLowerCase() === chip.keyword.toLowerCase();
-                return (
-                  <button
-                    key={chip.label}
-                    type="button"
-                    onClick={() => {
-                      const nextVal = active ? "" : chip.keyword;
-                      setKeywordInput(nextVal);
-                      updateFilters({ search: nextVal || null });
-                    }}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      active
-                        ? "bg-[#02457A] text-white border-[#02457A]"
-                        : "bg-white text-[#02457A] border-[#D6E8EE] hover:border-[#018ABE]"
-                    }`}
-                  >
-                    <IconMapPin className="w-3 h-3 text-[#018ABE]" />
-                    <span>{chip.label}</span>
-                  </button>
-                );
-              })}
             </div>
           </div>
 
@@ -438,8 +350,8 @@ function ProductsExplorer() {
                   {currentMinPrice && currentMaxPrice
                     ? `${formatCurrencyVND(Number(currentMinPrice))} - ${formatCurrencyVND(Number(currentMaxPrice))}`
                     : currentMinPrice
-                    ? `Từ ${formatCurrencyVND(Number(currentMinPrice))}`
-                    : `Đến ${formatCurrencyVND(Number(currentMaxPrice))}`}
+                      ? `Từ ${formatCurrencyVND(Number(currentMinPrice))}`
+                      : `Đến ${formatCurrencyVND(Number(currentMaxPrice))}`}
                   <button
                     onClick={() => {
                       setMinPriceInput("");
@@ -514,6 +426,31 @@ function ProductsExplorer() {
               </form>
             </div>
 
+            {/* Trạng thái món đồ */}
+            <div>
+              <label className="block text-xs font-bold text-[#001B48] uppercase tracking-wider mb-2">
+                Trạng thái
+              </label>
+              <div className="space-y-1">
+                {STATUS_OPTIONS.map((st) => {
+                  const active = currentStatus === st.value;
+                  return (
+                    <button
+                      key={st.value}
+                      type="button"
+                      onClick={() => updateFilters({ status: st.value })}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${active
+                        ? "bg-[#02457A] text-white shadow-2xs"
+                        : "text-[#001B48] hover:bg-[#D6E8EE]/40"
+                        }`}
+                    >
+                      {st.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Danh mục sản phẩm */}
             <div>
               <label className="block text-xs font-bold text-[#001B48] uppercase tracking-wider mb-2.5">
@@ -523,11 +460,10 @@ function ProductsExplorer() {
                 <button
                   type="button"
                   onClick={() => updateFilters({ category: null })}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    !currentCategory
-                      ? "bg-[#02457A] text-white shadow-2xs"
-                      : "text-[#001B48] hover:bg-[#D6E8EE]/40"
-                  }`}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${!currentCategory
+                    ? "bg-[#02457A] text-white shadow-2xs"
+                    : "text-[#001B48] hover:bg-[#D6E8EE]/40"
+                    }`}
                 >
                   <span className="flex items-center gap-2">
                     <IconSparkles className="w-4 h-4 shrink-0" />
@@ -545,11 +481,10 @@ function ProductsExplorer() {
                       key={cat.id}
                       type="button"
                       onClick={() => handleCategorySelect(cat.slug)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                        isSelected
-                          ? "bg-[#02457A] text-white shadow-2xs"
-                          : "text-[#001B48] hover:bg-[#D6E8EE]/40"
-                      }`}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${isSelected
+                        ? "bg-[#02457A] text-white shadow-2xs"
+                        : "text-[#001B48] hover:bg-[#D6E8EE]/40"
+                        }`}
                     >
                       <span className="flex items-center gap-2 truncate">
                         <CategoryGlyph name={cat.icon} className="w-4 h-4 shrink-0" />
@@ -557,9 +492,8 @@ function ProductsExplorer() {
                       </span>
                       {typeof cat.product_count === "number" && (
                         <span
-                          className={`text-[11px] px-1.5 py-0.5 rounded-full shrink-0 ${
-                            isSelected ? "bg-white/20 text-white" : "bg-[#D6E8EE] text-[#001B48]"
-                          }`}
+                          className={`text-[11px] px-1.5 py-0.5 rounded-full shrink-0 ${isSelected ? "bg-white/20 text-white" : "bg-[#D6E8EE] text-[#001B48]"
+                            }`}
                         >
                           {cat.product_count}
                         </span>
@@ -610,11 +544,10 @@ function ProductsExplorer() {
                       key={preset.label}
                       type="button"
                       onClick={() => handlePricePreset(preset.min, preset.max)}
-                      className={`px-2 py-1.5 text-[11px] font-semibold rounded-lg border text-center transition-all ${
-                        isPresetActive
-                          ? "bg-[#018ABE] text-white border-[#018ABE]"
-                          : "bg-white text-[#02457A] border-[#D6E8EE] hover:border-[#97CADB]"
-                      }`}
+                      className={`px-2 py-1.5 text-[11px] font-semibold rounded-lg border text-center transition-all ${isPresetActive
+                        ? "bg-[#018ABE] text-white border-[#018ABE]"
+                        : "bg-white text-[#02457A] border-[#D6E8EE] hover:border-[#97CADB]"
+                        }`}
                     >
                       {preset.label}
                     </button>
@@ -704,9 +637,8 @@ function ProductsExplorer() {
                 {/* Lưới sản phẩm */}
                 <div
                   aria-busy={loading}
-                  className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6 transition-opacity ${
-                    loading ? "opacity-50 pointer-events-none" : ""
-                  }`}
+                  className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6 transition-opacity ${loading ? "opacity-50 pointer-events-none" : ""
+                    }`}
                 >
                   {products.map((product) => (
                     <ProductCard key={product.id} product={product} />
@@ -742,11 +674,10 @@ function ProductsExplorer() {
                             aria-current={isActive ? "page" : undefined}
                             type="button"
                             onClick={() => updateFilters({ page: p.toString() })}
-                            className={`w-9 h-9 text-xs font-extrabold rounded-xl transition-all ${
-                              isActive
-                                ? "bg-[#018ABE] text-white shadow-2xs"
-                                : "bg-white text-[#001B48] border border-[#D6E8EE] hover:bg-[#D6E8EE]/30"
-                            }`}
+                            className={`w-9 h-9 text-xs font-extrabold rounded-xl transition-all ${isActive
+                              ? "bg-[#018ABE] text-white shadow-2xs"
+                              : "bg-white text-[#001B48] border border-[#D6E8EE] hover:bg-[#D6E8EE]/30"
+                              }`}
                           >
                             {p}
                           </button>
@@ -832,11 +763,10 @@ function ProductsExplorer() {
                         updateFilters({ status: st.value });
                         setMobileFilterOpen(false);
                       }}
-                      className={`px-2 py-2 rounded-xl text-[11px] font-bold border ${
-                        currentStatus === st.value
-                          ? "bg-[#001B48] text-white border-[#001B48]"
-                          : "bg-white text-[#02457A] border-[#D6E8EE]"
-                      }`}
+                      className={`px-2 py-2 rounded-xl text-[11px] font-bold border ${currentStatus === st.value
+                        ? "bg-[#001B48] text-white border-[#001B48]"
+                        : "bg-white text-[#02457A] border-[#D6E8EE]"
+                        }`}
                     >
                       {st.label}
                     </button>
@@ -879,9 +809,8 @@ function ProductsExplorer() {
                       updateFilters({ category: null });
                       setMobileFilterOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 text-left px-3 py-2.5 rounded-xl text-xs font-semibold ${
-                      !currentCategory ? "bg-[#02457A] text-white" : "text-[#001B48] hover:bg-[#D6E8EE]/40"
-                    }`}
+                    className={`w-full flex items-center gap-2 text-left px-3 py-2.5 rounded-xl text-xs font-semibold ${!currentCategory ? "bg-[#02457A] text-white" : "text-[#001B48] hover:bg-[#D6E8EE]/40"
+                      }`}
                   >
                     Tất cả danh mục
                   </button>
@@ -893,11 +822,10 @@ function ProductsExplorer() {
                         handleCategorySelect(cat.slug);
                         setMobileFilterOpen(false);
                       }}
-                      className={`w-full flex items-center gap-2 text-left px-3 py-2.5 rounded-xl text-xs font-semibold ${
-                        currentCategory === cat.slug || currentCategory === cat.id
-                          ? "bg-[#02457A] text-white"
-                          : "text-[#001B48] hover:bg-[#D6E8EE]/40"
-                      }`}
+                      className={`w-full flex items-center gap-2 text-left px-3 py-2.5 rounded-xl text-xs font-semibold ${currentCategory === cat.slug || currentCategory === cat.id
+                        ? "bg-[#02457A] text-white"
+                        : "text-[#001B48] hover:bg-[#D6E8EE]/40"
+                        }`}
                     >
                       <CategoryGlyph name={cat.icon} className="w-4 h-4 shrink-0" />
                       <span>{cat.name} ({cat.product_count || 0})</span>

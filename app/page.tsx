@@ -3,13 +3,13 @@ import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
+import { SafeTradeTimeline } from "@/components/safe-trade-timeline";
 import {
   CategoryIcon,
   IconArrowRight,
   IconShieldCheck,
   IconSearch,
   IconSparkles,
-  IconMapPin,
 } from "@/components/icons";
 import db, { Category, Product, ProductImage } from "@/lib/db";
 
@@ -170,93 +170,45 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Thanh 3 bước Mua bán an toàn (Horizontal Scannable Strip) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-lg shadow-[#001B48]/5 border border-[#97CADB] grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-start gap-3 p-2 rounded-xl bg-[#D6E8EE]/25">
-              <div className="w-8 h-8 rounded-xl bg-[#001B48] text-white font-black text-xs flex items-center justify-center shrink-0">
-                1
-              </div>
-              <div>
-                <h2 className="text-xs sm:text-sm font-extrabold text-[#001B48]">
-                  Giữ chỗ 48h qua Escrow
-                </h2>
-                <p className="text-[11px] text-[#02457A] mt-0.5 leading-relaxed">
-                  Tiền UNIP tạm khóa vào hợp đồng thông minh (0% phí), người bán yên tâm giữ đồ cho bạn.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-2 rounded-xl bg-[#D6E8EE]/25">
-              <div className="w-8 h-8 rounded-xl bg-[#02457A] text-white font-black text-xs flex items-center justify-center shrink-0">
-                2
-              </div>
-              <div>
-                <h2 className="text-xs sm:text-sm font-extrabold text-[#001B48]">
-                  Hẹn gặp & Kiểm tra Passport
-                </h2>
-                <p className="text-[11px] text-[#02457A] mt-0.5 leading-relaxed">
-                  Gặp trực tiếp tại KTX/Trường, đối chiếu món đồ với bảng thông số cam kết trên UniCycle Passport.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-2 rounded-xl bg-[#D6E8EE]/25">
-              <div className="w-8 h-8 rounded-xl bg-[#018ABE] text-white font-black text-xs flex items-center justify-center shrink-0">
-                3
-              </div>
-              <div>
-                <h2 className="text-xs sm:text-sm font-extrabold text-[#001B48]">
-                  Xác nhận Nhận hàng / Hoàn tiền
-                </h2>
-                <p className="text-[11px] text-[#02457A] mt-0.5 leading-relaxed">
-                  Tích đủ 3 mục kiểm tra để giải ngân ngay cho người bán, hoặc yêu cầu hủy/hoàn tiền minh bạch.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Danh mục sản phẩm (Categories Section) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg sm:text-xl font-black text-[#001B48]">
-                Khám phá theo danh mục
-              </h2>
-              <p className="text-xs text-[#02457A] mt-0.5">
-                Chọn nhanh nhóm đồ dùng bạn đang tìm kiếm cho học kỳ mới
-              </p>
-            </div>
-            <Link
-              href="/products"
-              className="text-xs font-bold text-[#018ABE] hover:text-[#02457A] flex items-center gap-1 group"
-            >
-              <span>Tất cả danh mục</span>
-              <IconArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-            {categories.map((cat) => (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 pb-4">
+          <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-lg shadow-[#001B48]/5 border border-[#97CADB]">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-black text-[#001B48]">
+                  Khám phá theo danh mục
+                </h2>
+              </div>
               <Link
-                key={cat.id}
-                href={`/products?category=${cat.slug}`}
-                className="group flex items-center gap-3 p-3.5 rounded-2xl bg-white hover:bg-[#D6E8EE]/40 border border-[#D6E8EE] hover:border-[#018ABE] transition-all hover:-translate-y-0.5 cursor-pointer shadow-2xs"
+                href="/products"
+                className="text-xs font-bold text-[#018ABE] hover:text-[#02457A] flex items-center gap-1 group"
               >
-                <div className="w-11 h-11 rounded-xl bg-[#D6E8EE]/70 text-[#02457A] flex items-center justify-center shrink-0 group-hover:bg-[#018ABE] group-hover:text-white transition-all">
-                  <CategoryIcon name={cat.icon} className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <span className="block text-xs sm:text-sm font-extrabold text-[#001B48] group-hover:text-[#018ABE] truncate transition-colors">
-                    {cat.name}
-                  </span>
-                  <span className="block text-[11px] text-[#02457A] font-medium mt-0.5">
-                    {cat.product_count || 0} món đang bán
-                  </span>
-                </div>
+                <span>Tất cả danh mục</span>
+                <IconArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
-            ))}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+              {categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/products?category=${cat.slug}`}
+                  className="group flex items-center gap-3 p-3.5 rounded-2xl bg-white hover:bg-[#D6E8EE]/40 border border-[#D6E8EE] hover:border-[#018ABE] transition-all hover:-translate-y-0.5 cursor-pointer shadow-2xs"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-[#D6E8EE]/70 text-[#02457A] flex items-center justify-center shrink-0 group-hover:bg-[#018ABE] group-hover:text-white transition-all">
+                    <CategoryIcon name={cat.icon} className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-xs sm:text-sm font-extrabold text-[#001B48] group-hover:text-[#018ABE] truncate transition-colors">
+                      {cat.name}
+                    </span>
+                    <span className="block text-[11px] text-[#02457A] font-medium mt-0.5">
+                      {cat.product_count || 0} món đang bán
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -267,12 +219,9 @@ export default async function HomePage() {
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#018ABE] animate-pulse" />
                 <h2 className="text-xl sm:text-2xl font-black text-[#001B48]">
-                  Đồ mới đăng quanh KTX & Trường
+                  Top sản phẩm
                 </h2>
               </div>
-              <p className="text-xs sm:text-sm text-[#02457A] mt-0.5">
-                Mỗi sản phẩm đều gắn kèm Hồ sơ Chứng thực UniCycle Passport và địa điểm hẹn gặp rõ ràng
-              </p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -311,16 +260,19 @@ export default async function HomePage() {
           )}
         </section>
 
+        {/* Timeline quy trình giao dịch kéo tới đâu hiển thị tới đó */}
+        <SafeTradeTimeline />
+
         {/* Banner kêu gọi đăng bán */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 pt-4">
           <div className="rounded-3xl bg-gradient-to-r from-[#001B48] via-[#02457A] to-[#018ABE] text-white p-6 sm:p-10 shadow-xl shadow-[#001B48]/10 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="space-y-2 max-w-xl">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-bold text-[#D6E8EE] border border-white/20">
                 <IconShieldCheck className="w-3.5 h-3.5 text-[#97CADB]" />
-                Chuyển phòng trọ • Dọn KTX • Ra trường
+                Bạn đang chuyển phòng trọ, dọn KTX hay ra trường
               </span>
               <h2 className="text-xl sm:text-2xl font-black leading-tight">
-                Có giáo trình hoặc đồ dùng KTX không còn sử dụng?
+                Bạn có giáo trình hoặc đồ dùng KTX không còn sử dụng?
               </h2>
               <p className="text-[#D6E8EE] text-xs sm:text-sm leading-relaxed">
                 Đăng tin trong 3 bước gọn gàng để khởi tạo Hồ sơ UniCycle Passport và nhận thanh toán 100% giá trị qua ví Escrow.

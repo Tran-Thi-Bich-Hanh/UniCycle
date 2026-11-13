@@ -24,16 +24,16 @@ export function ProductCard({ product }: { product: Product }) {
         />
       </div>
 
-      {/* Tên và giá sản phẩm */}
-      <div className="p-4 flex-1 flex flex-col justify-between gap-2.5">
-        <h3 className="text-xs sm:text-sm font-bold text-[#001B48] line-clamp-2 min-h-[2.5rem] leading-snug group-hover:text-[#018ABE] transition-colors">
-          {product.title}
-        </h3>
+          {/* Tên và giá sản phẩm */}
+          <div className="p-4 flex-1 flex flex-col justify-between gap-2.5">
+            <h3 className="text-xs sm:text-sm font-bold text-[#001B48] line-clamp-2 min-h-[2.5rem] leading-snug group-hover:text-[#018ABE] transition-colors">
+              {product.title}
+            </h3>
 
-        <span className="text-sm sm:text-base font-black text-[#02457A]">
-          {formatCurrencyVND(product.price)}
-        </span>
-      </div>
+          <span className="text-sm sm:text-base font-black text-[#02457A]">
+            {formatCurrencyVND(product.price)}
+          </span>
+        </div>
     </Link>
   );
 }
