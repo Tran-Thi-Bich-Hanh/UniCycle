@@ -101,8 +101,10 @@ export function Navbar() {
     router.refresh();
   };
 
+  const isAuthPage = pathname === "/login" || pathname === "/register";
+
   const authRedirectQuery =
-    pathname && pathname !== "/" && pathname !== "/login" && pathname !== "/register"
+    pathname && pathname !== "/" && !isAuthPage
       ? `?redirect=${encodeURIComponent(pathname)}`
       : "";
 
@@ -187,7 +189,9 @@ export function Navbar() {
                 <button
                   onClick={() => setShowDropdown(!showDropdown)}
                   aria-haspopup="menu"
-                  className="flex items-center gap-2 p-1.5 rounded-full hover:bg-[#D6E8EE]/40 transition-colors border border-[#D6E8EE] cursor-pointer"
+                  title={currentUser.fullName}
+                  aria-label={`Tài khoản ${currentUser.fullName}`}
+                  className="p-0.5 rounded-full hover:ring-2 hover:ring-[#018ABE] transition-all cursor-pointer"
                   aria-expanded={showDropdown}
                 >
                   <img
@@ -198,9 +202,6 @@ export function Navbar() {
                     alt={currentUser.fullName}
                     className="w-8 h-8 rounded-full object-cover bg-[#D6E8EE] border border-[#97CADB]"
                   />
-                  <span className="hidden sm:inline-block text-xs font-bold text-[#001B48] max-w-[100px] truncate pr-1">
-                    {currentUser.fullName}
-                  </span>
                 </button>
 
                 {showDropdown && (
@@ -292,7 +293,7 @@ export function Navbar() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : !isAuthPage ? (
               <div className="flex items-center gap-2">
                 <Link
                   href={`/login${authRedirectQuery}`}
@@ -307,7 +308,7 @@ export function Navbar() {
                   Đăng ký
                 </Link>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
