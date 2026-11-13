@@ -56,6 +56,7 @@ export default function ProfilePage() {
     await fetch("/api/auth/logout", { method: "POST" });
     window.dispatchEvent(new Event("unicycle:wallet-updated"));
     router.push("/login");
+    router.refresh();
   };
 
   if (loading) {

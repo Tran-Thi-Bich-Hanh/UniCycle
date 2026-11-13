@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  IconSearch,
   IconPlus,
   IconUser,
   IconLogOut,
@@ -93,32 +92,13 @@ export function Navbar() {
         : "text-[#02457A] hover:text-[#018ABE] hover:bg-[#D6E8EE]/40"
     }`;
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      router.push("/products");
-    }
-  };
-
-  const isProtectedPath =
-    pathname.startsWith("/profile") ||
-    pathname.startsWith("/wallet") ||
-    pathname === "/products/new" ||
-    pathname.endsWith("/edit");
-
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setCurrentUser(null);
     setShowDropdown(false);
     window.dispatchEvent(new Event("unicycle:wallet-updated"));
-
-    if (isProtectedPath) {
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
-    } else {
-      router.refresh();
-    }
+    router.push("/login");
+    router.refresh();
   };
 
   const authRedirectQuery =
@@ -157,27 +137,6 @@ export function Navbar() {
               </span>
             </Link>
           </div>
-
-          {/* Search bar */}
-          <form
-            onSubmit={handleSearch}
-            className="flex-1 max-w-lg hidden md:flex items-center relative"
-          >
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm giáo trình, bàn học, quạt điện, nệm KTX..."
-              className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-[#D6E8EE] rounded-full focus:bg-white focus:border-[#018ABE] focus:outline-hidden focus:ring-2 focus:ring-[#018ABE]/20 transition-all text-[#001B48] placeholder-slate-400"
-            />
-            <button
-              type="submit"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#018ABE] transition-colors cursor-pointer"
-              aria-label="Tìm kiếm"
-            >
-              <IconSearch className="w-4 h-4" />
-            </button>
-          </form>
 
           {/* Navigation links & Actions */}
           <div className="flex items-center gap-2.5 sm:gap-3">
@@ -350,26 +309,6 @@ export function Navbar() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Mobile search bar */}
-        <div className="pb-3 md:hidden">
-          <form onSubmit={handleSearch} className="flex items-center relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm sách, bàn ghế, đồ sinh hoạt..."
-              className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 border border-[#D6E8EE] rounded-full focus:bg-white focus:border-[#018ABE] focus:outline-hidden text-[#001B48]"
-            />
-            <button
-              type="submit"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              aria-label="Tìm kiếm"
-            >
-              <IconSearch className="w-3.5 h-3.5" />
-            </button>
-          </form>
         </div>
 
         {/* Mobile quick navigation */}
