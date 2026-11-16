@@ -7,9 +7,9 @@
 | Tài khoản | Đăng nhập Google (OAuth), đăng ký/đăng nhập email, hồ sơ cá nhân, chọn trường/KTX, xác minh sinh viên (thẻ SV/email trường) để nhận huy hiệu |
 | Sản phẩm | Đăng bán nhanh (< 60s), sửa, ẩn/xóa, đánh dấu đã bán, đăng lại, xem chi tiết, quản lý sản phẩm của tôi |
 | Tìm kiếm | Danh sách, tìm kiếm (hỗ trợ tiếng Việt có/không dấu), lọc theo danh mục/giá/tình trạng/khu vực/có passport/cho tặng 0đ, sắp xếp |
-| Liên hệ & Giao dịch | **Nút liên hệ Zalo (Deep link `zalo.me/<sdt>`), Form gửi yêu cầu mua/hẹn xem hàng tại trường/KTX, chấp nhận/từ chối, giữ chỗ (RESERVED), xác nhận hoàn tất (chu kỳ 48h), hủy** |
+| Liên hệ & Giao dịch | **Nút liên hệ Zalo (Deep link `zalo.me/<sdt>`), Form gửi yêu cầu mua/hẹn xem hàng tại trường/KTX, chấp nhận/từ chối, giữ chỗ (RESERVED), timeout đơn hẹn sau `meet_time + 24h`, xác nhận hoàn tất (chu kỳ 48h), khiếu nại "Tôi chưa nhận hàng", hủy** |
 | Đánh giá & uy tín | Đánh giá hai chiều (blind review 48h), lịch sử giao dịch, điểm uy tín sinh viên |
-| **Lịch sử đồ vật (Digital Passport)** | **Bật passport khi đăng bán, mã QR số hiển thị màn hình, timeline lịch sử (Chủ #1 → #2 → #3) lưu Database (Off-chain), trang xác minh `/passport/[id]`, "Đồ của tôi", bán lại kế thừa lịch sử, chuyển quyền trực tiếp** |
+| **Lịch sử đồ vật (Digital Passport)** | **Bật passport khi đăng bán, mã QR số hiển thị màn hình, timeline lịch sử (Chủ #1 → #2 → #3) lưu Database (Off-chain), trang xác minh `/passport/[id]`, "Đồ của tôi", bán lại kế thừa lịch sử (Chuyển quyền trực tiếp ở P1)** |
 | An toàn & kiểm duyệt | Báo cáo tin/người dùng, ẩn tin, khóa tài khoản, đánh dấu (flag) passport nghi vấn |
 | Thông báo | Email/thông báo trong ứng dụng khi có yêu cầu hẹn, thay đổi trạng thái đơn |
 
@@ -38,8 +38,9 @@
 
 - **Tích hợp Blockchain (Avalanche C-Chain)**:
   - Triển khai Smart contract Passport trên Fuji testnet → Mainnet.
-  - Relayer tự động ghi chuỗi chuyển giao lên chain khi đơn hoàn tất.
+  - Relayer tự động serialize giao dịch và ghi chuỗi chuyển giao lên chain khi đơn hoàn tất.
   - Nút "Xác minh trên blockchain" so khớp dữ liệu DB với on-chain RPC.
+- Tính năng **Chuyển quyền trực tiếp (Direct Transfer)** qua mã QR số 24h.
 - Chat trực tiếp realtime trong website (sử dụng Supabase Realtime).
 - Lưu yêu thích (wishlist), Push notification trên mobile web.
 - Neo (anchor) hash đánh giá/uy tín lên Avalanche theo lô (Merkle root).
@@ -62,7 +63,7 @@
 | Mobile-first | Thiết kế ưu tiên điện thoại; đăng bán dưới 60s, xem passport và hiển thị/quét QR màn hình hoàn chỉnh trên mobile |
 | Bảo mật | Băm mật khẩu, HTTPS, rate limit đăng nhập/gửi yêu cầu, chống CSRF/XSS, kiểm tra quyền ở mọi endpoint (BR03, BR04, BR25) |
 | **Bảo mật blockchain** | **Khóa relayer trong secret manager/KMS, không đưa vào mã nguồn; quyền `RECORDER_ROLE` chỉ cấp cho relayer; tách khóa admin và khóa relayer; giới hạn số tx/phút; kiểm thử hợp đồng (unit test + review) trước khi lên mainnet** |
-| Quyền riêng tư | Tối thiểu hóa dữ liệu hiển thị; không công khai email/SĐT/MSSV; cho phép xóa tài khoản; **không ghi dữ liệu cá nhân lên blockchain (BR27); pseudonym theo từng món đồ; bí mật HMAC lưu an toàn** |
+| Quyền riêng tư | Tối thiểu hóa dữ liệu hiển thị; không công khai email/SĐT/MSSV; tự động xóa vĩnh viễn ảnh thẻ sinh viên sau khi duyệt; cho phép xóa tài khoản (crypto-shredding); không ghi dữ liệu cá nhân lên blockchain (BR27); pseudonym ngẫu nhiên theo từng món đồ. Tuân thủ Nghị định 13/2023/NĐ-CP và Luật Bảo vệ dữ liệu cá nhân hiện hành |
 | Tìm kiếm | Hỗ trợ tiếng Việt có/không dấu, sai chính tả nhẹ |
 | SEO & chia sẻ | Trang sản phẩm và passport có metadata, Open Graph để chia sẻ đẹp lên Facebook/Zalo |
 | Khả năng truy cập | Tương phản đủ, nhãn cho form, điều hướng bàn phím |

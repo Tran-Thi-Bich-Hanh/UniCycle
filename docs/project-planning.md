@@ -37,9 +37,19 @@ Tài liệu này xác định lộ trình phát triển, phân chia Sprint, phâ
 
 ---
 
-## 2. Kế Hoạch Sprint Chi Tiết Cho Giai Đoạn MVP (Sprints 1 – 5)
+## 2. Kế Hoạch Sprint Chi Tiết Cho Giai Đoạn MVP (Sprints 0 – 5)
 
 Mỗi Sprint kéo dài từ **1 đến 1.5 tuần** với mục tiêu bàn giao rõ ràng (Deliverables) có thể kiểm thử và nghiệm thu độc lập.
+
+---
+
+### 🔍 Giai Đoạn 0: Khảo Sát & Xác Thực Nhu Cầu Thực Tế (Pre-Sprint · 1 tuần)
+- **Mục tiêu**: Xác thực giả thuyết bài toán trước khi bắt tay lập trình, đảm bảo sản phẩm giải quyết đúng nỗi đau sinh viên.
+- **Công việc cụ thể**:
+  1. Phỏng vấn sâu 8–15 sinh viên tại các cụm KTX (KTX ĐHQG Khu A/B, KTX Bách Khoa, KTX Kinh Tế...) bao gồm cả người thường xuyên mua và người cần thanh lý đồ.
+  2. Khảo sát 3–5 nhóm Facebook/Zalo pass đồ sinh viên sôi động nhất để phân tích tần suất bài trôi, các vụ việc bị lừa đảo hoặc giao dịch bất tiện.
+  3. Phỏng vấn trực tiếp về tính năng **Product Passport**: Mức độ quan tâm đến việc biết món đồ đã qua tay ai đối với các nhóm đồ khác nhau (sách giáo trình, quạt, bàn, đồ điện tử).
+- **Kết quả nghiệm thu**: Báo cáo tổng hợp nhu cầu (User Insights) dùng làm căn cứ tinh chỉnh tính năng trong các Sprint tiếp theo.
 
 ---
 
@@ -79,29 +89,30 @@ Mỗi Sprint kéo dài từ **1 đến 1.5 tuần** với mục tiêu bàn giao 
      - Khối thông tin Người bán (Trường ĐH, đánh giá sao, huy hiệu sinh viên).
      - Hộp lưu ý an toàn giao dịch tại nơi công cộng (cổng trường/KTX).
   2. Triển khai **Cụm Hành Động Kép (Dual CTA)**:
-     - **Nút "Nhắn qua Zalo"**: Tự động mở Deep link `zalo.me/<sdt>` với nội dung mẫu; trên desktop bật Modal hiển thị mã QR Zalo để quét bằng điện thoại.
+     - **Nút "Nhắn qua Zalo"**: Tự động mở Deep link `zalo.me/<sdt>` với nội dung mẫu; trên desktop bật Modal hiển thị mã QR Zalo; route trung gian `/api/zalo/[listingId]` để ẩn SĐT thật.
      - **Nút "Đặt lịch hẹn xem hàng"**: Modal chọn khung giờ hẹn, địa điểm (cổng KTX/căng tin/thư viện), và giá đề xuất.
+     - Banner nhắc nhở & Nút **"Chốt bán cho người này"** để giữ giao dịch Zalo không rơi khỏi hệ thống.
   3. Xây dựng hệ thống quản lý Đơn hẹn `/orders` & `/orders/[id]`:
      - Người bán bấm Chấp nhận ➔ Đơn chuyển `ACCEPTED`, sản phẩm tự động chuyển `RESERVED` (giữ chỗ, tránh bán trùng).
-     - Từ chối hoặc Hủy hẹn ➔ Sản phẩm quay lại `AVAILABLE`.
+     - **Job timeout đơn `ACCEPTED`**: Quá `meet_time + 24h` mà không bên nào bấm xác nhận, hệ thống tự động hủy đơn (`EXPIRED`) và nhả sản phẩm về `AVAILABLE` (BR37).
 - **Kết quả nghiệm thu**: Bấm nút Zalo mở đúng app Zalo với tin nhắn mẫu; gửi yêu cầu hẹn thành công và sản phẩm được khóa trạng thái `RESERVED`.
 
 ---
 
 ### 🏃 Sprint 4: Hoàn Tất Đơn 48H, Đánh Giá & Digital Passport (Trust & Passport)
-- **Mục tiêu**: Hoàn tất chu kỳ giao dịch trao tay, đánh giá uy tín và quản lý vòng đời món đồ.
+- **Mục tiêu**: Hoàn tất chu kỳ giao dịch trao tay, đánh giá uy tín và quản lý vòng đời món đồ (giảm tải phạm vi, chuyển Chuyển quyền trực tiếp sang P1).
 - **Công việc cụ thể**:
   1. Triển khai luồng xác nhận đơn trực tiếp:
      - Người mua bấm "Đã nhận hàng", người bán bấm "Đã bàn giao" ➔ Đơn `COMPLETED`.
-     - Job nền tự động kiểm tra: nếu 1 bên bấm xác nhận nhưng bên kia im lặng quá **48 giờ** ➔ Tự động hoàn tất `AUTO_COMPLETED` (BR13).
+     - **Cơ chế khiếu nại**: Nút "Tôi chưa nhận hàng" trong 48h chặn auto-complete và chuyển `DISPUTED` cho Admin can thiệp.
+     - Job định kỳ kiểm tra: nếu 1 bên bấm xác nhận nhưng bên kia im lặng quá **48 giờ** ➔ Tự động hoàn tất `AUTO_COMPLETED` (BR13).
   2. Xây dựng luồng **Đánh Giá Bí Mật (Blind Review)** trong 48 giờ:
      - Cả hai bên chấm điểm sao (1–5⭐) và nhận xét mà không thấy đánh giá của nhau.
      - Hiển thị công khai khi cả hai đã nộp hoặc sau 48 giờ; cập nhật điểm uy tín người bán.
   3. Xây dựng hệ thống **Digital Product Passport (Off-chain)**:
-     - Trang `/passport/[id]` hiển thị timeline chuỗi đời chủ (Chủ #1 ➔ Chủ #2) kèm mã QR số hiển thị trên màn hình.
+     - Trang `/passport/[id]` hiển thị timeline chuỗi đời chủ (Chủ #1 ➔ Chủ #2) kèm mã QR số hiển thị trên màn hình điện thoại.
      - Mục **"Đồ của tôi" (`/my-items`)**: Danh sách các món đồ đang sở hữu.
-     - **Nút "Bán lại" (Resell 1-click)**: Sinh viên tốt nghiệp/hết nhu cầu chỉ cần bấm nút này để tạo tin đăng mới kế thừa toàn bộ lịch sử trước đó.
-     - **Chuyển quyền trực tiếp**: Chuyển giao đồ tặng cho bạn bè bằng mã QR số có hạn 24 giờ.
+     - **Nút "Bán lại" (Resell 1-click)**: Bắt buộc chụp bộ ảnh mới phản ánh độ hao mòn hiện tại, kế thừa toàn bộ hồ sơ lịch sử trước đó (tính năng Chuyển quyền trực tiếp được đẩy sang P1 để đảm bảo tiến độ).
 - **Kết quả nghiệm thu**: Giao dịch hoàn tất chuyển quyền sở hữu món đồ sang tài khoản người mua; trang passport hiển thị đúng 2 đời chủ; nút bán lại hoạt động trơn tru.
 
 ---
@@ -109,9 +120,9 @@ Mỗi Sprint kéo dài từ **1 đến 1.5 tuần** với mục tiêu bàn giao 
 ### 🏃 Sprint 5: Xác Minh Sinh Viên, Kiểm Duyệt & Triển Khai Pilot (Polishing & Deployment)
 - **Mục tiêu**: Kiểm tra toàn diện, chống tin rác, sẵn sàng cho người dùng thật và bảo vệ đồ án.
 - **Công việc cụ thể**:
-  1. Trang xác minh sinh viên `/verify-student`: Upload ảnh thẻ sinh viên hoặc gửi mã xác thực qua email trường ➔ Duyệt cấp Huy hiệu uy tín.
+  1. Trang xác minh sinh viên `/verify-student`: Upload ảnh thẻ sinh viên hoặc gửi mã xác thực qua email trường ➔ Duyệt cấp Huy hiệu uy tín (ảnh thẻ tự động xóa sau duyệt).
   2. Module Báo cáo & Kiểm duyệt (Admin Dashboard tối thiểu):
-     - Báo cáo tin đăng rác, lừa đảo, đồ trộm cắp.
+     - Báo cáo tin đăng rác, lừa đảo, đồ trộm cắp, xử lý đơn khiếu nại `DISPUTED`.
      - Admin ẩn tin, khóa tài khoản, đánh dấu (flag) passport nghi vấn.
   3. Tối ưu hiệu năng, SEO & Open Graph (chia sẻ link hiển thị ảnh thumbnail đẹp trên Zalo/Facebook).
   4. Triển khai hệ thống lên môi trường production: **Frontend & API trên Vercel, CSDL trên Neon/Supabase**.
@@ -119,17 +130,16 @@ Mỗi Sprint kéo dài từ **1 đến 1.5 tuần** với mục tiêu bàn giao 
 
 ---
 
-## 3. Kế Hoạch Triển Khai Giai Đoạn P1 (Tích Hợp Avalanche Blockchain)
+## 3. Lộ Trình Lát Cắt Blockchain Tối Thiểu (Demo Trước Hạn Bảo Vệ) & Giai Đoạn P1
 
-Sau khi giai đoạn MVP đã vận hành ổn định trên môi trường thực tế, nhóm sẽ tiến hành tích hợp Blockchain theo các bước:
-
-| Bước | Nội dung công việc | Công nghệ / Công cụ |
-|---|---|---|
-| **1. Smart Contract** | Viết, tối ưu gas và viết Unit Test cho contract `UniCyclePassport.sol` | Solidity, Hardhat/Foundry, OpenZeppelin |
-| **2. Deploy Testnet** | Triển khai contract lên mạng **Avalanche Fuji Testnet**, xác minh mã nguồn trên Snowtrace | Avalanche Fuji, Snowtrace Explorer |
-| **3. Ví Relayer Backend** | Thiết lập ví Relayer (gán quyền `RECORDER_ROLE`) tự động trả phí gas AVAX, quản lý private key trong Secret Manager | viem / ethers.js |
-| **4. Worker ghi chain** | Thiết lập hàng đợi BullMQ/cron: Khi đơn `COMPLETED`, worker lấy dữ liệu ký giao dịch bất đồng bộ lên Avalanche | Queue Worker |
-| **5. Nút "Xác minh on-chain"** | Thêm nút trên trang `/passport/[id]` đọc dữ liệu sự kiện từ RPC Avalanche đối chiếu trực tiếp với DB | Avalanche RPC |
+Để đảm bảo vừa có sản phẩm thực tế hoàn chỉnh, vừa có bằng chứng công nghệ ấn tượng trước hội đồng phản biện:
+1. **Lát cắt Blockchain tối thiểu (Minimal Slice - Demo Testnet)**:
+   - Viết và triển khai Smart contract `UniCyclePassport.sol` lên mạng **Avalanche Fuji Testnet**.
+   - Chuẩn bị 1 kịch bản demo trọn vẹn: A bán cho B ➔ B bán cho C ➔ bấm nút "Xác minh trên blockchain" mở Snowtrace Fuji Explorer để đối chiếu mã hash giao dịch thực tế.
+2. **Kế hoạch mở rộng P1 (Production on-chain)**:
+   - Tích hợp ví Relayer tự động trả phí gas AVAX, quản lý private key trong KMS.
+   - Triển khai hàng đợi xử lý tuần tự (serialize transaction) để tránh đụng nonce khi relayer gửi nhiều tx cùng lúc.
+   - Tích hợp Chat Realtime nội bộ (Supabase Realtime) và tính năng Chuyển quyền trực tiếp (Direct Transfer).
 
 ---
 
@@ -138,9 +148,11 @@ Sau khi giai đoạn MVP đã vận hành ổn định trên môi trường th�
 | Rủi ro tiềm ẩn | Mức độ | Biện pháp phòng ngừa & Giảm thiểu |
 |---|---|---|
 | **Sinh viên ngại đăng ký vì rào cản** | Cao | Hỗ trợ đăng nhập nhanh bằng **Google (Gmail)** trong 1 chạm, không bắt buộc email trường ngày đầu. |
-| **Người bán và người mua không liên lạc được** | Cao | Tích hợp nút **Zalo Deep Link** mở thẳng app Zalo; cho phép quét QR Zalo tức thì trên máy tính. |
-| **Đơn hàng bị kẹt trạng thái giữ đồ vô hạn** | Trung bình | Cơ chế tự động hủy sau 48h nếu người bán không trả lời; tự động hoàn tất sau 48h nếu 1 bên xác nhận. |
-| **Lỗi mạng hoặc nghẽn gas khi làm blockchain** | Trung bình | Tách bạch hoàn toàn: MVP chạy Off-chain trên PostgreSQL tốc độ cao; Blockchain tích hợp ở P1 bất đồng bộ không làm nghẽn web. |
+| **Giao dịch rò rỉ qua Zalo** (hai bên chốt ngoài rồi không quay lại web) | Cao | Hiển thị banner nhắc nhở trên tin đăng + Nút "Chốt bán cho người này" để người bán tự đưa đơn vào hệ thống ngay. |
+| **Quá tải phạm vi Sprint 4** | Cao | Giảm tải: Đẩy tính năng "Chuyển quyền trực tiếp" sang P1, chỉ tập trung hoàn thiện bộ ba Đơn hàng 48h - Đánh giá - Digital Passport. |
+| **Người mua khiếu nại người bán bấm xác nhận khống** | Trung bình | Cơ chế nút "Tôi chưa nhận hàng" trong 48h lập tức chặn auto-complete, chuyển `DISPUTED` cho Admin xử lý. |
+| **Đơn hàng bị kẹt trạng thái giữ đồ vô hạn** | Trung bình | Cơ chế tự động hủy sau `meet_time + 24h` nếu cả hai im lặng; tự động hoàn tất sau 48h nếu người mua im lặng. |
+| **Lỗi mạng hoặc nghẽn gas khi làm blockchain** | Trung bình | Tách bạch hoàn toàn: MVP chạy Off-chain trên PostgreSQL tốc độ cao; Lát cắt Blockchain trên Fuji dùng để demo công nghệ độc lập. |
 | **Đăng tin rác / lừa đảo** | Trung bình | Giới hạn số tin đăng mỗi ngày (BR16), bộ lọc danh mục hàng cấm (BR17), nút báo cáo cộng đồng. |
 
 ---

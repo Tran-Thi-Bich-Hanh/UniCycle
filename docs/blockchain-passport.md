@@ -94,6 +94,8 @@ contract UniCyclePassport is AccessControl {
     ) external onlyRole(RECORDER_ROLE) {
         Passport storage p = passports[passportId];
         require(p.exists, "no passport");
+        require(!p.flagged, "passport flagged");
+        require(confirmation == 1 || confirmation == 2, "invalid confirmation");
         require(p.currentOwner == fromHash, "not current owner");
         require(toHash != fromHash, "same owner");
         p.currentOwner = toHash;
@@ -122,14 +124,13 @@ contract UniCyclePassport is AccessControl {
 
 ### 4. Pseudonym và quyền riêng tư
 
-- **Owner hash theo từng món đồ:** `ownerHash = HMAC-SHA256(serverSecret, userId ‖ passportId)`. Cùng một người sở hữu hai món đồ sẽ có hai hash khác nhau, nên người ngoài không thể nối các món đồ của một người.
-- **Order hash:** `orderHash = keccak256(orderId ‖ secret)`; không lộ mã đơn hay giá.
-- **Hiển thị công khai (BR29):** "Chủ #n · Trường · Tháng/Năm". Người dùng có thể bật "hiển thị tên của tôi trong lịch sử đồ vật" (mặc định tắt) để thể hiện kiểu "chị A, anh B" khi muốn.
-- **Xóa tài khoản (BR34):** xóa ánh xạ `owner_hash ↔ user_id` và bí mật liên quan; dữ liệu on-chain còn nhưng không còn truy ngược được đến người đó. Nêu rõ điều này trong chính sách riêng tư.
-- **Bí mật `serverSecret`:** lưu trong KMS/secret manager; nếu lộ, kẻ tấn công có thể dò ngược pseudonym từ danh sách userId, nên cần giới hạn quyền truy cập và có kế hoạch xoay khóa.
+- **Owner hash ngẫu nhiên theo từng món đồ:** `ownerHash` là một giá trị ngẫu nhiên cryptographically secure (32 bytes) được sinh riêng cho mỗi cặp (user, item) khi phát sinh quyền sở hữu và lưu trong bảng `passport_owners`. Do không dùng công thức dẫn xuất toán học từ `userId`, ngay cả khi lộ database cũng không thể liên kết các món đồ khác nhau của cùng một người trên blockchain.
+- **Order hash:** `orderHash = keccak256(orderId ‖ randomSalt)`; không lộ mã đơn hay giá.
+- **Hiển thị công khai (BR29):** "Chủ #n · Trường · Tháng/Năm". Người dùng có thể bật "hiển thị tên của tôi trong lịch sử đồ vật" (mặc định tắt).
+- **Xóa tài khoản (BR34):** Xóa dòng ánh xạ trong bảng `passport_owners` (crypto-shredding). Vì `ownerHash` là số ngẫu nhiên lưu độc lập, khi đã xóa mapping thì vĩnh viễn không còn cách nào truy ngược từ hash on-chain về danh tính thật.
 - **Không ghi lên chain:** tên, email, SĐT, MSSV, ảnh, giá, nội dung đánh giá (BR27).
 
-### 5. Gắn passport với món đồ (Định danh số & Không cần in dán vật lý)
+### 5. Gắn passport với món đồ (Định danh số & Đối chiếu khi Bán lại)
 
 Passport có ý nghĩa liên kết chặt chẽ với món đồ qua 2 mức định danh số:
 
@@ -138,9 +139,10 @@ Passport có ý nghĩa liên kết chặt chẽ với món đồ qua 2 mức đ�
 | **LIGHT** (mặc định) | Đa số đồ (bàn, ghế, quạt, giáo trình) | Ảnh chụp sản phẩm thật + **mã QR số hiển thị trực tiếp trên màn hình điện thoại/web** (không cần in dán vật lý) | `hash(passportId ‖ category ‖ hash các ảnh ‖ salt)` |
 | **SERIAL** (khuyến nghị cho đồ giá trị cao) | Laptop, điện thoại, máy tính Casio, xe máy | LIGHT + đối chiếu số serial/IMEI có sẵn của nhà sản xuất | LIGHT + `hash(serial chuẩn hóa ‖ salt)` |
 
-Lưu ý:
-- Mã QR trỏ tới URL dạng `unicycle.vn/passport/[id]`. Khi gặp mặt giao dịch tại cổng trường/KTX, người bán hoặc người mua chỉ cần mở màn hình điện thoại cho người kia quét để kiểm tra lịch sử tức thì.
-- Với đồ công nghệ giá trị cao (mức SERIAL), hệ thống cho phép đối chiếu số serial thật với hash mà không làm lộ số serial công khai ra ngoài.
+**Cơ chế đối chiếu ảnh khi "Bán lại" (Resell)**:
+- Mỗi khi bán lại qua các đời chủ, người bán bắt buộc phải chụp bộ ảnh mới. Hệ thống tính hash SHA-256 cho từng ảnh và lưu vào `listing_images.sha256`.
+- Người mua đối chiếu trực quan ảnh hiện tại với ảnh của các chủ trước trên timeline lịch sử để nhận biết độ hao mòn thực tế, đồng thời hệ thống kiểm chứng tính toàn vẹn của dữ liệu bằng mã hash.
+- Mã QR số trỏ tới URL `unicycle.vn/passport/[id]`. Khi gặp mặt giao dịch, mở màn hình điện thoại cho người mua quét đối chiếu ngay tức thì.
 
 ### 6. Chi tiết luồng ghi chain
 
@@ -192,5 +194,8 @@ Lưu ý:
 ### 10. Lưu ý khi dùng trong đồ án
 
 - Trình bày Passport như **tính năng chống chỉnh sửa lịch sử và kiểm chứng công khai**, không phải "xác thực hàng thật".
-- Demo trọn vòng **A → B → C** trên Fuji: đăng bán có passport → bán → xem timeline → B bán lại → C mua → timeline có 3 chủ → quét QR → bấm "Xác minh" → đối chiếu tx trên explorer.
-- Chuẩn bị sẵn câu trả lời cho các câu hỏi phản biện: "Nếu backend sai thì sao?" (nêu hướng ví nhúng và chữ ký người dùng ở P1), "Đồ giả/đồ trộm đăng ký passport thì sao?" (xác minh tài khoản, QR + serial, báo cáo và flag), "Dữ liệu cá nhân trên chain?" (chỉ hash/pseudonym, crypto-shredding).
+- **Lát cắt Blockchain tối thiểu (Minimal Slice) cho buổi bảo vệ đồ án**:
+  - Triển khai contract `UniCyclePassport.sol` lên **Avalanche Fuji Testnet**.
+  - Demo trọn vòng **A → B → C**: A đăng bán có passport ➔ B mua ➔ cập nhật timeline ➔ B bán lại cho C ➔ bấm nút "Xác minh trên blockchain" mở Snowtrace Fuji Explorer để đối chiếu tx hash thực tế.
+  - Phân định rành mạch với hội đồng: MVP web chạy Off-chain trên PostgreSQL cho tốc độ cao và trải nghiệm không cần ví; lát cắt Blockchain trên Fuji chứng minh tính khả thi kỹ thuật cho bước mở rộng tiếp theo.
+- Chuẩn bị sẵn câu trả lời cho các câu hỏi phản biện: "Nếu backend sai thì sao?" (nêu hướng ví nhúng EIP-712 ở P2), "Đồ giả/đồ trộm đăng ký passport thì sao?" (xác minh tài khoản, serial number, báo cáo và flag), "Dữ liệu cá nhân trên chain?" (chỉ hash ngẫu nhiên, crypto-shredding an toàn).

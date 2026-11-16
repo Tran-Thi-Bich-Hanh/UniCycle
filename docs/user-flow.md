@@ -10,8 +10,9 @@
 2. Duyệt danh sách hoặc tìm kiếm/lọc theo danh mục, giá, tình trạng, khu vực KTX/trường, "có lịch sử đồ vật".
 3. Mở chi tiết sản phẩm; xem ảnh, mô tả, hồ sơ người bán (đánh giá sao, huy hiệu sinh viên xác minh), tóm tắt Digital Passport.
 4. **Lựa chọn cách thức liên hệ**:
-   - **Cách 1 (Nhanh nhất - Nhắn Zalo)**: Bấm "Nhắn qua Zalo" → Mở ứng dụng Zalo trên điện thoại (hoặc hiển thị mã QR Zalo trên máy tính) với tin nhắn mẫu sẵn để trao đổi ngay.
-   - **Cách 2 (Đặt lịch hẹn giữ đồ)**: Bấm "Đặt lịch hẹn xem hàng" → Đăng nhập Google (nếu chưa) → Điền giá đề xuất, chọn địa điểm (cổng trường/KTX), khung giờ hẹn và gửi yêu cầu (`PENDING`).
+   - **Cách 1 (Nhanh nhất - Nhắn Zalo)**: Yêu cầu đăng nhập (BR01) → Bấm "Nhắn qua Zalo" → Mở ứng dụng Zalo trên điện thoại (hoặc hiển thị mã QR Zalo trên máy tính qua route trung gian bảo mật `/api/zalo/[listingId]`) với tin nhắn mẫu sẵn để trao đổi ngay.
+   - **Cách 2 (Đặt lịch hẹn giữ đồ)**: Bấm "Đặt lịch hẹn xem hàng" → Điền giá đề xuất, chọn địa điểm (cổng trường/KTX), khung giờ hẹn và gửi yêu cầu (`PENDING`).
+   - 💡 **Tránh rò rỉ giao dịch ngoài hệ thống**: Khi hai bên đã chốt thỏa thuận qua Zalo, hệ thống hiển thị banner nhắc: *"Đã chốt qua Zalo? Hãy xác nhận đặt hẹn trên UniCycle để bảo lưu đánh giá uy tín và nhận Product Passport"*. Người bán có nút **"Chốt bán cho người này"** để đưa sản phẩm vào trạng thái `RESERVED` ngay lập tức.
 5. Người bán chấp nhận lịch hẹn → Trạng thái đơn `ACCEPTED`, sản phẩm tự động chuyển `RESERVED` (giữ chỗ).
 6. Hai bên gặp mặt tại nơi hẹn công cộng (cổng KTX, căng tin, thư viện trường), kiểm tra sản phẩm (**có thể quét mã QR số trên màn hình điện thoại hoặc mở link `/passport/[id]` để đối chiếu**), thanh toán trực tiếp.
 7. Người mua bấm "Đã nhận hàng"; người bán bấm "Đã bàn giao".
@@ -23,7 +24,9 @@
 | Tình huống | Xử lý |
 |---|---|
 | Người bán từ chối | Người mua nhận thông báo, có thể gửi yêu cầu cho sản phẩm khác |
-| Người bán không phản hồi 48 giờ | Yêu cầu `EXPIRED`, sản phẩm trở về trạng thái có sẵn |
+| Người bán không phản hồi 48 giờ | Yêu cầu `PENDING` thành `EXPIRED`, sản phẩm trở về trạng thái có sẵn |
+| Cả hai im lặng sau giờ hẹn (`meet_time` + 24h) | Áp dụng BR37: Đơn `ACCEPTED` tự động `EXPIRED`, sản phẩm tự động nhả `RESERVED` quay về `AVAILABLE` |
+| Người mua bấm "Tôi chưa nhận hàng" trong 48h | Ngay lập tức chặn auto-complete, đơn chuyển `DISPUTED`, thông báo cho Admin can thiệp xử lý (BR13) |
 | Sản phẩm đã `RESERVED` bởi người khác | Hiển thị trạng thái đã giữ; người mua khác không thể gửi trùng lịch |
 | Sản phẩm không đúng mô tả khi gặp | Người mua từ chối nhận, hủy đơn kèm lý do; có thể báo cáo tin |
 | Thông tin không khớp passport | Người mua từ chối nhận hàng, báo cáo; admin có thể flag passport (BR32) |
@@ -44,6 +47,7 @@
 6. Nhận trao đổi từ người mua:
    - Nhận tin nhắn trực tiếp qua Zalo (người mua bấm link mở thẳng app Zalo).
    - Nhận thông báo yêu cầu hẹn xem hàng trên UniCycle.
+   - 💡 **Chốt bán cho khách Zalo**: Nếu người mua chỉ nhắn Zalo mà chưa bấm hẹn trên web, người bán có nút **"Chốt bán cho người này"** (nhập username / số điện thoại người mua) để tạo đơn `ACCEPTED` và khóa sản phẩm `RESERVED`, đảm bảo giao dịch không bị rơi khỏi hệ thống.
 7. Xem danh sách yêu cầu `PENDING`, chọn chấp nhận 1 yêu cầu phù hợp → sản phẩm chuyển `RESERVED`.
 8. Gặp mặt tại địa điểm hẹn ở trường/KTX, bàn giao đồ và nhận tiền trực tiếp.
 9. Bấm "Đã bàn giao" → hoàn tất khi người mua bấm xác nhận (hoặc tự hoàn tất sau 48h theo BR13).
@@ -98,11 +102,13 @@ Trạng thái: Hợp lệ · 2 lần chuyển giao · Chủ hiện tại: Chủ 
 │   └─ Chuyển giao #2 · 02/2026 · Hai bên xác nhận · tx 0x5de…f07 ↗
 ●  Chủ #3 · ĐH Kinh tế · 02/2026           (Chủ hiện tại)
 
-[Xác minh trên blockchain]  → so khớp dữ liệu hiển thị với sự kiện trên Avalanche
-Lưu ý: Passport ghi nhận chuỗi chuyển giao, không chứng nhận chất lượng hay tính xác thực món đồ.
+[Xác minh trên blockchain]  → (Tính năng P1: so khớp dữ liệu hiển thị với sự kiện trên Avalanche)
+Lưu ý: 
+- Passport ghi nhận chuỗi chuyển giao, không chứng nhận chất lượng hay tính xác thực món đồ.
+- Các liên kết giao dịch blockchain (tx 0x... ↗) chỉ xuất hiện từ giai đoạn P1 khi kích hoạt Avalanche C-Chain; ở MVP, timeline hiển thị bản ghi đã lưu trữ trong CSDL hệ thống.
 ```
 
-### 5.6. Luồng chuyển quyền trực tiếp (không qua yêu cầu mua)
+### 5.6. Luồng chuyển quyền trực tiếp (không qua yêu cầu mua - P1)
 
 **Dùng khi:** tặng bạn bè, trao đổi ngoài hệ thống, chuyển lại cho người quen.
 
@@ -122,4 +128,5 @@ Lưu ý: Passport ghi nhận chuỗi chuyển giao, không chứng nhận chất
 | Món đồ bị bán/tặng ngoài hệ thống làm lệch chủ sở hữu | Chủ cũ dùng "Chuyển quyền trực tiếp" để cập nhật chuỗi |
 | Passport bị flag | Tin đăng hiển thị cảnh báo; người mua được thông báo; admin xử lý |
 | Quên/cần hiển thị lại mã QR | Chủ hiện tại mở lại mã QR số bất kỳ lúc nào từ mục "Đồ của tôi" trên điện thoại |
+| Chủ hiện tại xóa tài khoản | Áp dụng BR34: Passport của món đồ tự động chuyển sang trạng thái `ARCHIVED_OWNER_DELETED` (lưu trữ đóng băng), chặn tạo tin bán lại cho đến khi liên hệ Admin hỗ trợ |
 | Xem passport khi chưa đăng nhập | Cho phép (trang công khai) |

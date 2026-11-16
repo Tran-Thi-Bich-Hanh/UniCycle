@@ -40,20 +40,21 @@ UniCycle
 | `/verify-student` | Upload thẻ sinh viên hoặc nhập email trường để nhận huy hiệu SV | Đăng nhập | MVP |
 | `/sell` | Form đăng bán nhanh < 60s (+ SĐT Zalo, bật Digital Passport) | Đăng nhập | MVP |
 | `/my-products` | Quản lý tin của tôi (sửa, ẩn, đã bán, gia hạn) | Đăng nhập | MVP |
-| **`/my-items`, `/my-items/[id]`** | **Đồ của tôi: passport, mã QR số màn hình, Bán lại 1-chạm, Chuyển quyền** | **Đăng nhập** | **MVP** |
-| **`/transfer/[code]`** | **Người nhận xem và chấp nhận chuyển quyền trực tiếp** | **Đăng nhập** | **MVP** |
+| **`/my-items`, `/my-items/[id]`** | **Đồ của tôi: passport, mã QR số màn hình, Bán lại 1-chạm** | **Đăng nhập** | **MVP** |
 | `/orders` | Quản lý lịch hẹn mua và bán | Đăng nhập | MVP |
-| `/orders/[id]` | Chi tiết hẹn, trạng thái giữ đồ, xác nhận bàn giao (chu kỳ 48h), đánh giá bí mật | Người tham gia đơn | MVP |
+| `/orders/[id]` | Chi tiết hẹn, trạng thái giữ đồ, xác nhận bàn giao (chu kỳ 48h), nút khiếu nại "Tôi chưa nhận hàng" (chặn auto-complete), đánh giá bí mật | Người tham gia đơn | MVP |
+| `/api/zalo/[listingId]` | Route trung gian điều hướng mở Zalo bảo mật (ẩn số điện thoại thật của người bán) | Đăng nhập (BR01) | MVP |
+| **`/transfer/[code]`** | **Người nhận xem và chấp nhận chuyển quyền trực tiếp (P1)** | **Đăng nhập** | **P1** |
 | `/notifications` | Thông báo đơn hẹn và hệ thống | Đăng nhập | MVP |
 | `/profile`, `/settings` | Hồ sơ cá nhân, cài đặt riêng tư số điện thoại | Đăng nhập | MVP |
 | `/terms`, `/privacy` | Điều khoản, riêng tư, hướng dẫn giao dịch an toàn | Công khai | MVP |
 | `/messages`, `/messages/[id]` | Chat realtime nội bộ (Supabase Realtime) | Đăng nhập | P1 |
-| `/favorites` | Tin yêu thích | Đăng nhập | P1 |
-| `/admin/*` | Người dùng, sản phẩm, báo cáo, passport flag, hàng đợi chain | Admin | MVP (tối thiểu) → P1 |
+| `/favorites` | Tin yêu thích (Wishlist) | Đăng nhập | P1 |
+| `/admin/*` | Người dùng, sản phẩm, báo cáo, giải quyết khiếu nại đơn, passport flag | Admin | MVP (tối thiểu) → P1 |
 
 ### 6.3. Điều hướng (ưu tiên mobile)
 
-Thanh điều hướng dưới (bottom nav), 5 mục: **Khám phá · Đăng bán · Hoạt động · Thông báo · Tài khoản.** "Đồ của tôi" nằm trong Tài khoản, đồng thời có lối tắt từ thông báo đơn hàng hoàn tất.
+Thanh điều hướng dưới (bottom nav), 5 mục chuẩn: **Trang chủ · Khám phá · Đăng tin (+) · Đơn hẹn · Tài khoản** (đồng bộ 100% với `ui-ux.md`). "Đồ của tôi" nằm trong mục Tài khoản, đồng thời có lối tắt từ thông báo đơn hàng hoàn tất.
 
 ### 6.4. Đường đi tiêu biểu
 

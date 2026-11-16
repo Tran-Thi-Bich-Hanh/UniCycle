@@ -124,9 +124,8 @@ Mỗi thẻ sản phẩm được kế thừa thiết kế e-commerce trực qua
 - **Huy hiệu (Badges)**:
   - `🌟 Sinh viên đã xác minh`: Nền xanh nhạt `#D6E8EE`, chữ xanh `#02457A`.
   - `📜 Có Passport`: Biểu thị món đồ có lịch sử chuyền tay minh bạch.
-- **Thanh thao tác nhanh (Quick Action Bar)**:
-  - Nút **Yêu thích (Wishlist)**: Lưu lại để theo dõi giá.
-  - Nút **Xem nhanh (Quick View Modal)**: Bật popup xem ảnh phóng to và mô tả vắn tắt mà không cần tải lại trang.
+- **Thanh thao tác nhanh (Quick Action Bar - P1)**:
+  - Nút **Yêu thích (Wishlist)** & Nút **Xem nhanh (Quick View)**: Đánh dấu là tính năng mở rộng ở P1 nhằm giữ phạm vi MVP tập trung và tinh gọn nhất.
 - **Tương tác**: Hover trên Desktop viền thẻ đổi màu sang `#97CADB`, nâng nhẹ thẻ tạo chiều sâu (`shadow-md`).
 
 ---
@@ -186,6 +185,7 @@ Hiển thị ngay trên trang chi tiết sản phẩm để người mua kiểm 
 │ ● Chủ #3: Bạn đang xem món đồ này!                          │
 │                                                             │
 │ [Mã QR số định danh · Quét trên màn hình điện thoại để đối chiếu] │
+│ 🔗 Xác minh on-chain: Sắp có ở giai đoạn P1 (Avalanche Fuji) │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -227,15 +227,21 @@ stateDiagram-v2
     }
     
     DaGiuCho --> HoanTat: Cả hai bấm "Đã bàn giao & nhận đồ"
-    DaGiuCho --> TuDongHoanTat: 1 bên bấm, bên kia không phản hồi sau 48h
+    DaGiuCho --> ChoXacNhanDoiUng: 1 bên bấm xác nhận trước
+    ChoXacNhanDoiUng --> TuDongHoanTat: Bên kia im lặng sau 48h
+    ChoXacNhanDoiUng --> KhieuNai: Người mua bấm "Tôi chưa nhận hàng" (DISPUTED)
+    
+    DaGiuCho --> HetHan: Quá meet_time + 24h cả hai im lặng (EXPIRED - nhả hàng)
     DaGiuCho --> HuyHen: Một trong hai bên Hủy lịch hẹn
     
     HoanTat --> DanhGiaBlind: Mở đánh giá uy tín (48 giờ)
     TuDongHoanTat --> DanhGiaBlind
+    KhieuNai --> AdminXuLy: Admin can thiệp giải quyết
 ```
 
-- **Quy tắc 48 giờ**:
-  - Khi một bên bấm "Đã nhận hàng/Đã giao", bên còn lại có **48 giờ** để xác nhận đối ứng. Quá 48h hệ thống tự động hoàn tất đơn (`AUTO_COMPLETED`) để tránh bị kẹt trạng thái.
+- **Quy tắc 48 giờ & Timeout**:
+  - Khi một bên bấm "Đã nhận hàng/Đã giao", bên còn lại có **48 giờ** để xác nhận đối ứng. Trong thời gian này, nếu người mua chưa nhận được hàng có thể bấm nút **"Tôi chưa nhận hàng" (Khiếu nại)** để chặn auto-complete và chuyển Admin xử lý. Quá 48h im lặng, đơn tự chuyển `AUTO_COMPLETED` (BR13).
+  - Nếu quá lịch hẹn (`meet_time`) + **24 giờ** mà không bên nào bấm xác nhận, đơn tự động chuyển `EXPIRED` và nhả trạng thái giữ chỗ về `AVAILABLE` (BR37).
   - Sau khi hoàn tất, hai bên có **48 giờ** để gửi đánh giá bí mật (blind review) cho nhau trước khi công khai điểm uy tín.
 
 ---
@@ -247,14 +253,14 @@ stateDiagram-v2
   - Xem lại toàn bộ timeline lịch sử của món đồ.
   - Hiển thị **Mã QR Passport số trực tiếp trên màn hình điện thoại**: Khi gặp mặt giao dịch hoặc chuyển nhượng, người bán chỉ cần mở app/web cho người mua quét đối chiếu ngay tức thì (không cần in dán vật lý).
   - **Nút "Bán lại" (Resell 1-click)**: Khi hết năm học không dùng nữa, sinh viên bấm nút này hệ thống tự tạo tin đăng mới và kế thừa toàn bộ lịch sử uy tín của các đời chủ trước!
-  - **Chuyển quyền trực tiếp**: Cho tặng bạn bè bằng mã số / QR có hạn 24 giờ mà không cần qua luồng mua bán.
+  - **Chuyển quyền trực tiếp (P1)**: Cho tặng bạn bè bằng mã số / QR có hạn 24 giờ mà không cần qua luồng mua bán.
 
 ---
 
 ### 4.7. Quy Chuẩn Modal & Popup Tương Tác (Dialog UX Patterns)
 
 1. **Modal Liên Hệ Zalo (Desktop)**:
-   - Tối ưu cho sinh viên duyệt web bằng laptop: Hiển thị mã QR Zalo to, rõ nét giữa màn hình kèm nút "Mở Zalo Web" và nút "Sao chép số điện thoại".
+   - Tối ưu cho sinh viên duyệt web bằng laptop: Hiển thị mã QR Zalo to, rõ nét giữa màn hình kèm nút "Mở Zalo Web" và nút "Sao chép số điện thoại" (qua route trung gian bảo mật `/api/zalo/[listingId]`).
 2. **Modal Đặt Lịch Hẹn Xem Hàng**:
    - Chọn nhanh các địa điểm công cộng an toàn phổ biến: Cổng KTX Khu A/B, Nhà ăn trung tâm, Thư viện trường, Cổng chính Đại học.
    - Chọn khung giờ hẹn: Sáng (8h-11h), Trưa (11h-13h), Chiều (13h-17h), Tối (17h-20h).
@@ -281,5 +287,8 @@ stateDiagram-v2
 - [ ] Thiết kế Component Thẻ Sản Phẩm (Product Card) tích hợp nhãn Zalo & Passport.
 - [ ] Triển khai Trang Chi Tiết Sản Phẩm (PDP) với Dual CTA (Nút Zalo + Đặt lịch hẹn).
 - [ ] Tích hợp Form đăng bán tối giản dưới 60 giây.
-- [ ] Hoàn thiện luồng xác nhận đơn và đánh giá 48 giờ.
+- [ ] Hoàn thiện luồng xác nhận đơn và đánh giá 48 giờ kèm xử lý khiếu nại.
+- [ ] Xây dựng trang Lịch sử đồ vật `/passport/[id]` và màn hình "Đồ của tôi" `/my-items`.
+- [ ] Phát triển tính năng Bán lại 1-chạm (Resell) kế thừa Digital Passport.
+- [ ] Xây dựng giao diện Xác minh sinh viên `/verify-student` và trang Admin cơ bản.
 

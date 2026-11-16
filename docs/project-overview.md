@@ -17,7 +17,7 @@ Hiện nay việc này diễn ra phân tán trên các nhóm Facebook, Zalo ho�
 | Thiếu lịch sử giao dịch | Không có nơi thống nhất theo dõi giao dịch và đánh giá người dùng |
 | Chưa có nền tảng tập trung | Chưa có nơi dành riêng cho cộng đồng sinh viên, gắn với trường/KTX |
 
-> **Lưu ý (giả thuyết cần kiểm chứng):** các vấn đề trên là giả thuyết ban đầu. Trước khi xây dựng nên phỏng vấn 8–15 sinh viên (cả người mua lẫn người bán) và khảo sát các nhóm Facebook hiện có để xác nhận mức độ đau thực tế (xem mục 12, Giai đoạn 0). Riêng nhu cầu "xem lịch sử món đồ" cần hỏi trực tiếp: người mua có thật sự quan tâm không, với nhóm đồ nào.
+> **Lưu ý (giả thuyết cần kiểm chứng):** các vấn đề trên là giả thuyết ban đầu. Trước khi xây dựng nên phỏng vấn 8–15 sinh viên (cả người mua lẫn người bán) và khảo sát các nhóm Facebook hiện có để xác nhận mức độ đau thực tế (xem chi tiết tại [`docs/project-planning.md`](file:///d:/Linh%20tinh/unicycle/docs/project-planning.md), Giai đoạn 0). Riêng nhu cầu "xem lịch sử món đồ" cần hỏi trực tiếp: người mua có thật sự quan tâm không, với nhóm đồ nào.
 
 ### 1.2. Bối cảnh cạnh tranh
 
@@ -86,20 +86,16 @@ UniCycle hướng đến sinh viên TP.HCM. Một tài khoản có thể vừa m
 | Buyer | Tìm sản phẩm; so sánh giá/tình trạng; xem hồ sơ và đánh giá người bán; **xem lịch sử chuyển giao món đồ**; hẹn giao nhận; kiểm tra rồi thanh toán trực tiếp |
 | Seller | Đăng bán dễ dàng; tiếp cận người mua tiềm năng; chủ động giá và giao nhận; quản lý yêu cầu; xây dựng uy tín; **bán lại món đồ đã mua với lịch sử được kế thừa** |
 
-### 2.3. Chỉ số thành công (KPI) cho giai đoạn pilot
+### 2.3. Chỉ số thành công (KPI) nếu triển khai pilot thực tế
 
-| Chỉ số | Mục tiêu gợi ý (1 trường, 8 tuần đầu) |
-|---|---|
-| Số người dùng đã xác minh | 300+ |
-| Số tin đăng đang hoạt động | 150+ |
-| Tỷ lệ tin có ít nhất 1 liên hệ/yêu cầu | ≥ 50% |
-| Tỷ lệ yêu cầu dẫn đến giao dịch hoàn tất | ≥ 25% |
-| Thời gian trung bình từ đăng đến bán | ≤ 10 ngày |
-| Tỷ lệ người dùng quay lại sau 30 ngày | ≥ 30% |
-| Tỷ lệ tin bị báo cáo vi phạm | < 3% |
-| **Tỷ lệ tin đăng có bật Digital Passport** | **≥ 40%** |
-| **So sánh tỷ lệ liên hệ/bán: tin có passport vs không có** | **Tin có passport không thấp hơn; kỳ vọng cao hơn** |
-| **Số món đồ đã có ≥ 2 lần chuyển giao (bán lại)** | **≥ 10** |
-| **Tỷ lệ liên hệ qua Zalo / Gửi yêu cầu thành công** | **≥ 95%** |
+| Chỉ số | Mục tiêu gợi ý nếu chạy pilot (1 trường, 8 tuần) | Mục tiêu nghiệm thu Đồ án (UAT Test) |
+|---|---|---|
+| Số người dùng đăng ký | 300+ sinh viên | 20–30 sinh viên thử nghiệm |
+| Số tin đăng hoạt động | 150+ tin | 30–50 tin mẫu thực tế |
+| Tỷ lệ tin có liên hệ/yêu cầu | ≥ 50% | 100% kịch bản kiểm thử |
+| Tỷ lệ yêu cầu hoàn tất | ≥ 25% | Hoàn thành trọn vẹn chu kỳ A ➔ B |
+| Tỷ lệ tin bật Digital Passport | ≥ 40% | ≥ 50% |
+| Số món đồ bán lại (≥ 2 đời chủ) | ≥ 10 món | Ít nhất 3 kịch bản A ➔ B ➔ C |
+| Tỷ lệ liên hệ Zalo / Gửi yêu cầu | ≥ 95% thành công | 100% không lỗi hệ thống |
 
-> Các con số là mục tiêu gợi ý; điều chỉnh sau khi có dữ liệu thực tế của pilot.
+> Các con số pilot là mục tiêu dài hạn nếu đưa vào vận hành tại trường; trong khuôn khổ đồ án tốt nghiệp, nhóm tập trung đáp ứng 100% tiêu chí kiểm thử chức năng (UAT) với nhóm sinh viên thử nghiệm.
