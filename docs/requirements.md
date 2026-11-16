@@ -24,7 +24,7 @@
 | Đăng bán siêu tốc dưới 60 giây (ảnh, giá, danh mục, tình trạng, khu vực KTX) | Tạo nguồn cung nhanh chóng, thân thiện trên mobile |
 | Duyệt/tìm kiếm/lọc **không cần đăng nhập** | Giảm rào cản, tối ưu SEO và dễ dàng chia sẻ link lên Facebook/Zalo |
 | Chi tiết sản phẩm + hồ sơ người bán (đánh giá, trường, huy hiệu xác minh) | Cung cấp đầy đủ thông tin minh bạch trước khi giao dịch |
-| **Nút "Nhắn qua Zalo" (Deep link `zalo.me/<sdt>`)** | **Kênh trao đổi chính tức thì của sinh viên VN; kèm tin nhắn mẫu và QR Zalo trên desktop** |
+| **Nút "Nhắn qua Zalo" (Deep link qua route trung gian bảo mật)** | **Kênh trao đổi chính tức thì của sinh viên VN; sau 1 lần đăng nhập Google, tự quay lại luồng đang làm; kèm tin nhắn mẫu và QR Zalo trên desktop** |
 | **Nút "Đặt lịch hẹn xem hàng" (Form chọn giờ, địa điểm KTX/cổng trường)** | **Ghi nhận đơn trên hệ thống, đề xuất giá, theo dõi lịch hẹn giao dịch trao tay** |
 | Đặt giữ chỗ (`RESERVED`) → Đã bán (`SOLD`) | Quản lý trạng thái giao dịch rõ ràng, tránh bán trùng cho nhiều người |
 | Xác nhận hoàn tất + đánh giá hai chiều blind (chu kỳ 48 giờ) | Tự hoàn tất sau 48h nếu 1 bên im lặng; đánh giá bí mật chống trả đũa |

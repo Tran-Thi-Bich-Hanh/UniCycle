@@ -161,6 +161,8 @@ Passport có ý nghĩa liên kết chặt chẽ với món đồ qua 2 mức đ�
 **Xử lý lỗi:**
 - Tx thất bại → `FAILED`, thử lại với backoff (tối đa 3 lần); vẫn lỗi → `NEEDS_ATTENTION`, báo admin.
 - Hợp đồng revert vì `not current owner` → đánh dấu bất nhất (DB lệch chain), admin điều tra; không tự ý sửa.
+- Contract revert vì passport flagged không còn xảy ra trong luồng bình thường nhờ BR39. Nếu xảy ra thì coi là bất nhất như trường hợp not current owner.
+- Serialize giao dịch theo từng địa chỉ ví relayer (quản lý nonce tuần tự) để tránh đụng độ nonce khi ghi chain song song.
 - Chủ động xử lý trùng (idempotency): mỗi `chain_txs` có `payload_hash` để tránh gửi lặp.
 
 ### 7. Giao diện xác minh

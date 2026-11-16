@@ -89,9 +89,9 @@ Mỗi Sprint kéo dài từ **1 đến 1.5 tuần** với mục tiêu bàn giao 
      - Khối thông tin Người bán (Trường ĐH, đánh giá sao, huy hiệu sinh viên).
      - Hộp lưu ý an toàn giao dịch tại nơi công cộng (cổng trường/KTX).
   2. Triển khai **Cụm Hành Động Kép (Dual CTA)**:
-     - **Nút "Nhắn qua Zalo"**: Tự động mở Deep link `zalo.me/<sdt>` với nội dung mẫu; trên desktop bật Modal hiển thị mã QR Zalo; route trung gian `/api/zalo/[listingId]` để ẩn SĐT thật.
-     - **Nút "Đặt lịch hẹn xem hàng"**: Modal chọn khung giờ hẹn, địa điểm (cổng KTX/căng tin/thư viện), và giá đề xuất.
-     - Banner nhắc nhở & Nút **"Chốt bán cho người này"** để giữ giao dịch Zalo không rơi khỏi hệ thống.
+     - **Nút "Nhắn qua Zalo"**: Hiển thị cả với khách vãng lai; khi bấm kiểm tra auth, nếu chưa đăng nhập thì mở popup Google 1 chạm kèm `returnTo` để không đứt đoạn trải nghiệm; đăng nhập xong mở route trung gian `/api/zalo/[listingId]` để chống thu thập SĐT hàng loạt (rate limit 10 lượt/h); trên desktop bật Modal mã QR (chỉ hiện nút copy số khi người bán không ẩn số công khai).
+     - **Nút "Đặt lịch hẹn xem hàng"**: Modal chọn khung giờ hẹn, địa điểm (cổng KTX/căng tin/thư viện), và giá đề xuất (yêu cầu đăng nhập, có luồng `returnTo`).
+     - Banner nhắc nhở & Nút **"Gửi lời mời chốt bán"** (link dùng một lần, hết hạn sau 24h theo BR38) để giữ giao dịch Zalo không rơi khỏi hệ thống.
   3. Xây dựng hệ thống quản lý Đơn hẹn `/orders` & `/orders/[id]`:
      - Người bán bấm Chấp nhận ➔ Đơn chuyển `ACCEPTED`, sản phẩm tự động chuyển `RESERVED` (giữ chỗ, tránh bán trùng).
      - **Job timeout đơn `ACCEPTED`**: Quá `meet_time + 24h` mà không bên nào bấm xác nhận, hệ thống tự động hủy đơn (`EXPIRED`) và nhả sản phẩm về `AVAILABLE` (BR37).
@@ -148,7 +148,8 @@ Mỗi Sprint kéo dài từ **1 đến 1.5 tuần** với mục tiêu bàn giao 
 | Rủi ro tiềm ẩn | Mức độ | Biện pháp phòng ngừa & Giảm thiểu |
 |---|---|---|
 | **Sinh viên ngại đăng ký vì rào cản** | Cao | Hỗ trợ đăng nhập nhanh bằng **Google (Gmail)** trong 1 chạm, không bắt buộc email trường ngày đầu. |
-| **Giao dịch rò rỉ qua Zalo** (hai bên chốt ngoài rồi không quay lại web) | Cao | Hiển thị banner nhắc nhở trên tin đăng + Nút "Chốt bán cho người này" để người bán tự đưa đơn vào hệ thống ngay. |
+| **Khách vãng lai bỏ đi khi bị yêu cầu đăng nhập lúc bấm nút Zalo** | Trung bình | Popup Google 1 chạm (OAuth), đăng nhập xong tự động mở thẳng route Zalo qua `returnTo` mà không mất vị trí trang. |
+| **Giao dịch rò rỉ qua Zalo** (hai bên chốt ngoài rồi không quay lại web) | Cao | Hiển thị banner nhắc nhở trên tin đăng + Nút "Gửi lời mời chốt bán" (link dùng một lần, hết hạn 24h theo BR38) để người bán đưa đơn vào hệ thống. |
 | **Quá tải phạm vi Sprint 4** | Cao | Giảm tải: Đẩy tính năng "Chuyển quyền trực tiếp" sang P1, chỉ tập trung hoàn thiện bộ ba Đơn hàng 48h - Đánh giá - Digital Passport. |
 | **Người mua khiếu nại người bán bấm xác nhận khống** | Trung bình | Cơ chế nút "Tôi chưa nhận hàng" trong 48h lập tức chặn auto-complete, chuyển `DISPUTED` cho Admin xử lý. |
 | **Đơn hàng bị kẹt trạng thái giữ đồ vô hạn** | Trung bình | Cơ chế tự động hủy sau `meet_time + 24h` nếu cả hai im lặng; tự động hoàn tất sau 48h nếu người mua im lặng. |

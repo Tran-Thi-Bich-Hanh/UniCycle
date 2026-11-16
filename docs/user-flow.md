@@ -10,8 +10,8 @@
 2. Duyệt danh sách hoặc tìm kiếm/lọc theo danh mục, giá, tình trạng, khu vực KTX/trường, "có lịch sử đồ vật".
 3. Mở chi tiết sản phẩm; xem ảnh, mô tả, hồ sơ người bán (đánh giá sao, huy hiệu sinh viên xác minh), tóm tắt Digital Passport.
 4. **Lựa chọn cách thức liên hệ**:
-   - **Cách 1 (Nhanh nhất - Nhắn Zalo)**: Yêu cầu đăng nhập (BR01) → Bấm "Nhắn qua Zalo" → Mở ứng dụng Zalo trên điện thoại (hoặc hiển thị mã QR Zalo trên máy tính qua route trung gian bảo mật `/api/zalo/[listingId]`) với tin nhắn mẫu sẵn để trao đổi ngay.
-   - **Cách 2 (Đặt lịch hẹn giữ đồ)**: Bấm "Đặt lịch hẹn xem hàng" → Điền giá đề xuất, chọn địa điểm (cổng trường/KTX), khung giờ hẹn và gửi yêu cầu (`PENDING`).
+   - **Cách 1 (Nhanh nhất - Nhắn Zalo)**: Bấm "Nhắn qua Zalo" → (nếu chưa đăng nhập: popup đăng nhập Google 1 chạm, hệ thống tự động quay lại `returnTo`) → mở Zalo qua route trung gian bảo mật `/api/zalo/[listingId]` với tin nhắn mẫu sẵn để trao đổi ngay.
+   - **Cách 2 (Đặt lịch hẹn giữ đồ)**: Bấm "Đặt lịch hẹn xem hàng" → (nếu chưa đăng nhập: popup đăng nhập Google 1 chạm, hệ thống tự động quay lại `returnTo`) → Điền giá đề xuất, chọn địa điểm (cổng trường/KTX), khung giờ hẹn và gửi yêu cầu (`PENDING`).
    - 💡 **Tránh rò rỉ giao dịch ngoài hệ thống**: Khi hai bên đã chốt thỏa thuận qua Zalo, hệ thống hiển thị banner nhắc: *"Đã chốt qua Zalo? Hãy xác nhận đặt hẹn trên UniCycle để bảo lưu đánh giá uy tín và nhận Product Passport"*. Người bán có nút **"Gửi lời mời chốt bán"** (tạo link/QR dùng 1 lần theo BR38) gửi qua Zalo cho người mua bấm "Xác nhận mua", đưa sản phẩm vào trạng thái `RESERVED` ngay lập tức.
 5. Người bán chấp nhận lịch hẹn → Trạng thái đơn `ACCEPTED`, sản phẩm tự động chuyển `RESERVED` (giữ chỗ).
 6. Hai bên gặp mặt tại nơi hẹn công cộng (cổng KTX, căng tin, thư viện trường), kiểm tra sản phẩm (**có thể quét mã QR số trên màn hình điện thoại hoặc mở link `/passport/[id]` để đối chiếu**), thanh toán trực tiếp.
@@ -126,7 +126,7 @@ Lưu ý:
 | Tx ghi chain thất bại/chậm (ở P1) | Đơn vẫn `COMPLETED`; passport hiển thị "Đang ghi lên blockchain…"; hệ thống thử lại tự động; quá 3 lần → cảnh báo admin (BR28) |
 | Người đăng không phải chủ hiện tại | Hệ thống chặn đăng (BR25), hướng dẫn dùng "Chuyển quyền" hoặc liên hệ hỗ trợ |
 | Món đồ bị bán ngoài hệ thống | Chủ cũ dùng "Gửi lời mời chốt bán" (BR38) gửi link cho người mua xác nhận để cập nhật đúng chuỗi passport (hoặc dùng Chuyển quyền trực tiếp ở P1) |
-| Passport bị flag | Tin đăng hiển thị cảnh báo; người mua được thông báo; admin xử lý |
+| Passport bị flag | Tin đăng bị ẩn (`HIDDEN`), đơn đang xử lý chuyển `DISPUTED` hoặc `REJECTED` (BR39), các bên liên quan được thông báo |
 | Quên/cần hiển thị lại mã QR | Chủ hiện tại mở lại mã QR số bất kỳ lúc nào từ mục "Đồ của tôi" trên điện thoại |
 | Chủ hiện tại xóa tài khoản | Áp dụng BR34: Passport của món đồ tự động chuyển sang trạng thái `ARCHIVED_OWNER_DELETED` (lưu trữ đóng băng), chặn tạo tin bán lại cho đến khi liên hệ Admin hỗ trợ |
 | Xem passport khi chưa đăng nhập | Cho phép (trang công khai) |

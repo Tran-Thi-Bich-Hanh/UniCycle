@@ -4,7 +4,7 @@
 
 | Mã | Quy tắc |
 |---|---|
-| BR01 | Người dùng phải đăng nhập (qua Google hoặc Email) mới được đăng bán, gửi yêu cầu hẹn mua, bấm liên hệ Zalo hoặc đánh giá. **Nút Zalo chỉ hiển thị đối với người dùng đã đăng nhập** nhằm ngăn chặn hành vi cào dữ liệu / spam số điện thoại. Việc xem danh sách, chi tiết và tìm kiếm không yêu cầu đăng nhập |
+| BR01 | Người dùng phải đăng nhập (qua Google hoặc Email) mới được đăng bán, gửi yêu cầu hẹn, liên hệ Zalo hoặc đánh giá. Nút “Nhắn qua Zalo” và “Đặt lịch hẹn” luôn hiển thị với khách; khi khách bấm, hệ thống mở cửa sổ đăng nhập (ưu tiên Google 1 chạm) rồi tự động quay lại và tiếp tục hành động đã chọn. Số điện thoại không bao giờ có trong HTML trả về cho khách. Việc xem danh sách, chi tiết và tìm kiếm không yêu cầu đăng nhập |
 | BR19 | Mọi tài khoản đã đăng nhập đều có thể đăng bán. Tài khoản xác minh danh tính sinh viên (qua thẻ sinh viên hoặc email trường) được cấp Huy hiệu "Sinh viên đã xác minh" và tin đăng được ưu tiên hiển thị |
 | BR20 | Một người dùng có thể đồng thời là Buyer và Seller (không tách loại tài khoản) |
 
@@ -33,7 +33,7 @@
 | BR13 | Nếu một bên (thường là người bán) đã bấm xác nhận hoàn tất nhưng bên kia chưa phản hồi: Trong vòng **48 giờ**, người mua có quyền bấm **"Tôi chưa nhận hàng" (Khiếu nại)** để lập tức chặn auto-complete và chuyển đơn sang trạng thái `DISPUTED` cho Admin can thiệp xử lý. Nếu quá 48 giờ mà người mua hoàn toàn im lặng, đơn tự chuyển `AUTO_COMPLETED` |
 | BR21 | Hai bên có thể hủy trước khi hoàn tất; hủy nhiều lần liên tiếp sẽ bị ghi nhận và có thể ảnh hưởng uy tín |
 | BR22 | Nếu người bán đổi giá/điều kiện sau khi có yêu cầu `PENDING`, người mua được thông báo và yêu cầu cần được xác nhận lại |
-| BR36 | Người bán có thể bật liên hệ nhanh qua **Zalo (Deep link)** kèm lời nhắn mẫu. Khi người bán chọn **ẩn SĐT thật**, link Zalo sẽ đi qua **route trung gian** (ví dụ `/api/zalo/[listingId]`) để mở cuộc trò chuyện Zalo mà không để lộ số điện thoại thô trên HTML/API client |
+| BR36 | Người bán có thể bật liên hệ nhanh qua Zalo kèm lời nhắn mẫu. Link Zalo luôn đi qua route trung gian `/api/zalo/[listingId]` (yêu cầu đăng nhập, có rate limit theo tài khoản và IP) để chống thu thập số điện thoại hàng loạt. Khi người bán chọn ẩn SĐT (`hide_phone = true`), số không xuất hiện trong HTML/API trả về client và không có nút “Sao chép số”. Lưu ý: người mua vẫn có thể thấy thông tin tài khoản Zalo của người bán sau khi mở cuộc trò chuyện. UniCycle không cam kết ẩn tuyệt đối số điện thoại khỏi người đã liên hệ |
 | BR37 | **Timeout cho đơn `ACCEPTED`**: Quá thời gian hẹn (`meet_time`) + **24 giờ** mà không bên nào bấm xác nhận giao dịch thành công, đơn hàng tự động chuyển sang `EXPIRED` (hết hạn) và sản phẩm tự động nhả trạng thái `RESERVED` quay về `AVAILABLE` để người khác có thể đặt mua |
 | BR38 | **Chốt bán cho khách Zalo**: Người bán tạo lời mời chốt bán (link/QR dùng một lần, hết hạn sau 24 giờ) và gửi cho người mua qua Zalo. Đơn chỉ được tạo (`ACCEPTED`, listing `RESERVED`) sau khi người mua đăng nhập và bấm "Xác nhận mua". Người bán không nhập SĐT/username để tạo đơn thay người mua. Đơn tạo qua lời mời vẫn chịu BR04, BR13, BR37 và vẫn cần xác nhận bàn giao. Giao dịch cùng một cặp tài khoản lặp lại nhiều lần bị xét theo BR23/BR35 |
 
@@ -58,7 +58,8 @@
 | BR29 | Lịch sử hiển thị công khai ở dạng ẩn danh: "Chủ #n · Trường · Tháng/Năm". Tên hiển thị chỉ xuất hiện nếu chủ đó **chủ động đồng ý** |
 | BR30 | Passport **không chứng nhận** chất lượng hay tính xác thực của món đồ. Mọi trang passport phải hiển thị tuyên bố này |
 | BR31 | Chuyển giao do `AUTO_COMPLETED` (chỉ một bên xác nhận) được ghi với mức xác nhận "một bên" và hiển thị khác với "hai bên xác nhận" |
-| BR32 | Admin có thể đánh dấu (flag) passport nghi vấn (đồ bị báo mất, gian lận); trạng thái flag hiển thị cảnh báo trên tin đăng và được ghi nhận bằng sự kiện trên chain |
+| BR32 | Admin có thể đánh dấu (flag) passport nghi vấn (đồ bị báo mất, gian lận). Trạng thái flag hiển thị cảnh báo nổi bật trên tin đăng và trang passport; ở P1 được ghi nhận bằng sự kiện trên chain. Hậu quả nghiệp vụ theo BR39 |
+| BR39 | **Hiệu lực của flag**: Khi passport bị flag: (a) không cho tạo đơn mới, không cho “Bán lại” hay chuyển quyền; (b) tin đăng liên quan chuyển `HIDDEN` (admin vẫn xem được); (c) đơn `PENDING` tự động `REJECTED`; đơn `ACCEPTED`/`WAITING_CONFIRMATION` chuyển `DISPUTED` để admin xử lý theo bảng kết quả; (d) chủ hiện tại và các bên liên quan được thông báo kèm lý do chung (không lộ người báo cáo). Khi admin gỡ flag (unflag), tin đăng được khôi phục nếu còn hạn. Mọi thao tác flag/unflag ghi vào `passport_events` kèm reason và admin thực hiện |
 | BR33 | Một món đồ chỉ có một passport duy nhất. Người dùng không được tạo passport mới cho món đã có passport; khi bán lại phải dùng "Bán lại" từ "Đồ của tôi" và bắt buộc cập nhật bộ ảnh chụp mới |
 | BR34 | **Xử lý khi người dùng xóa tài khoản**: Ánh xạ `owner_hash ↔ user_id` và bí mật liên quan bị xóa vĩnh viễn (crypto-shredding), lịch sử trên DB/chain vẫn giữ nguyên chuỗi nhưng không còn liên kết đến danh tính cá nhân. Với các món đồ (`items`) mà người xóa tài khoản đang là **chủ sở hữu hiện tại**: Passport của món đồ đó sẽ tự động chuyển sang trạng thái `ARCHIVED_OWNER_DELETED` (lưu trữ đóng băng), không thể tạo tin đăng bán lại cho đến khi có yêu cầu khôi phục hoặc xác minh qua Admin |
 | BR35 | Chuỗi chuyển giao dạng vòng lặp bất thường (A → B → A) hoặc giữa các tài khoản nghi ngờ thông đồng bị gắn cảnh báo và không được tính vào chỉ số uy tín |

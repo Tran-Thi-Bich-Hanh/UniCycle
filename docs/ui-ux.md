@@ -137,8 +137,10 @@ Trang quyết định chuyển đổi giao dịch, giải quyết triệt để 
 #### A. Cụm Hành Động Liên Lạc (Dual CTA - Điểm đột phá MVP)
 Thay vì bắt sinh viên chờ đợi trong hệ thống chat xa lạ, UniCycle cung cấp 2 lựa chọn liên hệ rõ ràng:
 
+- 💡 **Luồng cho khách vãng lai (Chưa đăng nhập)**: Cả 2 nút "Nhắn qua Zalo" và "Đặt lịch hẹn" luôn hiển thị với khách. Khi khách bấm, hệ thống bật popup đăng nhập nhanh (ưu tiên Google 1 chạm) rồi tự động quay lại (`returnTo`) và tiếp tục mở Zalo hoặc mở form hẹn mà không làm đứt đoạn trải nghiệm. Số điện thoại không bao giờ lộ trong HTML của khách.
+
 1. **Nút "Nhắn qua Zalo" (Ưu tiên số 1 - Màu xanh Zalo `#0068FF`)**:
-   - Khi bấm trên Mobile: Mở ứng dụng Zalo trên điện thoại (`zalo.me/<sdt_người_bán>`).
+   - Khi bấm trên Mobile: Mở ứng dụng Zalo trên điện thoại thông qua route trung gian `/api/zalo/[listingId]`.
    - Tự động điền nội dung mẫu: *"Chào bạn, mình thấy tin đăng [Tên món đồ] giá [Giá tiền] trên UniCycle, bạn còn đồ không ạ?"*.
    - **Giao diện Modal trên Desktop (Zalo Contact Dialog)**:
      ```
@@ -148,11 +150,11 @@ Thay vì bắt sinh viên chờ đợi trong hệ thống chat xa lạ, UniCycle
      ├────────────────────────────────────────────────┤
      │       ┌──────────────┐                         │
      │       │ [ MÃ QR ZALO ]                         │
-     │       │   (Quét ngay)│                         │
+     │       │ (Token 5 phút)                         │
      │       └──────────────┘                         │
      │  Quét mã QR bằng ứng dụng Zalo trên điện thoại │
      │  hoặc:                                         │
-     │  [ 📱 Mở Zalo Web ]   [ 📋 Copy Số điện thoại ]│
+     │  [ 📱 Mở Zalo Web ]   [ 📋 Copy Số (nếu công khai)]│
      └────────────────────────────────────────────────┘
      ```
 2. **Nút "Đặt lịch hẹn xem hàng" (Nút thứ hai - Nền `#018ABE`)**:
@@ -205,7 +207,7 @@ Tối ưu form 1 trang duy nhất (Single-step scroll) trên điện thoại:
    - Giá bán (hoặc tích chọn `Tặng miễn phí 0đ`).
 3. **Khu vực bàn giao**: Chọn Trường đại học / Cụm KTX để người mua cùng trường dễ tìm.
 4. **Tùy chọn liên hệ Zalo & Passport**:
-   - Nhập Số điện thoại Zalo (có tuỳ chọn ẩn số thật, chỉ mở link Zalo).
+   - Nhập Số điện thoại Zalo (có tuỳ chọn tích chọn: `[ ] Không hiện số điện thoại công khai`, liên hệ đi qua route trung gian bảo mật).
    - Công tắc bật: `[x] Tạo Hộ chiếu đồ vật (Passport) miễn phí cho món đồ này`.
 5. **Nút "Đăng bán ngay"**: Nổi bật màu `#018ABE`.
 
@@ -262,7 +264,7 @@ stateDiagram-v2
 ### 4.7. Quy Chuẩn Modal & Popup Tương Tác (Dialog UX Patterns)
 
 1. **Modal Liên Hệ Zalo (Desktop)**:
-   - Tối ưu cho sinh viên duyệt web bằng laptop: Hiển thị mã QR Zalo to, rõ nét giữa màn hình kèm nút "Mở Zalo Web" và nút "Sao chép số điện thoại" (qua route trung gian bảo mật `/api/zalo/[listingId]`).
+   - Tối ưu cho sinh viên duyệt web bằng laptop: Hiển thị mã QR Zalo to, rõ nét giữa màn hình (mã QR trỏ tới URL route trung gian có token ngắn hạn `/api/zalo/[listingId]`, không mã hóa trực tiếp số điện thoại) kèm nút "Mở Zalo Web". Nút "Sao chép số điện thoại" **chỉ hiển thị khi người bán không ẩn SĐT (`hide_phone = false`)**.
 2. **Modal Đặt Lịch Hẹn Xem Hàng**:
    - Chọn nhanh các địa điểm công cộng an toàn phổ biến: Cổng KTX Khu A/B, Nhà ăn trung tâm, Thư viện trường, Cổng chính Đại học.
    - Chọn khung giờ hẹn: Sáng (8h-11h), Trưa (11h-13h), Chiều (13h-17h), Tối (17h-20h).

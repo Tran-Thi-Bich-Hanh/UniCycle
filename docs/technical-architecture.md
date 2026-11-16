@@ -10,7 +10,7 @@
 | ORM | Prisma hoặc Drizzle ORM |
 | Xác thực | Đăng nhập Google (Google OAuth / NextAuth.js / Supabase Auth) + Email & Mật khẩu; Xác minh sinh viên (thẻ SV hoặc email trường) để cấp huy hiệu. **Chính sách riêng tư:** Ảnh chụp thẻ sinh viên được tự động xóa vĩnh viễn khỏi Storage ngay sau khi Admin phê duyệt (tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân). |
 | Lưu ảnh | Cloudinary hoặc Supabase Storage / S3-compatible; nén ảnh phía client, tạo thumbnail |
-| Kênh liên hệ | **Ưu tiên MVP: Zalo Deep link (`zalo.me/<sdt>`)** kèm tin nhắn mẫu + Form đặt lịch hẹn xem hàng tại cổng trường/KTX. Có route trung gian `/api/zalo/[listingId]` để ẩn SĐT thật khi người bán yêu cầu. |
+| Kênh liên hệ | **Ưu tiên MVP: Zalo Deep link** kèm tin nhắn mẫu + Form đặt lịch hẹn xem hàng tại cổng trường/KTX. Route trung gian `/api/zalo/[listingId]` để chống thu thập SĐT hàng loạt; rate limit 10 lượt/giờ/tài khoản (gợi ý); người bán có thể chọn ẩn số điện thoại công khai. |
 | Chat realtime (P1) | Supabase Realtime hoặc Socket.IO (khi cần mở rộng sau MVP) |
 | Thông báo | Email thông báo (Resend); thông báo trong ứng dụng |
 | Job nền | **`pg_cron` (Supabase / PostgreSQL extension)** hoặc **GitHub Actions Scheduled Workflows** (chạy mỗi 1-2 giờ gọi Route Handler bảo mật với `CRON_SECRET`) để quét hết hạn đơn `PENDING`, timeout đơn `ACCEPTED` sau `meet_time + 24h` (BR37), và tự hoàn tất sau 48h (BR13). *(Tránh dùng BullMQ trên Vercel do thiếu process thường trực; Vercel Cron Hobby bị giới hạn tần suất 1 lần/ngày)*. |
@@ -45,7 +45,7 @@ Thông báo cho hai bên + hiển thị mã kiểm chứng on-chain trên /passp
 |---|---|
 | Auth | `POST /auth/login/google`, `POST /auth/register`, `POST /auth/login`, `POST /auth/verify-student` (upload thẻ SV hoặc email trường) |
 | Listings | `GET /listings`, `GET /listings/:id`, `POST /listings` (kèm Zalo phone, Digital Passport), `PATCH /listings/:id`, `POST /listings/:id/mark-sold` |
-| Zalo Proxy & Invites | `GET /api/zalo/:listingId` (mở Zalo bảo mật ẩn SĐT thô), `POST /listings/:id/invites` (tạo lời mời chốt bán BR38), `POST /invites/:code/accept` (người mua chấp nhận lời mời) |
+| Zalo Proxy & Invites | `GET /api/zalo/:listingId` (route trung gian bảo mật mở Zalo; trả 401 kèm `returnTo` nếu chưa đăng nhập để frontend mở popup), `POST /listings/:id/invites` (tạo lời mời chốt bán BR38), `POST /invites/:code/accept` (người mua chấp nhận lời mời) |
 | Orders | `POST /listings/:id/orders` (đặt lịch hẹn), `POST /orders/:id/accept`, `.../reject`, `.../cancel`, `.../confirm`, **`POST /orders/:id/dispute` (khiếu nại "Tôi chưa nhận hàng", chặn auto-complete)** |
 | Reviews | `POST /orders/:id/reviews`, `GET /users/:id/reviews` (chu kỳ 48h blind) |
 | **Passport** | **`GET /passports/:id` (timeline công khai), `GET /me/items` (danh sách đồ của tôi), `POST /items/:id/resell` (bán lại 1-click), `GET /items/:id/qr` (QR số màn hình), `GET /passports/:id/verify` (ở P1)** |

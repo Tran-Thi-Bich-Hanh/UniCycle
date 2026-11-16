@@ -33,7 +33,7 @@ UniCycle
 | `/products` | Danh sách, lọc, sắp xếp theo trường/KTX | Công khai | MVP |
 | `/search?q=` | Kết quả tìm kiếm | Công khai | MVP |
 | `/categories/[slug]` | Sản phẩm theo danh mục | Công khai | MVP |
-| `/products/[id]` | Chi tiết sản phẩm, tóm tắt Digital Passport, nút "Nhắn Zalo", nút "Đặt lịch hẹn", báo cáo | Công khai (hành động cần đăng nhập) | MVP |
+| `/products/[id]` | Chi tiết sản phẩm, tóm tắt Digital Passport, nút "Nhắn Zalo", nút "Đặt lịch hẹn", báo cáo | Công khai (khách bấm hành động sẽ được yêu cầu đăng nhập, rồi tự quay lại) | MVP |
 | **`/passport/[id]`** | **Timeline chuyển giao số, mã QR số hiển thị màn hình, tuyên bố giới hạn (xác minh on-chain ở P1)** | **Công khai** | **MVP** |
 | `/users/[id]` | Hồ sơ công khai: tên hiển thị, trường, huy hiệu xác minh SV, uy tín, tin đang bán | Công khai | MVP |
 | `/login`, `/register` | Đăng nhập Google (OAuth) & Email | Khách | MVP |
@@ -43,7 +43,7 @@ UniCycle
 | **`/my-items`, `/my-items/[id]`** | **Đồ của tôi: passport, mã QR số màn hình, Bán lại 1-chạm** | **Đăng nhập** | **MVP** |
 | `/orders` | Quản lý lịch hẹn mua và bán | Đăng nhập | MVP |
 | `/orders/[id]` | Chi tiết hẹn, trạng thái giữ đồ, xác nhận bàn giao (chu kỳ 48h), nút khiếu nại "Tôi chưa nhận hàng" (chặn auto-complete), đánh giá bí mật | Người tham gia đơn | MVP |
-| `/api/zalo/[listingId]` | Route trung gian điều hướng mở Zalo bảo mật (ẩn số điện thoại thật của người bán) | Đăng nhập (BR01) | MVP |
+| `/api/zalo/[listingId]` | Route trung gian điều hướng mở Zalo bảo mật (ẩn số điện thoại thật của người bán) | Đăng nhập; khách bị chuyển tới `/login?returnTo=...` | MVP |
 | **`/transfer/[code]`** | **Người nhận xem và chấp nhận chuyển quyền trực tiếp (P1)** | **Đăng nhập** | **P1** |
 | `/notifications` | Thông báo đơn hẹn và hệ thống | Đăng nhập | MVP |
 | `/profile`, `/settings` | Hồ sơ cá nhân, cài đặt riêng tư số điện thoại | Đăng nhập | MVP |

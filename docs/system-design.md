@@ -59,7 +59,8 @@ ACTIVE (off-chain DB, chủ #1 = người bán, cấp passport_id + QR số trê
    ▼
 TRANSFERRED(n) ──(lặp lại các đời chủ)──→ TRANSFERRED(n+1)
 
-Mọi trạng thái → FLAGGED (admin đánh dấu nghi vấn đồ mất cắp/gian lận; có thể gỡ cờ)
+Mọi trạng thái → FLAGGED (admin đánh dấu nghi vấn đồ mất cắp/gian lận)
+FLAGGED ──(admin gỡ cờ)──→ trạng thái trước đó (ACTIVE hoặc TRANSFERRED(n))
 Khi chủ hiện tại xóa tài khoản → ARCHIVED_OWNER_DELETED (đóng băng, không cho bán lại)
 
 Giai đoạn P1 (Kích hoạt Avalanche C-Chain):
@@ -91,7 +92,7 @@ Quy tắc: tại một thời điểm chỉ một tx đang xử lý cho mỗi pa
 | `users` | id, email, auth_provider (google/email), is_student_verified (bool), student_card_url, display_name, avatar_url, school_id, dorm, role (user/admin), status, reputation_score, created_at, **deleted_at (timestamp, nullable)** |
 | `schools` | id, name, email_domain, area |
 | `categories` | id, name, slug |
-| **`items`** | **id, current_owner_id, category_id, passport_enabled, passport_id (bytes32, unique, nullable), identity_level (LIGHT/SERIAL), item_commit (bytes32), item_salt (mã hóa, bí mật), passport_status (ACTIVE/FLAGGED/ARCHIVED_OWNER_DELETED), flagged_at, created_at** |
+| **`items`** | **id, current_owner_id, category_id, passport_enabled, passport_id (bytes32, unique, nullable), identity_level (LIGHT/SERIAL), item_commit (bytes32), item_salt (mã hóa, bí mật), passport_status (ACTIVE/FLAGGED/ARCHIVED_OWNER_DELETED), flag_reason (nullable), flagged_at, created_at** |
 | `listings` | id, **item_id**, seller_id, title, category_id, price, is_free, condition, description, school_id/area, zalo_phone, hide_phone (bool), status, expires_at, created_at |
 | `listing_images` | id, listing_id, url, **sha256**, position |
 | `orders` | id, listing_id, buyer_id, seller_id, proposed_price, meet_place, meet_time, message, status (PENDING / ACCEPTED / WAITING_CONFIRMATION / COMPLETED / AUTO_COMPLETED / DISPUTED / REJECTED / CANCELLED / EXPIRED), confirmed_first_by (buyer/seller, nullable), buyer_confirmed_at, seller_confirmed_at, dispute_reason, disputed_at, resolved_by (nullable), resolved_at (nullable), resolution_note (nullable), expires_at, created_at |
@@ -100,7 +101,7 @@ Quy tắc: tại một thời điểm chỉ một tx đang xử lý cho mỗi pa
 | `reports` | id, reporter_id, target_type (listing/user/passport), target_id, reason, status, handled_by, created_at |
 | `notifications` | id, user_id, type, payload, read_at, created_at |
 | **`passport_owners`** | **id, item_id, seq (1,2,3…), user_id, owner_hash (bytes32, ngẫu nhiên per (user, item) để crypto-shredding an toàn), show_name (bool), since** |
-| **`passport_events`** | **id, item_id, seq, event_type (REGISTERED/TRANSFERRED/FLAGGED/UNFLAGGED), from_owner_hash, to_owner_hash, order_id (nullable), transfer_kind (SALE/DIRECT), confirmation_level (BOTH/ONE_SIDE), chain_tx_id, occurred_at** |
+| **`passport_events`** | **id, item_id, seq, event_type (REGISTERED/TRANSFERRED/FLAGGED/UNFLAGGED), from_owner_hash, to_owner_hash, order_id (nullable), transfer_kind (SALE/DIRECT), confirmation_level (BOTH/ONE_SIDE), actor_admin_id (nullable), reason (nullable), chain_tx_id, occurred_at** |
 | **`chain_txs`** | **id, item_id, kind, payload_hash, status, tx_hash, attempts, last_error, submitted_at, confirmed_at** |
 | **`direct_transfers` (P1)** | **id, item_id, from_user_id, to_user_id (nullable), code_hash, expires_at, status** |
 | `favorites` (P1) | user_id, listing_id |
@@ -117,6 +118,7 @@ Quy tắc: tại một thời điểm chỉ một tx đang xử lý cho mỗi pa
 | Chỉ cho tạo review khi `orders.status IN (COMPLETED, AUTO_COMPLETED)` và reviewer là buyer hoặc seller | BR08 |
 | Người dùng đã đăng nhập (qua Google hoặc email) được phép đăng bán; tài khoản có `is_student_verified = true` được gắn huy hiệu uy tín | BR19 |
 | Listing có `item_id` với passport: kiểm tra `listings.seller_id = items.current_owner_id` thông qua **Database Transaction trong Application Layer hoặc PostgreSQL Trigger** (vì ràng buộc CHECK thuần túy không thể truy vấn xuyên bảng) | BR25 |
+| Không tạo `orders` mới nếu `items.passport_status = FLAGGED` (kiểm tra trong Database Transaction ở tầng ứng dụng) | BR39 |
 | `UNIQUE (item_id, seq)` trên `passport_owners` và `passport_events` | Thứ tự chuyển giao |
 | `UNIQUE (passport_id)` trên `items` | BR33 |
 | Mỗi `item_id` tối đa một `chain_txs` ở trạng thái `QUEUED`/`SUBMITTED` (ở P1) | Tránh sai thứ tự (mục 7.5) |
