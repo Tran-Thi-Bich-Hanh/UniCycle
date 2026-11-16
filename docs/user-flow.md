@@ -124,7 +124,7 @@ Lưu ý:
 | Tình huống | Xử lý |
 |---|---|
 | Tx ghi chain thất bại/chậm (ở P1) | Đơn vẫn `COMPLETED`; passport hiển thị "Đang ghi lên blockchain…"; hệ thống thử lại tự động; quá 3 lần → cảnh báo admin (BR28) |
-| Người đăng không phải chủ hiện tại | Hệ thống chặn đăng (BR25), hướng dẫn dùng "Chuyển quyền" hoặc liên hệ hỗ trợ |
+| Người đăng không phải chủ hiện tại | Hệ thống chặn đăng (BR25), hướng dẫn nhờ chủ cũ gửi "Lời mời chốt bán" (BR38) để nhận quyền sở hữu hoặc liên hệ hỗ trợ (tính năng "Chuyển quyền trực tiếp" có ở P1) |
 | Món đồ bị bán ngoài hệ thống | Chủ cũ dùng "Gửi lời mời chốt bán" (BR38) gửi link cho người mua xác nhận để cập nhật đúng chuỗi passport (hoặc dùng Chuyển quyền trực tiếp ở P1) |
 | Passport bị flag | Tin đăng bị ẩn (`HIDDEN`), đơn đang xử lý chuyển `DISPUTED` hoặc `REJECTED` (BR39), các bên liên quan được thông báo |
 | Quên/cần hiển thị lại mã QR | Chủ hiện tại mở lại mã QR số bất kỳ lúc nào từ mục "Đồ của tôi" trên điện thoại |

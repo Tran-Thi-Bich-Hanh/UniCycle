@@ -100,7 +100,7 @@ Quy tắc: tại một thời điểm chỉ một tx đang xử lý cho mỗi pa
 | `reviews` | id, order_id, reviewer_id, reviewee_id, rating (1–5), comment, submitted_at, visible_at |
 | `reports` | id, reporter_id, target_type (listing/user/passport), target_id, reason, status, handled_by, created_at |
 | `notifications` | id, user_id, type, payload, read_at, created_at |
-| **`passport_owners`** | **id, item_id, seq (1,2,3…), user_id, owner_hash (bytes32, ngẫu nhiên per (user, item) để crypto-shredding an toàn), show_name (bool), since** |
+| **`passport_owners`** | **id, item_id, seq (1,2,3…), user_id (nullable, đặt NULL khi xóa tài khoản), owner_hash (bytes32, ngẫu nhiên per (user, item) để crypto-shredding an toàn), show_name (bool), since** |
 | **`passport_events`** | **id, item_id, seq, event_type (REGISTERED/TRANSFERRED/FLAGGED/UNFLAGGED), from_owner_hash, to_owner_hash, order_id (nullable), transfer_kind (SALE/DIRECT), confirmation_level (BOTH/ONE_SIDE), actor_admin_id (nullable), reason (nullable), chain_tx_id, occurred_at** |
 | **`chain_txs`** | **id, item_id, kind, payload_hash, status, tx_hash, attempts, last_error, submitted_at, confirmed_at** |
 | **`direct_transfers` (P1)** | **id, item_id, from_user_id, to_user_id (nullable), code_hash, expires_at, status** |
@@ -123,4 +123,4 @@ Quy tắc: tại một thời điểm chỉ một tx đang xử lý cho mỗi pa
 | `UNIQUE (passport_id)` trên `items` | BR33 |
 | Mỗi `item_id` tối đa một `chain_txs` ở trạng thái `QUEUED`/`SUBMITTED` (ở P1) | Tránh sai thứ tự (mục 7.5) |
 | Job định kỳ: hết hạn đơn `PENDING` > 48 giờ, timeout đơn `ACCEPTED` sau `meet_time + 24h` (BR37), tự hoàn tất sau 48h (BR13), timeout đơn `DISPUTED` sau 72h tự động CANCELLED và nhả `AVAILABLE`, hết hạn tin theo BR15, thử lại `chain_txs` FAILED (ở P1) | BR12, BR13, BR15, BR28, BR37 |
-| Xóa tài khoản (`deleted_at`): xóa ánh xạ `owner_hash ↔ user_id` (crypto-shredding); chuyển các `items` đang sở hữu sang `ARCHIVED_OWNER_DELETED` | BR34 |
+| Xóa tài khoản (`deleted_at`): đặt `passport_owners.user_id = NULL` và `show_name = false` (crypto-shredding nhưng giữ nguyên `owner_hash`, `seq`, `since` để bảo toàn timeline); chuyển các `items` đang sở hữu sang `ARCHIVED_OWNER_DELETED` | BR34 |

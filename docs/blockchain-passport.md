@@ -17,7 +17,7 @@
 - Không đảm bảo chất lượng, tình trạng hay giá hợp lý của món đồ.
 - Ở giai đoạn đầu, backend UniCycle là bên gọi hợp đồng thay cho người dùng, nên blockchain đem lại **tính không thể sửa và khả năng kiểm chứng công khai**, chưa phải "hoàn toàn phi tập trung". Muốn tiến xa hơn, cần người dùng tự ký xác nhận qua ví nhúng (P2).
 
-> Cách nói trung thực với người dùng: **"Lịch sử chuyển giao được ghi nhận minh bạch và không thể sửa đổi"**, không phải **"hàng đã được thẩm định chất lượng"**.
+> Cách nói trung thực với người dùng và hội đồng: **Ở MVP (PostgreSQL), lịch sử chuyển giao được ghi nhận minh bạch (Admin vẫn có quyền can thiệp xử lý tranh chấp); khi ghi nhận On-chain (Lát cắt Fuji Testnet & P1), lịch sử mới đạt tính chống chỉnh sửa (bất biến) và kiểm chứng công khai**, hoàn toàn không phải **"hàng đã được thẩm định chất lượng"**.
 
 ### 2. Kiến trúc lai (hybrid)
 
@@ -127,7 +127,7 @@ contract UniCyclePassport is AccessControl {
 - **Owner hash ngẫu nhiên theo từng món đồ:** `ownerHash` là một giá trị ngẫu nhiên cryptographically secure (32 bytes) được sinh riêng cho mỗi cặp (user, item) khi phát sinh quyền sở hữu và lưu trong bảng `passport_owners`. Do không dùng công thức dẫn xuất toán học từ `userId`, ngay cả khi lộ database cũng không thể liên kết các món đồ khác nhau của cùng một người trên blockchain.
 - **Order hash:** `orderHash = keccak256(orderId ‖ randomSalt)`; không lộ mã đơn hay giá.
 - **Hiển thị công khai (BR29):** "Chủ #n · Trường · Tháng/Năm". Người dùng có thể bật "hiển thị tên của tôi trong lịch sử đồ vật" (mặc định tắt).
-- **Xóa tài khoản (BR34):** Xóa dòng ánh xạ trong bảng `passport_owners` (crypto-shredding). Vì `ownerHash` là số ngẫu nhiên lưu độc lập, khi đã xóa mapping thì vĩnh viễn không còn cách nào truy ngược từ hash on-chain về danh tính thật.
+- **Xóa tài khoản (BR34):** Đặt `passport_owners.user_id = NULL` và `show_name = false` (crypto-shredding), nhưng giữ nguyên bản ghi (`owner_hash`, `seq`, `since`) để không làm mất thứ tự hay thời điểm trên timeline. Vì `ownerHash` là số ngẫu nhiên lưu độc lập, khi đã gỡ `user_id = NULL` thì vĩnh viễn không còn cách nào truy ngược từ hash on-chain về danh tính thật.
 - **Không ghi lên chain:** tên, email, SĐT, MSSV, ảnh, giá, nội dung đánh giá (BR27).
 
 ### 5. Gắn passport với món đồ (Định danh số & Đối chiếu khi Bán lại)
@@ -140,8 +140,8 @@ Passport có ý nghĩa liên kết chặt chẽ với món đồ qua 2 mức đ�
 | **SERIAL** (khuyến nghị cho đồ giá trị cao) | Laptop, điện thoại, máy tính Casio, xe máy | LIGHT + đối chiếu số serial/IMEI có sẵn của nhà sản xuất | LIGHT + `hash(serial chuẩn hóa ‖ salt)` |
 
 **Cơ chế đối chiếu ảnh khi "Bán lại" (Resell)**:
-- Mỗi khi bán lại qua các đời chủ, người bán bắt buộc phải chụp bộ ảnh mới. Hệ thống tính hash SHA-256 cho từng ảnh và lưu vào `listing_images.sha256`.
-- Người mua đối chiếu trực quan ảnh hiện tại với ảnh của các chủ trước trên timeline lịch sử để nhận biết độ hao mòn thực tế, đồng thời hệ thống kiểm chứng tính toàn vẹn của dữ liệu bằng mã hash.
+- Mỗi khi bán lại qua các đời chủ, hệ thống không tự động sao chép ảnh của tin cũ mà **yêu cầu người bán tải lên bộ ảnh mới**. Hệ thống tính `sha256` cho từng ảnh và lưu vào `listing_images.sha256` nhằm chứng minh tính toàn vẹn của tệp ảnh kể từ lúc đăng (lưu ý: `sha256` chỉ chứng minh ảnh không bị tráo đổi sau khi đăng, không tự chứng minh là ảnh mới chụp vì nén lại sẽ ra hash khác).
+- Để kiểm chứng độ mới thực tế: trang sản phẩm và passport hiển thị ảnh hiện tại song song với ảnh của các đời chủ trước trên timeline để **người mua trực tiếp so sánh trực quan** độ hao mòn (ở P1 có thể bổ sung perceptual hash - `pHash` để tự động cảnh báo nếu tải lại ảnh cũ).
 - Mã QR số trỏ tới URL `unicycle.vn/passport/[id]`. Khi gặp mặt giao dịch, mở màn hình điện thoại cho người mua quét đối chiếu ngay tức thì.
 
 ### 6. Chi tiết luồng ghi chain
@@ -170,7 +170,7 @@ Passport có ý nghĩa liên kết chặt chẽ với món đồ qua 2 mức đ�
 - **Trang `/passport/[id]`:** timeline Chủ #1 → #2 → #3 (ví dụ ở mục 5.5), mức xác nhận ("hai bên"/"một bên"), link tới tx trên block explorer, cảnh báo nếu bị flag, tuyên bố giới hạn (BR30).
 - **Nút "Xác minh trên blockchain":** đọc các sự kiện `PassportRegistered` / `OwnershipTransferred` của passport từ RPC, so với dữ liệu hiển thị; trả về "Khớp ✓" hoặc "Không khớp, đã báo quản trị".
 - **Trên tin đăng:** huy hiệu "Có lịch sử đồ vật", số chủ, thời điểm chuyển giao gần nhất; tin có passport bị flag hiển thị cảnh báo nổi bật.
-- **Trong "Đồ của tôi":** danh sách món đồ, trạng thái chain ("Đang ghi…/Đã xác nhận"), nút Bán lại, Chuyển quyền, Tải QR.
+- **Trong "Đồ của tôi":** danh sách món đồ, trạng thái chain ("Đang ghi…/Đã xác nhận"), nút Bán lại, Hiển thị QR số, Chuyển quyền trực tiếp (P1).
 
 ### 8. Mạng, chi phí và triển khai
 
@@ -195,9 +195,9 @@ Passport có ý nghĩa liên kết chặt chẽ với món đồ qua 2 mức đ�
 
 ### 10. Lưu ý khi dùng trong đồ án
 
-- Trình bày Passport như **tính năng chống chỉnh sửa lịch sử và kiểm chứng công khai**, không phải "xác thực hàng thật".
-- **Lát cắt Blockchain tối thiểu (Minimal Slice) cho buổi bảo vệ đồ án**:
-  - Triển khai contract `UniCyclePassport.sol` lên **Avalanche Fuji Testnet**.
-  - Demo trọn vòng **A → B → C**: A đăng bán có passport ➔ B mua ➔ cập nhật timeline ➔ B bán lại cho C ➔ bấm nút "Xác minh trên blockchain" mở Snowtrace Fuji Explorer để đối chiếu tx hash thực tế.
-  - Phân định rành mạch với hội đồng: MVP web chạy Off-chain trên PostgreSQL cho tốc độ cao và trải nghiệm không cần ví; lát cắt Blockchain trên Fuji chứng minh tính khả thi kỹ thuật cho bước mở rộng tiếp theo.
+- Phân định rõ khi thuyết trình trước hội đồng: **Ở MVP (Off-chain PostgreSQL)**, Passport là **tính năng minh bạch hóa lịch sử vòng đời đồ vật** (Admin vẫn sửa được để xử lý khiếu nại `DISPUTED`); **chỉ ở phần On-chain (Lát cắt Fuji Testnet & P1)**, Passport mới mang tính **chống chỉnh sửa lịch sử (tamper-evident) và kiểm chứng công khai**, và không bao giờ gọi là "xác thực hàng thật".
+- **Lát cắt Blockchain tối thiểu (Minimal Slice) cho buổi bảo vệ đồ án (thực hiện trong Sprint 5)**:
+  - Triển khai contract `UniCyclePassport.sol` lên **Avalanche Fuji Testnet** và tích hợp một **Relayer tối giản** (gửi giao dịch trực tiếp từ backend khi đơn demo hoàn tất) để ghi sự kiện `PassportRegistered` và `OwnershipTransferred` thật lên chain.
+  - Demo trọn vòng **A → B → C**: A đăng bán có passport ➔ B mua ➔ cập nhật timeline & ghi Fuji ➔ B bán lại cho C ➔ bấm nút **"Xác minh trên blockchain"** đọc sự kiện từ Fuji RPC so khớp với DB ("Khớp ✓") và mở Snowtrace Fuji Explorer để đối chiếu `tx_hash` thực tế.
+  - Phân định rành mạch với hội đồng: MVP web vận hành chính trên PostgreSQL cho tốc độ cao và trải nghiệm không cần ví; lát cắt Blockchain trên Fuji chứng minh trọn vẹn luồng kỹ thuật on-chain cho bước mở rộng P1.
 - Chuẩn bị sẵn câu trả lời cho các câu hỏi phản biện: "Nếu backend sai thì sao?" (nêu hướng ví nhúng EIP-712 ở P2), "Đồ giả/đồ trộm đăng ký passport thì sao?" (xác minh tài khoản, serial number, báo cáo và flag), "Dữ liệu cá nhân trên chain?" (chỉ hash ngẫu nhiên, crypto-shredding an toàn).

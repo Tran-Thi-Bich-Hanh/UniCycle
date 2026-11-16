@@ -19,7 +19,7 @@ UniCycle
 │   └── Tin nhắn (P1)
 ├── Tài khoản (cần đăng nhập)
 │   ├── Hồ sơ, đánh giá, lịch sử giao dịch
-│   ├── Đồ của tôi (passport, QR, bán lại, chuyển quyền)
+│   ├── Đồ của tôi (passport, QR, bán lại; chuyển quyền trực tiếp P1)
 │   ├── Yêu thích (P1)
 │   ├── Thông báo
 │   └── Cài đặt (quyền riêng tư lịch sử: hiển thị tên hay ẩn danh)
@@ -43,7 +43,8 @@ UniCycle
 | **`/my-items`, `/my-items/[id]`** | **Đồ của tôi: passport, mã QR số màn hình, Bán lại 1-chạm** | **Đăng nhập** | **MVP** |
 | `/orders` | Quản lý lịch hẹn mua và bán | Đăng nhập | MVP |
 | `/orders/[id]` | Chi tiết hẹn, trạng thái giữ đồ, xác nhận bàn giao (chu kỳ 48h), nút khiếu nại "Tôi chưa nhận hàng" (chặn auto-complete), đánh giá bí mật | Người tham gia đơn | MVP |
-| `/api/zalo/[listingId]` | Route trung gian điều hướng mở Zalo bảo mật (ẩn số điện thoại thật của người bán) | Đăng nhập; khách bị chuyển tới `/login?returnTo=...` | MVP |
+| `/api/zalo/[listingId]` | Route trung gian điều hướng mở Zalo (chống thu thập SĐT hàng loạt, có rate limit) | Đăng nhập; khách bị chuyển tới `/login?returnTo=...` | MVP |
+| `/invites/[code]` | Người mua xem và bấm "Xác nhận mua" từ lời mời chốt bán qua Zalo (BR38) | Đăng nhập; khách bị chuyển tới `/login?returnTo=...` | MVP |
 | **`/transfer/[code]`** | **Người nhận xem và chấp nhận chuyển quyền trực tiếp (P1)** | **Đăng nhập** | **P1** |
 | `/notifications` | Thông báo đơn hẹn và hệ thống | Đăng nhập | MVP |
 | `/profile`, `/settings` | Hồ sơ cá nhân, cài đặt riêng tư số điện thoại | Đăng nhập | MVP |

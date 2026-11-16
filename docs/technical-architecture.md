@@ -13,7 +13,7 @@
 | Kênh liên hệ | **Ưu tiên MVP: Zalo Deep link** kèm tin nhắn mẫu + Form đặt lịch hẹn xem hàng tại cổng trường/KTX. Route trung gian `/api/zalo/[listingId]` để chống thu thập SĐT hàng loạt; rate limit 10 lượt/giờ/tài khoản (gợi ý); người bán có thể chọn ẩn số điện thoại công khai. |
 | Chat realtime (P1) | Supabase Realtime hoặc Socket.IO (khi cần mở rộng sau MVP) |
 | Thông báo | Email thông báo (Resend); thông báo trong ứng dụng |
-| Job nền | **`pg_cron` (Supabase / PostgreSQL extension)** hoặc **GitHub Actions Scheduled Workflows** (chạy mỗi 1-2 giờ gọi Route Handler bảo mật với `CRON_SECRET`) để quét hết hạn đơn `PENDING`, timeout đơn `ACCEPTED` sau `meet_time + 24h` (BR37), và tự hoàn tất sau 48h (BR13). *(Tránh dùng BullMQ trên Vercel do thiếu process thường trực; Vercel Cron Hobby bị giới hạn tần suất 1 lần/ngày)*. |
+| Job nền | **`pg_cron` (Supabase / PostgreSQL extension)** hoặc **GitHub Actions Scheduled Workflows** (chạy mỗi 1-2 giờ gọi Route Handler bảo mật với `CRON_SECRET`) để quét hết hạn đơn `PENDING` (> 48h), timeout đơn `ACCEPTED` sau `meet_time + 24h` (BR37), tự hoàn tất sau 48h (BR13), và timeout đơn `DISPUTED` quá SLA 72h (tự chuyển `CANCELLED`, nhả `AVAILABLE`). *(Tránh dùng BullMQ trên Vercel do thiếu process thường trực; Vercel Cron Hobby bị giới hạn tần suất 1 lần/ngày)*. |
 | **Digital Passport (MVP)** | **Lưu trữ CSDL PostgreSQL (bảng `items`, `passport_owners`, `passport_events`), tạo mã QR số động bằng thư viện `qrcode` hiển thị trên màn hình** |
 | **Blockchain (P1)** | **Avalanche C-Chain (tương thích EVM); phát triển/demo trên Fuji testnet, pilot trên mainnet** |
 | **Smart contract (P1)** | **Solidity + Hardhat/Foundry; OpenZeppelin (`AccessControl`); xác minh mã nguồn trên Snowtrace** |

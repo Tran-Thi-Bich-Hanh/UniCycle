@@ -7,7 +7,7 @@
 | Tài khoản | Đăng nhập Google (OAuth), đăng ký/đăng nhập email, hồ sơ cá nhân, chọn trường/KTX, xác minh sinh viên (thẻ SV/email trường) để nhận huy hiệu |
 | Sản phẩm | Đăng bán nhanh (< 60s), sửa, ẩn/xóa, đánh dấu đã bán, đăng lại, xem chi tiết, quản lý sản phẩm của tôi |
 | Tìm kiếm | Danh sách, tìm kiếm (hỗ trợ tiếng Việt có/không dấu), lọc theo danh mục/giá/tình trạng/khu vực/có passport/cho tặng 0đ, sắp xếp |
-| Liên hệ & Giao dịch | **Nút liên hệ Zalo (Deep link `zalo.me/<sdt>`), Form gửi yêu cầu mua/hẹn xem hàng tại trường/KTX, chấp nhận/từ chối, giữ chỗ (RESERVED), timeout đơn hẹn sau `meet_time + 24h`, xác nhận hoàn tất (chu kỳ 48h), khiếu nại "Tôi chưa nhận hàng", hủy** |
+| Liên hệ & Giao dịch | **Nút liên hệ Zalo (Deep link qua route trung gian `/api/zalo/[listingId]`), lời mời chốt bán 24h (BR38), Form gửi yêu cầu mua/hẹn xem hàng tại trường/KTX, chấp nhận/từ chối, giữ chỗ (RESERVED), timeout đơn hẹn sau `meet_time + 24h`, xác nhận hoàn tất (chu kỳ 48h), khiếu nại "Tôi chưa nhận hàng", hủy** |
 | Đánh giá & uy tín | Đánh giá hai chiều (blind review 48h), lịch sử giao dịch, điểm uy tín sinh viên |
 | **Lịch sử đồ vật (Digital Passport)** | **Bật passport khi đăng bán, mã QR số hiển thị màn hình, timeline lịch sử (Chủ #1 → #2 → #3) lưu Database (Off-chain), trang xác minh `/passport/[id]`, "Đồ của tôi", bán lại kế thừa lịch sử (Chuyển quyền trực tiếp ở P1)** |
 | An toàn & kiểm duyệt | Báo cáo tin/người dùng, ẩn tin, khóa tài khoản, đánh dấu (flag) passport nghi vấn |
