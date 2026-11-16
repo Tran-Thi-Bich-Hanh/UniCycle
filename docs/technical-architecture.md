@@ -45,7 +45,7 @@ Thông báo cho hai bên + hiển thị mã kiểm chứng on-chain trên /passp
 |---|---|
 | Auth | `POST /auth/login/google`, `POST /auth/register`, `POST /auth/login`, `POST /auth/verify-student` (upload thẻ SV hoặc email trường) |
 | Listings | `GET /listings`, `GET /listings/:id`, `POST /listings` (kèm Zalo phone, Digital Passport), `PATCH /listings/:id`, `POST /listings/:id/mark-sold` |
-| Zalo Proxy | `GET /api/zalo/:listingId` (điều hướng bảo mật mở app/web Zalo mà không lộ SĐT thô của người bán) |
+| Zalo Proxy & Invites | `GET /api/zalo/:listingId` (mở Zalo bảo mật ẩn SĐT thô), `POST /listings/:id/invites` (tạo lời mời chốt bán BR38), `POST /invites/:code/accept` (người mua chấp nhận lời mời) |
 | Orders | `POST /listings/:id/orders` (đặt lịch hẹn), `POST /orders/:id/accept`, `.../reject`, `.../cancel`, `.../confirm`, **`POST /orders/:id/dispute` (khiếu nại "Tôi chưa nhận hàng", chặn auto-complete)** |
 | Reviews | `POST /orders/:id/reviews`, `GET /users/:id/reviews` (chu kỳ 48h blind) |
 | **Passport** | **`GET /passports/:id` (timeline công khai), `GET /me/items` (danh sách đồ của tôi), `POST /items/:id/resell` (bán lại 1-click), `GET /items/:id/qr` (QR số màn hình), `GET /passports/:id/verify` (ở P1)** |

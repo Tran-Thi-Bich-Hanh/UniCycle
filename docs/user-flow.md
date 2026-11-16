@@ -12,7 +12,7 @@
 4. **Lựa chọn cách thức liên hệ**:
    - **Cách 1 (Nhanh nhất - Nhắn Zalo)**: Yêu cầu đăng nhập (BR01) → Bấm "Nhắn qua Zalo" → Mở ứng dụng Zalo trên điện thoại (hoặc hiển thị mã QR Zalo trên máy tính qua route trung gian bảo mật `/api/zalo/[listingId]`) với tin nhắn mẫu sẵn để trao đổi ngay.
    - **Cách 2 (Đặt lịch hẹn giữ đồ)**: Bấm "Đặt lịch hẹn xem hàng" → Điền giá đề xuất, chọn địa điểm (cổng trường/KTX), khung giờ hẹn và gửi yêu cầu (`PENDING`).
-   - 💡 **Tránh rò rỉ giao dịch ngoài hệ thống**: Khi hai bên đã chốt thỏa thuận qua Zalo, hệ thống hiển thị banner nhắc: *"Đã chốt qua Zalo? Hãy xác nhận đặt hẹn trên UniCycle để bảo lưu đánh giá uy tín và nhận Product Passport"*. Người bán có nút **"Chốt bán cho người này"** để đưa sản phẩm vào trạng thái `RESERVED` ngay lập tức.
+   - 💡 **Tránh rò rỉ giao dịch ngoài hệ thống**: Khi hai bên đã chốt thỏa thuận qua Zalo, hệ thống hiển thị banner nhắc: *"Đã chốt qua Zalo? Hãy xác nhận đặt hẹn trên UniCycle để bảo lưu đánh giá uy tín và nhận Product Passport"*. Người bán có nút **"Gửi lời mời chốt bán"** (tạo link/QR dùng 1 lần theo BR38) gửi qua Zalo cho người mua bấm "Xác nhận mua", đưa sản phẩm vào trạng thái `RESERVED` ngay lập tức.
 5. Người bán chấp nhận lịch hẹn → Trạng thái đơn `ACCEPTED`, sản phẩm tự động chuyển `RESERVED` (giữ chỗ).
 6. Hai bên gặp mặt tại nơi hẹn công cộng (cổng KTX, căng tin, thư viện trường), kiểm tra sản phẩm (**có thể quét mã QR số trên màn hình điện thoại hoặc mở link `/passport/[id]` để đối chiếu**), thanh toán trực tiếp.
 7. Người mua bấm "Đã nhận hàng"; người bán bấm "Đã bàn giao".
@@ -47,14 +47,14 @@
 6. Nhận trao đổi từ người mua:
    - Nhận tin nhắn trực tiếp qua Zalo (người mua bấm link mở thẳng app Zalo).
    - Nhận thông báo yêu cầu hẹn xem hàng trên UniCycle.
-   - 💡 **Chốt bán cho khách Zalo**: Nếu người mua chỉ nhắn Zalo mà chưa bấm hẹn trên web, người bán có nút **"Chốt bán cho người này"** (nhập username / số điện thoại người mua) để tạo đơn `ACCEPTED` và khóa sản phẩm `RESERVED`, đảm bảo giao dịch không bị rơi khỏi hệ thống.
+   - 💡 **Chốt bán cho khách Zalo (BR38)**: Nếu người mua chỉ nhắn Zalo mà chưa bấm hẹn trên web, người bán bấm **"Gửi lời mời chốt bán"** để tạo link/QR dùng 1 lần (hạn 24 giờ) gửi qua Zalo. Khi người mua đăng nhập và bấm "Xác nhận mua", đơn tự động chuyển `ACCEPTED` và listing chuyển `RESERVED` ngay lập tức, đảm bảo giao dịch không bị rơi khỏi hệ thống.
 7. Xem danh sách yêu cầu `PENDING`, chọn chấp nhận 1 yêu cầu phù hợp → sản phẩm chuyển `RESERVED`.
 8. Gặp mặt tại địa điểm hẹn ở trường/KTX, bàn giao đồ và nhận tiền trực tiếp.
 9. Bấm "Đã bàn giao" → hoàn tất khi người mua bấm xác nhận (hoặc tự hoàn tất sau 48h theo BR13).
 10. Nộp đánh giá người mua trong 48 giờ; nhận đánh giá đối ứng.
 11. Sản phẩm chuyển `SOLD`; Digital Passport tự động cập nhật chuyển giao quyền sở hữu cho người mua mới.
 
-**Tính năng hỗ trợ:** Đánh dấu đã bán thủ công (khi bán ngoài hệ thống; nếu có passport thì dùng "Chuyển quyền trực tiếp"), Đăng lại, Tạm ẩn, Gia hạn tin.
+**Tính năng hỗ trợ:** Đánh dấu đã bán thủ công (nếu có passport thì dùng "Gửi lời mời chốt bán" để chuyển giao đúng chủ; tính năng Chuyển quyền trực tiếp không qua tin đăng sẽ có ở P1), Đăng lại, Tạm ẩn, Gia hạn tin.
 
 **Luồng ngoại lệ:** nhiều yêu cầu cùng lúc (BR11); người mua không đến; đổi giá khi đã có yêu cầu (BR22); tin hết hạn (BR15) → nhắc gia hạn qua email.
 
@@ -125,7 +125,7 @@ Lưu ý:
 |---|---|
 | Tx ghi chain thất bại/chậm (ở P1) | Đơn vẫn `COMPLETED`; passport hiển thị "Đang ghi lên blockchain…"; hệ thống thử lại tự động; quá 3 lần → cảnh báo admin (BR28) |
 | Người đăng không phải chủ hiện tại | Hệ thống chặn đăng (BR25), hướng dẫn dùng "Chuyển quyền" hoặc liên hệ hỗ trợ |
-| Món đồ bị bán/tặng ngoài hệ thống làm lệch chủ sở hữu | Chủ cũ dùng "Chuyển quyền trực tiếp" để cập nhật chuỗi |
+| Món đồ bị bán ngoài hệ thống | Chủ cũ dùng "Gửi lời mời chốt bán" (BR38) gửi link cho người mua xác nhận để cập nhật đúng chuỗi passport (hoặc dùng Chuyển quyền trực tiếp ở P1) |
 | Passport bị flag | Tin đăng hiển thị cảnh báo; người mua được thông báo; admin xử lý |
 | Quên/cần hiển thị lại mã QR | Chủ hiện tại mở lại mã QR số bất kỳ lúc nào từ mục "Đồ của tôi" trên điện thoại |
 | Chủ hiện tại xóa tài khoản | Áp dụng BR34: Passport của món đồ tự động chuyển sang trạng thái `ARCHIVED_OWNER_DELETED` (lưu trữ đóng băng), chặn tạo tin bán lại cho đến khi liên hệ Admin hỗ trợ |

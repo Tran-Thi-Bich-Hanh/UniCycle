@@ -28,7 +28,18 @@ PENDING ──(người bán chấp nhận)──→ ACCEPTED ──(cả hai x�
 ```
 
 `COMPLETED` / `AUTO_COMPLETED` là điểm kích hoạt: mở cửa sổ đánh giá bí mật (trong 48 giờ) và cập nhật chuyển giao quyền sở hữu Digital Passport trong CSDL (và xếp hàng ghi chain ở P1).
-`DISPUTED`: Đơn bị tạm dừng auto-complete, chuyển Admin xem xét bằng chứng và phân giải.
+`DISPUTED`: Đơn bị tạm dừng auto-complete, chuyển Admin xem xét bằng chứng và phân giải. Nút khiếu nại chỉ hiển thị cho người mua khi bên bấm xác nhận trước là người bán (`orders.confirmed_first_by = 'seller'`).
+
+#### Đầu ra của DISPUTED
+
+| Admin kết luận | Order | Listing | Passport | Uy tín |
+|---|---|---|---|---|
+| Người mua đã nhận hàng (khiếu nại sai) | `COMPLETED` | `SOLD` | Chuyển chủ, mức xác nhận “hai bên” | Ghi nhận khiếu nại sai cho người mua |
+| Chưa giao hàng / giao không đúng | `CANCELLED` | Về `AVAILABLE` | Giữ nguyên chủ cũ | Ghi nhận lỗi cho người bán |
+| Không đủ căn cứ | `CANCELLED` | Về `AVAILABLE` | Giữ nguyên chủ cũ | Không ghi nhận |
+
+- **SLA xử lý**: Admin xử lý trong **72 giờ**. Quá hạn 72 giờ mà chưa có kết luận phân giải thì hệ thống tự động chuyển đơn sang `CANCELLED` và nhả listing về `AVAILABLE` (vì chưa chứng minh được việc bàn giao).
+- **Trạng thái tạm thời**: Trong lúc `DISPUTED`, passport chưa chuyển chủ và listing vẫn giữ ở trạng thái `RESERVED`.
 
 ### 7.3. Đánh giá (Review)
 
@@ -83,7 +94,8 @@ Quy tắc: tại một thời điểm chỉ một tx đang xử lý cho mỗi pa
 | **`items`** | **id, current_owner_id, category_id, passport_enabled, passport_id (bytes32, unique, nullable), identity_level (LIGHT/SERIAL), item_commit (bytes32), item_salt (mã hóa, bí mật), passport_status (ACTIVE/FLAGGED/ARCHIVED_OWNER_DELETED), flagged_at, created_at** |
 | `listings` | id, **item_id**, seller_id, title, category_id, price, is_free, condition, description, school_id/area, zalo_phone, hide_phone (bool), status, expires_at, created_at |
 | `listing_images` | id, listing_id, url, **sha256**, position |
-| `orders` | id, listing_id, buyer_id, seller_id, proposed_price, meet_place, meet_time, message, status (PENDING/ACCEPTED/RESERVED/COMPLETED/AUTO_COMPLETED/DISPUTED/CANCELLED/EXPIRED), buyer_confirmed_at, seller_confirmed_at, dispute_reason, disputed_at, expires_at, created_at |
+| `orders` | id, listing_id, buyer_id, seller_id, proposed_price, meet_place, meet_time, message, status (PENDING / ACCEPTED / WAITING_CONFIRMATION / COMPLETED / AUTO_COMPLETED / DISPUTED / REJECTED / CANCELLED / EXPIRED), confirmed_first_by (buyer/seller, nullable), buyer_confirmed_at, seller_confirmed_at, dispute_reason, disputed_at, resolved_by (nullable), resolved_at (nullable), resolution_note (nullable), expires_at, created_at |
+| **`order_invites`** | **id, listing_id, code_hash, expires_at, status (PENDING/ACCEPTED/EXPIRED/REVOKED), accepted_by (user_id, nullable), created_at** |
 | `reviews` | id, order_id, reviewer_id, reviewee_id, rating (1–5), comment, submitted_at, visible_at |
 | `reports` | id, reporter_id, target_type (listing/user/passport), target_id, reason, status, handled_by, created_at |
 | `notifications` | id, user_id, type, payload, read_at, created_at |
@@ -108,5 +120,5 @@ Quy tắc: tại một thời điểm chỉ một tx đang xử lý cho mỗi pa
 | `UNIQUE (item_id, seq)` trên `passport_owners` và `passport_events` | Thứ tự chuyển giao |
 | `UNIQUE (passport_id)` trên `items` | BR33 |
 | Mỗi `item_id` tối đa một `chain_txs` ở trạng thái `QUEUED`/`SUBMITTED` (ở P1) | Tránh sai thứ tự (mục 7.5) |
-| Job định kỳ: hết hạn đơn `PENDING` > 48 giờ, timeout đơn `ACCEPTED` sau `meet_time + 24h` (BR37), tự hoàn tất sau 48h (BR13), hết hạn tin theo BR15, thử lại `chain_txs` FAILED (ở P1) | BR12, BR13, BR15, BR28, BR37 |
+| Job định kỳ: hết hạn đơn `PENDING` > 48 giờ, timeout đơn `ACCEPTED` sau `meet_time + 24h` (BR37), tự hoàn tất sau 48h (BR13), timeout đơn `DISPUTED` sau 72h tự động CANCELLED và nhả `AVAILABLE`, hết hạn tin theo BR15, thử lại `chain_txs` FAILED (ở P1) | BR12, BR13, BR15, BR28, BR37 |
 | Xóa tài khoản (`deleted_at`): xóa ánh xạ `owner_hash ↔ user_id` (crypto-shredding); chuyển các `items` đang sở hữu sang `ARCHIVED_OWNER_DELETED` | BR34 |

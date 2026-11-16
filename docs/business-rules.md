@@ -35,6 +35,7 @@
 | BR22 | Nếu người bán đổi giá/điều kiện sau khi có yêu cầu `PENDING`, người mua được thông báo và yêu cầu cần được xác nhận lại |
 | BR36 | Người bán có thể bật liên hệ nhanh qua **Zalo (Deep link)** kèm lời nhắn mẫu. Khi người bán chọn **ẩn SĐT thật**, link Zalo sẽ đi qua **route trung gian** (ví dụ `/api/zalo/[listingId]`) để mở cuộc trò chuyện Zalo mà không để lộ số điện thoại thô trên HTML/API client |
 | BR37 | **Timeout cho đơn `ACCEPTED`**: Quá thời gian hẹn (`meet_time`) + **24 giờ** mà không bên nào bấm xác nhận giao dịch thành công, đơn hàng tự động chuyển sang `EXPIRED` (hết hạn) và sản phẩm tự động nhả trạng thái `RESERVED` quay về `AVAILABLE` để người khác có thể đặt mua |
+| BR38 | **Chốt bán cho khách Zalo**: Người bán tạo lời mời chốt bán (link/QR dùng một lần, hết hạn sau 24 giờ) và gửi cho người mua qua Zalo. Đơn chỉ được tạo (`ACCEPTED`, listing `RESERVED`) sau khi người mua đăng nhập và bấm "Xác nhận mua". Người bán không nhập SĐT/username để tạo đơn thay người mua. Đơn tạo qua lời mời vẫn chịu BR04, BR13, BR37 và vẫn cần xác nhận bàn giao. Giao dịch cùng một cặp tài khoản lặp lại nhiều lần bị xét theo BR23/BR35 |
 
 ### 4.4. Đánh giá & uy tín
 

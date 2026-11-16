@@ -236,7 +236,9 @@ stateDiagram-v2
     
     HoanTat --> DanhGiaBlind: Mở đánh giá uy tín (48 giờ)
     TuDongHoanTat --> DanhGiaBlind
-    KhieuNai --> AdminXuLy: Admin can thiệp giải quyết
+    KhieuNai --> AdminXuLy: Admin can thiệp giải quyết (SLA 72h)
+    AdminXuLy --> HoanTat: Xác nhận đã nhận (COMPLETED/SOLD)
+    AdminXuLy --> HuyHen: Chưa giao / không đủ căn cứ (CANCELLED/AVAILABLE)
 ```
 
 - **Quy tắc 48 giờ & Timeout**:
