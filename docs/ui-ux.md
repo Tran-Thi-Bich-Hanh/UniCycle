@@ -1,16 +1,6 @@
 # UniCycle – Hướng Dẫn Thiết Kế Giao Diện & Trải Nghiệm Người Dùng (UI/UX Specification)
 
 Tài liệu này chuẩn hóa toàn bộ thiết kế giao diện (UI) và trải nghiệm người dùng (UX) cho **UniCycle** – Nền tảng mua bán đồ cũ dành cho sinh viên.
-Tài liệu được xây dựng dựa trên sự kết hợp giữa:
-1. **Trải nghiệm mua sắm & sàn thương mại thực tế** từ cấu trúc của [`index.html`](file:///d:/Linh%20tinh/unicycle/index.html).
-2. **Hệ thống màu sắc & Design Tokens chuẩn** từ [`docs/design.md`](file:///d:/Linh%20tinh/unicycle/docs/design.md) (bảng màu 5 cấp độ xanh tối giản, nền trắng tinh gọn, hiệu ứng loang màu Hero Gradient Bleed).
-3. **Các quyết định kiến trúc MVP đã chốt**:
-   - **Kênh liên hệ**: Ưu tiên **Zalo Deep Link (`zalo.me/...`)** kết hợp **Form đặt lịch hẹn xem hàng** trực tiếp trên web.
-   - **Xác thực**: Đăng nhập nhanh qua **Google (Gmail)**, kèm huy hiệu "Sinh viên đã xác minh" (qua thẻ SV hoặc email trường).
-   - **Thời gian giao dịch**: Chu kỳ xác nhận và tự động hoàn tất rút gọn còn **48 giờ** (phù hợp giao dịch trao tay trực tiếp).
-   - **Lịch sử đồ vật (Product Passport)**: Lưu trữ cơ sở dữ liệu (**Off-chain**) ở MVP với mã QR và timeline trực quan; sẵn sàng tích hợp Avalanche sau.
-
----
 
 ## 1. Triết Lý Thiết Kế & Nguyên Tắc UX/UI
 
@@ -64,10 +54,12 @@ Phần đầu của Trang chủ sử dụng kỹ thuật gradient chuyển màu:
 Kế thừa trải nghiệm điều hướng thuận tiện từ `index.html` và chuẩn mobile app:
 
 ```
-[DESKTOP NAVIGATION - Sticky Header]
+[DESKTOP NAVIGATION - Sticky Header & Topbar]
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ [UniCycle Logo]  [🔍 Tìm kiếm sách, đồ KTX...]  [Khu vực: Làng ĐH ▼]       │
-│                  [Đăng bán +]  [Yêu cầu mua]  [Đăng nhập / Avatar Google]    │
+│ 🎓 Ký túc xá: Làng Đại Học Thủ Đức ▼ | ⚡ Hỗ trợ sinh viên 24/7 | Góc 0đ Cho Tặng │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ [UniCycle Logo]   [🔍 Tìm giáo trình, quạt, bàn KTX...]   [Khu vực: KTX Khu B ▼]  │
+│                   [Đăng bán +]   [📋 Đơn hẹn (2)]   [👤 Avatar Google / Đăng nhập]│
 └─────────────────────────────────────────────────────────────────────────────┘
 
 [MOBILE NAVIGATION - Bottom Bar (Cố định dưới cùng màn hình)]
@@ -100,14 +92,18 @@ Trang chủ được thiết kế theo phễu chuyển đổi giúp người mua
      - 🎁 Tặng miễn phí (0đ)
 3. **Bộ lọc nhanh (Quick Filter Pills)**:
    - `[Tất cả]` `[Gần bạn]` `[Có lịch sử đồ vật]` `[Dưới 100k]` `[Đồ tặng 0đ]`.
-4. **Lưới sản phẩm nổi bật (Product Grid)**:
-   - Hiển thị theo dạng Card 2 cột trên Mobile, 4 cột trên Desktop.
+4. **Các Phân Đoạn Trọng Tâm Trên Trang Chủ (Curated Sections - Kế thừa từ index.html)**:
+   - **⚡ Mới đăng quanh KTX của bạn**: Tự động ưu tiên hiển thị các tin đăng trong bán kính trường/KTX đã chọn.
+   - **📚 Giáo trình & Sách học đại học**: Phân mục chuyên biệt cho sách học, tài liệu ôn thi chuyển giao giữa các khóa.
+   - **🔌 Đồ gia dụng KTX thiết yếu**: Quạt điện, nồi cơm mini, bàn học gấp, ấm siêu tốc.
+   - **🎁 Góc 0đ – Sinh viên chia sẻ**: Nơi các bạn sinh viên năm cuối tặng đồ miễn phí cho tân sinh viên khó khăn.
+   - **🏆 Sinh viên bán đồ uy tín tuần**: Top người bán có điểm đánh giá 5⭐ và phản hồi nhanh.
 
 ---
 
 ### 4.2. Thẻ Sản Phẩm Chuẩn (Product Card UX)
 
-Mỗi thẻ sản phẩm được thiết kế gọn gàng, rõ ràng thông tin trọng yếu:
+Mỗi thẻ sản phẩm được kế thừa thiết kế e-commerce trực quan từ `index.html`:
 
 ```
 ┌───────────────────────────────────────┐
@@ -115,18 +111,22 @@ Mỗi thẻ sản phẩm được thiết kế gọn gàng, rõ ràng thông tin
 │ ┌───────────────┐ ┌─────────────────┐ │
 │ │ 🌟 Đã xác minh│ │ 📜 Có Passport  │ │
 │ └───────────────┘ └─────────────────┘ │
+│ [🤍 Yêu thích]         [👁️ Xem nhanh] │
 ├───────────────────────────────────────┤
 │ Bàn học gấp gọn sinh viên KTX         │
 │ 120.000 đ                             │
 │ 📍 KTX Khu B, ĐHQG TP.HCM · 2 giờ trước│
 ├───────────────────────────────────────┤
-│ [ Nhắn Zalo ]        [ Xem chi tiết ] │
+│ [ 💬 Nhắn Zalo ]     [ 📅 Đặt hẹn ]   │
 └───────────────────────────────────────┘
 ```
 
 - **Huy hiệu (Badges)**:
   - `🌟 Sinh viên đã xác minh`: Nền xanh nhạt `#D6E8EE`, chữ xanh `#02457A`.
   - `📜 Có Passport`: Biểu thị món đồ có lịch sử chuyền tay minh bạch.
+- **Thanh thao tác nhanh (Quick Action Bar)**:
+  - Nút **Yêu thích (Wishlist)**: Lưu lại để theo dõi giá.
+  - Nút **Xem nhanh (Quick View Modal)**: Bật popup xem ảnh phóng to và mô tả vắn tắt mà không cần tải lại trang.
 - **Tương tác**: Hover trên Desktop viền thẻ đổi màu sang `#97CADB`, nâng nhẹ thẻ tạo chiều sâu (`shadow-md`).
 
 ---
@@ -139,12 +139,26 @@ Trang quyết định chuyển đổi giao dịch, giải quyết triệt để 
 Thay vì bắt sinh viên chờ đợi trong hệ thống chat xa lạ, UniCycle cung cấp 2 lựa chọn liên hệ rõ ràng:
 
 1. **Nút "Nhắn qua Zalo" (Ưu tiên số 1 - Màu xanh Zalo `#0068FF`)**:
-   - Khi bấm: Mở ứng dụng Zalo trên điện thoại hoặc web Zalo (`zalo.me/<sdt_người_bán>`).
+   - Khi bấm trên Mobile: Mở ứng dụng Zalo trên điện thoại (`zalo.me/<sdt_người_bán>`).
    - Tự động điền nội dung mẫu: *"Chào bạn, mình thấy tin đăng [Tên món đồ] giá [Giá tiền] trên UniCycle, bạn còn đồ không ạ?"*.
-   - Modal hỗ trợ trên Desktop: Hiển thị mã QR Zalo của người bán để người mua quét bằng điện thoại cực nhanh.
+   - **Giao diện Modal trên Desktop (Zalo Contact Dialog)**:
+     ```
+     ┌────────────────────────────────────────────────┐
+     │ 💬 LIÊN HỆ QUA ZALO                            │
+     │ Người bán: Bạn Minh (ĐH Bách Khoa)            │
+     ├────────────────────────────────────────────────┤
+     │       ┌──────────────┐                         │
+     │       │ [ MÃ QR ZALO ]                         │
+     │       │   (Quét ngay)│                         │
+     │       └──────────────┘                         │
+     │  Quét mã QR bằng ứng dụng Zalo trên điện thoại │
+     │  hoặc:                                         │
+     │  [ 📱 Mở Zalo Web ]   [ 📋 Copy Số điện thoại ]│
+     └────────────────────────────────────────────────┘
+     ```
 2. **Nút "Đặt lịch hẹn xem hàng" (Nút thứ hai - Nền `#018ABE`)**:
    - Mở popup chọn:
-     - Giá đề xuất (nếu muốn trả giá nhẹ).
+     - Giá đề xuất (nếu muốn thương lượng nhẹ).
      - Địa điểm đề xuất (Cổng KTX, Nhà ăn, Thư viện trường...).
      - Khung giờ có thể gặp mặt.
    - Khi gửi: Người bán nhận thông báo; nếu đồng ý, sản phẩm chuyển sang trạng thái **Đang giữ chỗ (Reserved)** để không bị người khác mua mất.
@@ -171,7 +185,7 @@ Hiển thị ngay trên trang chi tiết sản phẩm để người mua kiểm 
 │   ▼ Bàn giao trực tiếp tại KTX Khu B                        │
 │ ● Chủ #3: Bạn đang xem món đồ này!                          │
 │                                                             │
-│ [Quét mã QR trên đồ để đối chiếu]                           │
+│ [Mã QR số định danh · Quét trên màn hình điện thoại để đối chiếu] │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -230,9 +244,23 @@ stateDiagram-v2
 
 - Khi mua thành công một món đồ có Passport, món đồ sẽ tự động chuyển vào mục **"Đồ của tôi"** trong tài khoản người mua.
 - **Tính năng độc đáo**:
-  - Xem lại lịch sử món đồ.
-  - Tải mã **QR Passport** để lưu hoặc in dán lên thân đồ (quạt, bàn, máy tính...).
-  - **Nút "Bán lại" (Resell)**: Khi hết năm học không dùng nữa, sinh viên bấm nút này hệ thống tự tạo tin đăng mới và kế thừa toàn bộ lịch sử uy tín của các đời chủ trước!
+  - Xem lại toàn bộ timeline lịch sử của món đồ.
+  - Hiển thị **Mã QR Passport số trực tiếp trên màn hình điện thoại**: Khi gặp mặt giao dịch hoặc chuyển nhượng, người bán chỉ cần mở app/web cho người mua quét đối chiếu ngay tức thì (không cần in dán vật lý).
+  - **Nút "Bán lại" (Resell 1-click)**: Khi hết năm học không dùng nữa, sinh viên bấm nút này hệ thống tự tạo tin đăng mới và kế thừa toàn bộ lịch sử uy tín của các đời chủ trước!
+  - **Chuyển quyền trực tiếp**: Cho tặng bạn bè bằng mã số / QR có hạn 24 giờ mà không cần qua luồng mua bán.
+
+---
+
+### 4.7. Quy Chuẩn Modal & Popup Tương Tác (Dialog UX Patterns)
+
+1. **Modal Liên Hệ Zalo (Desktop)**:
+   - Tối ưu cho sinh viên duyệt web bằng laptop: Hiển thị mã QR Zalo to, rõ nét giữa màn hình kèm nút "Mở Zalo Web" và nút "Sao chép số điện thoại".
+2. **Modal Đặt Lịch Hẹn Xem Hàng**:
+   - Chọn nhanh các địa điểm công cộng an toàn phổ biến: Cổng KTX Khu A/B, Nhà ăn trung tâm, Thư viện trường, Cổng chính Đại học.
+   - Chọn khung giờ hẹn: Sáng (8h-11h), Trưa (11h-13h), Chiều (13h-17h), Tối (17h-20h).
+3. **Modal Đánh Giá Bí Mật 48 Giờ**:
+   - Chấm sao trực quan (1–5⭐) kèm các tag nhanh: *"Đồ đúng mô tả"*, *"Đúng giờ"*, *"Thân thiện"*, *"Nhiệt tình"*.
+   - Khung nhận xét ngắn gọn, thông báo rõ: *"Đánh giá của bạn sẽ được giữ bí mật và chỉ hiển thị khi cả hai cùng hoàn tất hoặc sau 48 giờ"*.
 
 ---
 
