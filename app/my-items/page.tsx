@@ -1,9 +1,12 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { MyItemsClient, MyItemData } from "@/components/my-items/MyItemsClient";
+
+export const dynamic = "force-dynamic";
+export const instant = false;
 
 export const metadata: Metadata = {
   title: "Đồ Của Tôi & Digital Product Passport | UniCycle Sinh Viên",
@@ -11,7 +14,7 @@ export const metadata: Metadata = {
     "Quản lý các món đồ đang sở hữu, hiển thị mã QR số khi gặp mặt tại KTX và đăng bán lại 1-chạm kế thừa lịch sử Digital Passport.",
 };
 
-export default async function MyItemsPage() {
+async function MyItemsContent() {
   const user = await getSessionUser();
   if (!user) {
     redirect("/login?returnTo=/my-items");
@@ -112,3 +115,19 @@ export default async function MyItemsPage() {
   return <MyItemsClient initialItems={formattedItems} />;
 }
 
+export default function MyItemsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center py-24">
+          <div className="w-10 h-10 border-3 border-[#018ABE] border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-sm font-semibold text-[#02457A]">
+            Đang tải danh sách đồ của bạn & Digital Passport...
+          </p>
+        </div>
+      }
+    >
+      <MyItemsContent />
+    </Suspense>
+  );
+}

@@ -6,6 +6,9 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+export const dynamic = "force-dynamic";
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Chi Tiết Đơn Hẹn & Bàn Giao | UniCycle Sinh Viên",
   description:
