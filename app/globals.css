@@ -40,7 +40,7 @@ input {
   background:
     radial-gradient(circle at 80% 25%, rgba(151, 202, 219, 0.45) 0%, transparent 55%),
     radial-gradient(circle at 20% 70%, rgba(1, 138, 190, 0.3) 0%, transparent 50%),
-    linear-gradient(180deg, #001B48 0%, #013264 35%, #02457A 60%, #018ABE 82%, #75B9CF 92%, #D6E8EE 97%, #FFFFFF 100%);
+    linear-gradient(180deg, #001B48 0%, #013264 35%, #02457A 50%, #018ABE 72%, #75B9CF 82%, #D6E8EE 97%);
 }
 
 /* Hero Gradient Bleed - kéo dài mượt hơn xuống dưới */
@@ -48,5 +48,5 @@ input {
   background:
     radial-gradient(circle at 80% 25%, rgba(151, 202, 219, 0.45) 0%, transparent 55%),
     radial-gradient(circle at 20% 70%, rgba(1, 138, 190, 0.3) 0%, transparent 50%),
-    linear-gradient(180deg, #001B48 0%, #013264 35%, #02457A 60%, #018ABE 82%, #75B9CF 92%, #D6E8EE 97%, #FFFFFF 100%);
+    linear-gradient(180deg, #001B48 0%, #013264 35%, #02457A 60%, #018ABE 72%, #75B9CF 92%);
 }

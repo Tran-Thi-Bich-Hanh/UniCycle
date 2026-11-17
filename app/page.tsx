@@ -44,7 +44,7 @@ export default function Home() {
   return (
     <div className="flex flex-col flex-1">
       {/* Khối Hero Gradient Bleed: kéo dài hơn, hình ảnh to và sát lề phải hơn */}
-      <section className="hero-gradient-bleed text-white pt-5 pb-36 sm:pt-5 sm:pb-48 relative overflow-hidden">
+      <section className="hero-gradient-bleed text-white pt-0 pb-36 sm:pt-0 sm:pb-48 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
             {/* Cột trái (6/12 cột): Tiêu đề, thông điệp & CTA */}
