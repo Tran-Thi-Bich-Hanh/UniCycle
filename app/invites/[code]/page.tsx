@@ -6,7 +6,6 @@ interface PageProps {
   params: Promise<{ code: string }>;
 }
 
-export const dynamic = "force-dynamic";
 export const instant = false;
 
 export const metadata: Metadata = {

@@ -5,7 +5,6 @@ import { getSessionUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { MyItemsClient, MyItemData } from "@/components/my-items/MyItemsClient";
 
-export const dynamic = "force-dynamic";
 export const instant = false;
 
 export const metadata: Metadata = {
