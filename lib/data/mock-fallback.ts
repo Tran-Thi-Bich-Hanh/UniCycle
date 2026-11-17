@@ -8,6 +8,7 @@ export const FALLBACK_CATEGORIES: CategoryItem[] = [
     name: "Giáo trình & Sách học",
     description: "Tài liệu ôn thi, đề cương các khóa",
     count: "140+ tin",
+    imageUrl: "/categories/giao-trinh-sach.jpg",
     icon: "book",
   },
   {
@@ -16,6 +17,7 @@ export const FALLBACK_CATEGORIES: CategoryItem[] = [
     name: "Bàn ghế & Tủ KTX",
     description: "Bàn học gấp, ghế xoay, tủ vải",
     count: "85+ tin",
+    imageUrl: "/categories/ban-ghe-tu-ktx.jpg",
     icon: "archive",
   },
   {
@@ -24,6 +26,7 @@ export const FALLBACK_CATEGORIES: CategoryItem[] = [
     name: "Đồ gia dụng & Quạt",
     description: "Quạt Senko, ấm siêu tốc, nồi cơm",
     count: "110+ tin",
+    imageUrl: "/categories/do-gia-dung-quat.jpg",
     icon: "bolt",
   },
   {
@@ -32,6 +35,7 @@ export const FALLBACK_CATEGORIES: CategoryItem[] = [
     name: "Đồ điện tử & Máy tính",
     description: "Casio fx-580, chuột, bàn phím",
     count: "95+ tin",
+    imageUrl: "/categories/do-dien-tu-phu-kien.jpg",
     icon: "chip",
   },
   {
@@ -40,6 +44,7 @@ export const FALLBACK_CATEGORIES: CategoryItem[] = [
     name: "Xe đạp & Phương tiện",
     description: "Xe đạp làng ĐH, mũ bảo hiểm",
     count: "40+ tin",
+    imageUrl: "/categories/xe-dap-phuong-tien.jpg",
     icon: "truck",
   },
   {
@@ -48,6 +53,7 @@ export const FALLBACK_CATEGORIES: CategoryItem[] = [
     name: "Góc 0đ Cho Tặng",
     description: "Đồ dùng, giáo trình miễn phí 0đ",
     count: "50+ tin",
+    imageUrl: "/categories/goc-0d-cho-tang.jpg",
     icon: "gift",
   },
 ];

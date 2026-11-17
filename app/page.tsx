@@ -99,13 +99,24 @@ async function LiveMarketplaceFeed() {
     }
 
     if (dbCategories && dbCategories.length > 0) {
+      // Map số tin tương ứng hoặc fallback
+      const countMap: Record<string, string> = {
+        "goc-0d-cho-tang": "50+ tin",
+        "giao-trinh-sach": "140+ tin",
+        "do-dien-tu-phu-kien": "95+ tin",
+        "xe-dap-phuong-tien": "40+ tin",
+        "ban-ghe-tu-ktx": "85+ tin",
+        "do-gia-dung-quat": "110+ tin",
+      };
+
       categories = dbCategories.map((c) => ({
         id: c.id,
         slug: c.slug,
         name: c.name,
         description: c.description,
         icon: c.icon,
-        count: "Đang cập nhật",
+        imageUrl: `/categories/${c.slug}.jpg`,
+        count: countMap[c.slug] || "Khám phá",
       }));
     }
 

@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export interface CategoryItem {
   id: string;
@@ -9,8 +10,18 @@ export interface CategoryItem {
   name: string;
   description?: string | null;
   icon?: string | null;
+  imageUrl?: string | null;
   count?: string;
 }
+
+const CATEGORY_IMAGES: Record<string, string> = {
+  "goc-0d-cho-tang": "/categories/goc-0d-cho-tang.jpg",
+  "giao-trinh-sach": "/categories/giao-trinh-sach.jpg",
+  "do-dien-tu-phu-kien": "/categories/do-dien-tu-phu-kien.jpg",
+  "xe-dap-phuong-tien": "/categories/xe-dap-phuong-tien.jpg",
+  "ban-ghe-tu-ktx": "/categories/ban-ghe-tu-ktx.jpg",
+  "do-gia-dung-quat": "/categories/do-gia-dung-quat.jpg",
+};
 
 const DEFAULT_CATEGORIES: CategoryItem[] = [
   {
@@ -19,6 +30,7 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     name: "Giáo trình & Sách học",
     description: "Tài liệu ôn thi, đề cương các khóa",
     count: "140+ tin",
+    imageUrl: "/categories/giao-trinh-sach.jpg",
     icon: "book",
   },
   {
@@ -27,6 +39,7 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     name: "Bàn ghế & Tủ KTX",
     description: "Bàn học gấp, ghế xoay, tủ vải",
     count: "85+ tin",
+    imageUrl: "/categories/ban-ghe-tu-ktx.jpg",
     icon: "archive",
   },
   {
@@ -35,14 +48,16 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     name: "Đồ gia dụng & Quạt",
     description: "Quạt Senko, ấm siêu tốc, nồi cơm",
     count: "110+ tin",
+    imageUrl: "/categories/do-gia-dung-quat.jpg",
     icon: "bolt",
   },
   {
     id: "do-dien-tu-phu-kien",
     slug: "do-dien-tu-phu-kien",
-    name: "Đồ điện tử & Máy tính",
+    name: "Đồ điện tử & Phụ kiện",
     description: "Casio fx-580, chuột, bàn phím",
     count: "95+ tin",
+    imageUrl: "/categories/do-dien-tu-phu-kien.jpg",
     icon: "chip",
   },
   {
@@ -51,6 +66,7 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     name: "Xe đạp & Phương tiện",
     description: "Xe đạp làng ĐH, mũ bảo hiểm",
     count: "40+ tin",
+    imageUrl: "/categories/xe-dap-phuong-tien.jpg",
     icon: "truck",
   },
   {
@@ -59,6 +75,7 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     name: "Góc 0đ Cho Tặng",
     description: "Đồ dùng, giáo trình miễn phí 0đ",
     count: "50+ tin",
+    imageUrl: "/categories/goc-0d-cho-tang.jpg",
     icon: "gift",
   },
 ];
@@ -151,12 +168,13 @@ export function CategoryGrid({
           {categories.map((cat) => {
             const isSelected = selectedSlug === cat.slug;
             const isFree = cat.slug === "goc-0d-cho-tang";
+            const imageSrc = cat.imageUrl || CATEGORY_IMAGES[cat.slug];
 
             return (
               <div
                 key={cat.id || cat.slug}
                 onClick={() => onSelectCategory && onSelectCategory(cat.slug)}
-                className={`group relative bg-white rounded-2xl p-4 sm:p-5 flex flex-col items-center text-center border cursor-pointer transition-all duration-300 ${
+                className={`group relative bg-white rounded-2xl p-3.5 sm:p-4 flex flex-col items-center text-center border cursor-pointer transition-all duration-300 ${
                   isSelected
                     ? "border-[#018ABE] shadow-[0_10px_25px_rgba(1,138,190,0.2)] bg-[#D6E8EE]/10 -translate-y-1"
                     : isFree
@@ -164,22 +182,34 @@ export function CategoryGrid({
                     : "border-[#D6E8EE] hover:border-[#018ABE] hover:shadow-[0_10px_25px_rgba(2,69,122,0.1)] hover:-translate-y-1"
                 }`}
               >
-                {/* Vòng tròn icon holder */}
-                <div
-                  className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-3 transition-colors duration-300 ${
-                    isSelected
-                      ? "bg-[#018ABE] text-white"
-                      : isFree
-                      ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"
-                      : "bg-[#D6E8EE]/40 text-[#018ABE] group-hover:bg-[#018ABE]/15"
-                  }`}
-                >
-                  {renderIcon(cat.icon || cat.slug)}
+                {/* Khung ảnh đại diện 3D danh mục */}
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden mb-2.5 bg-slate-50 border border-slate-100 shadow-xs group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
+                  {imageSrc ? (
+                    <Image
+                      src={imageSrc}
+                      alt={cat.name}
+                      fill
+                      sizes="(max-width: 640px) 64px, 80px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div
+                      className={`w-full h-full flex items-center justify-center transition-colors duration-300 ${
+                        isSelected
+                          ? "bg-[#018ABE] text-white"
+                          : isFree
+                          ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"
+                          : "bg-[#D6E8EE]/40 text-[#018ABE] group-hover:bg-[#018ABE]/15"
+                      }`}
+                    >
+                      {renderIcon(cat.icon || cat.slug)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Tên danh mục */}
                 <h3
-                  className={`text-sm sm:text-[15px] font-bold line-clamp-2 leading-snug transition-colors mb-1 ${
+                  className={`text-xs sm:text-[14px] font-bold line-clamp-2 leading-snug transition-colors mb-1 min-h-[2.5rem] flex items-center justify-center ${
                     isSelected
                       ? "text-[#018ABE]"
                       : isFree
@@ -191,8 +221,8 @@ export function CategoryGrid({
                 </h3>
 
                 {/* Số lượng tin */}
-                <span className="text-[11px] sm:text-xs font-semibold text-[#02457A]/70 group-hover:text-[#018ABE] transition-colors">
-                  {cat.count || "Khám phá ngay"}
+                <span className="text-[11px] sm:text-xs font-semibold text-[#02457A]/75 group-hover:text-[#018ABE] transition-colors">
+                  {cat.count || "Khám phá"}
                 </span>
 
                 {/* Badge "Hot" hoặc "Miễn phí" */}
