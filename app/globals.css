@@ -1,26 +1,71 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* UniCycle 5-Level Blue Palette + Pure White Canvas (docs/ui-ux.md) */
+  --color-navy-900: #001B48;
+  --color-ocean-800: #02457A;
+  --color-cerulean-600: #018ABE;
+  --color-sky-300: #97CADB;
+  --color-ice-100: #D6E8EE;
+  --color-canvas: #FFFFFF;
+  --color-zalo: #0068FF;
+
+  /* Semantic surface & text tokens */
+  --background: #FFFFFF;
+  --foreground: #001B48;
+  --surface-muted: #F4F9FB;
+  --border-subtle: #D6E8EE;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-navy-900: var(--color-navy-900);
+  --color-ocean-800: var(--color-ocean-800);
+  --color-cerulean-600: var(--color-cerulean-600);
+  --color-sky-300: var(--color-sky-300);
+  --color-ice-100: var(--color-ice-100);
+  --color-canvas: var(--color-canvas);
+  --color-zalo: var(--color-zalo);
+  --color-surface-muted: var(--surface-muted);
+  --color-border-subtle: var(--border-subtle);
+  --font-sans: var(--font-manrope), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Hero Gradient Bleed effect from docs/ui-ux.md §2.3 */
+.hero-gradient-bleed {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(151, 202, 219, 0.35) 0%, transparent 45%),
+    linear-gradient(180deg, #001B48 0%, #02457A 48%, #018ABE 78%, #D6E8EE 93%, #FFFFFF 100%);
+}
+
+/* Visible keyboard focus ring following WCAG 2.2 & ui-ux-pro-max */
+:focus-visible {
+  outline: 2px solid var(--color-cerulean-600);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
