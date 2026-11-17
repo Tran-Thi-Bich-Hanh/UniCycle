@@ -71,28 +71,9 @@ function LoginContent() {
     performLogin(email, password);
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "hoangnam.bka@gmail.com" }),
-      });
-      if (res.ok) {
-        window.dispatchEvent(new Event("unicycle-auth-change"));
-        const destination = returnTo.startsWith("/") ? returnTo : "/";
-        router.push(destination);
-        router.refresh();
-      } else {
-        setError("Đăng nhập Google thất bại.");
-        setLoading(false);
-      }
-    } catch {
-      setError("Lỗi kết nối khi đăng nhập Google.");
-      setLoading(false);
-    }
+    router.push(`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`);
   };
 
   return (
