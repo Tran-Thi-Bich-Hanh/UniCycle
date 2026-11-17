@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { BookingModal } from "@/components/orders/BookingModal";
 
 export interface ProductDetailData {
   id: string;
@@ -89,6 +90,9 @@ export function ProductDetailClient({
   const [copiedMessage, setCopiedMessage] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
 
+  // Booking Modal State (Task 3.2)
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+
   // Mở Zalo qua route bảo mật /api/zalo/[listingId]
   const handleOpenZalo = useCallback(async () => {
     // Nếu chưa đăng nhập: chuyển tới trang đăng nhập với returnTo (BR01)
@@ -153,6 +157,12 @@ export function ProductDetailClient({
       }, 50);
       return () => clearTimeout(timer);
     }
+    if (action === "book" && currentUserId) {
+      const timer = setTimeout(() => {
+        setIsBookingModalOpen(true);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
   }, [searchParams, currentUserId, handleOpenZalo]);
 
   const images = product.images && product.images.length > 0
@@ -195,8 +205,7 @@ export function ProductDetailClient({
       return;
     }
 
-    // Task 3.2 sẽ gắn trực tiếp BookingModal. Hiện tại dẫn sang điều hướng đặt hẹn
-    router.push(`/orders?createFor=${product.id}`);
+    setIsBookingModalOpen(true);
   };
 
   const isReserved = product.status === "RESERVED";
@@ -649,7 +658,26 @@ export function ProductDetailClient({
         </div>
       )}
 
-      {/* 4. Món đồ tương tự (nếu có) */}
+      {/* 4. MODAL ĐẶT LỊCH HẸN (Booking Modal - Task 3.2) */}
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        product={{
+          id: product.id,
+          title: product.title,
+          price: product.price,
+          isFree: product.isFree,
+          schoolName: product.school?.shortName,
+          imageUrl: activeImage,
+          sellerName: product.seller.displayName,
+        }}
+        onSuccess={() => {
+          setIsBookingModalOpen(false);
+          router.push("/orders");
+        }}
+      />
+
+      {/* 5. Món đồ tương tự (nếu có) */}
       {relatedProducts.length > 0 && (
         <section className="mt-14 pt-10 border-t border-[#D6E8EE]">
           <h2 className="text-xl sm:text-2xl font-extrabold text-[#001B48] mb-6">
