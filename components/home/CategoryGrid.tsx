@@ -23,6 +23,46 @@ const CATEGORY_IMAGES: Record<string, string> = {
   "do-gia-dung-quat": "/categories/do-gia-dung-quat.jpg",
 };
 
+const CATEGORY_THEMES: Record<
+  string,
+  {
+    bgGradient: string;
+    borderAccent: string;
+    glowColor: string;
+  }
+> = {
+  "goc-0d-cho-tang": {
+    bgGradient: "from-emerald-100/70 via-teal-50 to-emerald-50",
+    borderAccent: "border-emerald-200 group-hover:border-emerald-400",
+    glowColor: "group-hover:shadow-[0_12px_28px_rgba(16,185,129,0.2)]",
+  },
+  "giao-trinh-sach": {
+    bgGradient: "from-sky-100/70 via-blue-50 to-indigo-50/50",
+    borderAccent: "border-sky-200 group-hover:border-sky-400",
+    glowColor: "group-hover:shadow-[0_12px_28px_rgba(2,69,122,0.18)]",
+  },
+  "do-dien-tu-phu-kien": {
+    bgGradient: "from-indigo-100/70 via-cyan-50 to-blue-50/50",
+    borderAccent: "border-indigo-200 group-hover:border-indigo-400",
+    glowColor: "group-hover:shadow-[0_12px_28px_rgba(99,102,241,0.18)]",
+  },
+  "xe-dap-phuong-tien": {
+    bgGradient: "from-amber-100/70 via-orange-50 to-yellow-50/50",
+    borderAccent: "border-amber-200 group-hover:border-amber-400",
+    glowColor: "group-hover:shadow-[0_12px_28px_rgba(245,158,11,0.18)]",
+  },
+  "ban-ghe-tu-ktx": {
+    bgGradient: "from-purple-100/70 via-pink-50 to-rose-50/50",
+    borderAccent: "border-purple-200 group-hover:border-purple-400",
+    glowColor: "group-hover:shadow-[0_12px_28px_rgba(168,85,247,0.18)]",
+  },
+  "do-gia-dung-quat": {
+    bgGradient: "from-rose-100/70 via-amber-50 to-orange-50/50",
+    borderAccent: "border-orange-200 group-hover:border-orange-400",
+    glowColor: "group-hover:shadow-[0_12px_28px_rgba(249,115,22,0.18)]",
+  },
+};
+
 const DEFAULT_CATEGORIES: CategoryItem[] = [
   {
     id: "giao-trinh-sach",
@@ -163,53 +203,80 @@ export function CategoryGrid({
           </Link>
         </div>
 
-        {/* Lưới danh mục 6 ô (phong cách widget-categories-box index.html) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
+        {/* Lưới danh mục 6 ô (phong cách widget-categories-box index.html - UI/UX Pro Max) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4 lg:gap-5">
           {categories.map((cat) => {
             const isSelected = selectedSlug === cat.slug;
             const isFree = cat.slug === "goc-0d-cho-tang";
             const imageSrc = cat.imageUrl || CATEGORY_IMAGES[cat.slug];
+            const theme = CATEGORY_THEMES[cat.slug] || {
+              bgGradient: "from-slate-100/70 via-slate-50 to-sky-50/40",
+              borderAccent: "border-slate-200 group-hover:border-[#018ABE]/60",
+              glowColor: "group-hover:shadow-[0_12px_28px_rgba(1,138,190,0.15)]",
+            };
 
             return (
               <div
                 key={cat.id || cat.slug}
                 onClick={() => onSelectCategory && onSelectCategory(cat.slug)}
-                className={`group relative bg-white rounded-2xl p-3.5 sm:p-4 flex flex-col items-center text-center border cursor-pointer transition-all duration-300 ${
+                className={`group relative bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col items-center text-center border cursor-pointer transition-all duration-300 ${
                   isSelected
-                    ? "border-[#018ABE] shadow-[0_10px_25px_rgba(1,138,190,0.2)] bg-[#D6E8EE]/10 -translate-y-1"
+                    ? "border-[#018ABE] ring-2 ring-[#018ABE]/20 shadow-[0_12px_28px_rgba(1,138,190,0.22)] bg-[#D6E8EE]/15 -translate-y-1.5"
                     : isFree
-                    ? "border-emerald-200 hover:border-emerald-500 hover:shadow-[0_10px_25px_rgba(16,185,129,0.15)] hover:-translate-y-1"
-                    : "border-[#D6E8EE] hover:border-[#018ABE] hover:shadow-[0_10px_25px_rgba(2,69,122,0.1)] hover:-translate-y-1"
+                    ? "border-emerald-200 hover:border-emerald-500 hover:shadow-[0_14px_30px_rgba(16,185,129,0.18)] hover:-translate-y-1.5"
+                    : `border-slate-200/80 hover:border-[#018ABE] ${theme.glowColor} hover:-translate-y-1.5`
                 }`}
               >
-                {/* Khung ảnh đại diện 3D danh mục */}
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden mb-2.5 bg-slate-50 border border-slate-100 shadow-xs group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
-                  {imageSrc ? (
-                    <Image
-                      src={imageSrc}
-                      alt={cat.name}
-                      fill
-                      sizes="(max-width: 640px) 64px, 80px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div
-                      className={`w-full h-full flex items-center justify-center transition-colors duration-300 ${
-                        isSelected
-                          ? "bg-[#018ABE] text-white"
-                          : isFree
-                          ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"
-                          : "bg-[#D6E8EE]/40 text-[#018ABE] group-hover:bg-[#018ABE]/15"
-                      }`}
-                    >
-                      {renderIcon(cat.icon || cat.slug)}
-                    </div>
-                  )}
+                {/* Chỉ báo trạng thái đang chọn lọc */}
+                {isSelected && (
+                  <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 bg-[#018ABE] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    <span>Đang lọc</span>
+                  </span>
+                )}
+
+                {/* Huy hiệu Góc 0đ Cho Tặng nổi bật */}
+                {isFree && (
+                  <span className="absolute -top-2.5 right-2 sm:right-3 z-10 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] sm:text-[11px] font-extrabold px-2.5 py-0.5 rounded-full shadow-sm ring-2 ring-white inline-flex items-center gap-1">
+                    <span>🎁</span>
+                    <span>0đ Tặng</span>
+                  </span>
+                )}
+
+                {/* Khung ảnh đại diện 3D danh mục kích thước lớn (96px desktop / 80px mobile) */}
+                <div
+                  className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden mb-3 p-1 bg-gradient-to-br ${theme.bgGradient} border ${theme.borderAccent} shadow-xs group-hover:scale-105 group-hover:shadow-md transition-all duration-300`}
+                >
+                  <div className="relative w-full h-full rounded-xl overflow-hidden">
+                    {imageSrc ? (
+                      <Image
+                        src={imageSrc}
+                        alt={cat.name}
+                        fill
+                        sizes="(max-width: 640px) 80px, 96px"
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div
+                        className={`w-full h-full flex items-center justify-center transition-colors duration-300 ${
+                          isSelected
+                            ? "bg-[#018ABE] text-white"
+                            : isFree
+                            ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"
+                            : "bg-[#D6E8EE]/40 text-[#018ABE] group-hover:bg-[#018ABE]/15"
+                        }`}
+                      >
+                        {renderIcon(cat.icon || cat.slug)}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Tên danh mục */}
                 <h3
-                  className={`text-xs sm:text-[14px] font-bold line-clamp-2 leading-snug transition-colors mb-1 min-h-[2.5rem] flex items-center justify-center ${
+                  className={`text-xs sm:text-[14px] font-bold line-clamp-2 leading-snug transition-colors mb-2 min-h-[2.5rem] flex items-center justify-center ${
                     isSelected
                       ? "text-[#018ABE]"
                       : isFree
@@ -220,17 +287,18 @@ export function CategoryGrid({
                   {cat.name}
                 </h3>
 
-                {/* Số lượng tin */}
-                <span className="text-[11px] sm:text-xs font-semibold text-[#02457A]/75 group-hover:text-[#018ABE] transition-colors">
+                {/* Số lượng tin dạng Capsule Pill Badge */}
+                <span
+                  className={`inline-flex items-center text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-colors ${
+                    isSelected
+                      ? "bg-[#018ABE] text-white"
+                      : isFree
+                      ? "bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100"
+                      : "bg-slate-100 text-slate-600 group-hover:bg-[#D6E8EE]/70 group-hover:text-[#018ABE]"
+                  }`}
+                >
                   {cat.count || "Khám phá"}
                 </span>
-
-                {/* Badge "Hot" hoặc "Miễn phí" */}
-                {isFree && (
-                  <span className="absolute -top-2 right-2 bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
-                    0đ
-                  </span>
-                )}
               </div>
             );
           })}
