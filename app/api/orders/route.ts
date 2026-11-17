@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { reconcileExpiredOrders } from "@/lib/utils/order-timeouts";
 
 export async function GET(req: NextRequest) {
   try {
+    // Tự động kiểm tra và dọn dẹp các đơn/lời mời hết hạn (BR12, BR37, BR38)
+    reconcileExpiredOrders().catch((err) => console.warn("Lỗi reconcile:", err));
+
     const user = await getSessionUser();
     if (!user) {
       return NextResponse.json(

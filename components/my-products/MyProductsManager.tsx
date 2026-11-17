@@ -52,6 +52,16 @@ export function MyProductsManager() {
   const [editHidePhone, setEditHidePhone] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
 
+  // Modal Lời mời chốt bán Zalo (BR38)
+  const [inviteModalData, setInviteModalData] = useState<{
+    listingTitle: string;
+    inviteUrl: string;
+    fullInviteUrl: string;
+    qrUrl: string;
+  } | null>(null);
+  const [generatingInviteId, setGeneratingInviteId] = useState<string | null>(null);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+
   // Tải danh sách tin
   const loadListings = async () => {
     try {
@@ -285,6 +295,44 @@ export function MyProductsManager() {
     } finally {
       setSavingEdit(false);
     }
+  };
+
+  // Tạo lời mời chốt bán cho khách Zalo (BR38)
+  const handleCreateInvite = async (listingId: string, listingTitle: string) => {
+    setActionError(null);
+    setGeneratingInviteId(listingId);
+
+    try {
+      const res = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setActionError(data.error || "Không thể tạo lời mời chốt bán.");
+        return;
+      }
+
+      setInviteModalData({
+        listingTitle,
+        inviteUrl: data.inviteUrl,
+        fullInviteUrl: data.fullInviteUrl,
+        qrUrl: data.qrUrl,
+      });
+    } catch {
+      setActionError("Lỗi kết nối khi tạo lời mời chốt bán Zalo.");
+    } finally {
+      setGeneratingInviteId(null);
+    }
+  };
+
+  const handleCopyInviteLink = () => {
+    if (!inviteModalData?.fullInviteUrl) return;
+    navigator.clipboard.writeText(inviteModalData.fullInviteUrl);
+    setCopiedInvite(true);
+    setTimeout(() => setCopiedInvite(false), 2000);
   };
 
   return (
@@ -537,6 +585,19 @@ export function MyProductsManager() {
 
                   {/* Cột phải: Cụm nút thao tác (Actions) */}
                   <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
+                    {/* Nút Chốt bán Zalo (BR38) */}
+                    {!isReserved && !isSold && !isHidden && (
+                      <button
+                        type="button"
+                        onClick={() => handleCreateInvite(listing.id, listing.title)}
+                        disabled={generatingInviteId === listing.id}
+                        className="px-3 py-2 rounded-xl text-xs font-bold bg-[#0068FF]/10 text-[#0068FF] hover:bg-[#0068FF]/20 border border-[#0068FF]/30 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                        title="Tạo link chốt bán nhanh cho khách Zalo 24h (BR38)"
+                      >
+                        <span>{generatingInviteId === listing.id ? "Đang tạo..." : "📲 Chốt bán Zalo"}</span>
+                      </button>
+                    )}
+
                     {/* Nút Sửa tin (khóa nếu RESERVED theo BR18) */}
                     <button
                       type="button"
@@ -758,6 +819,71 @@ export function MyProductsManager() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL LỜI MỜI CHỐT BÁN ZALO (BR38) */}
+      {inviteModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl bg-[#0068FF] text-white flex items-center justify-center text-sm font-bold">
+                  📲
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-[#001B48]">
+                    Link Chốt Bán Cho Khách Zalo
+                  </h3>
+                  <span className="text-[11px] text-slate-500">
+                    Có hiệu lực trong 24 giờ (Quy tắc BR38)
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInviteModalData(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Bạn hãy gửi link hoặc đưa mã QR này cho bạn mua qua Zalo. Khi người mua bấm <strong>&quot;Xác nhận mua&quot;</strong>, món đồ sẽ tự động chuyển sang trạng thái <strong>Giữ chỗ (RESERVED)</strong> trên hệ thống:
+            </p>
+
+            {/* Mã QR */}
+            <div className="flex flex-col items-center justify-center p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+              <div className="relative w-40 h-40 rounded-xl overflow-hidden bg-white p-2 border">
+                <Image src={inviteModalData.qrUrl} alt="Invite QR" fill className="object-contain p-1" />
+              </div>
+              <span className="text-[11px] text-slate-500 mt-2">Quét mã để mở link xác nhận mua ngay</span>
+            </div>
+
+            {/* Link & Copy */}
+            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200">
+              <input
+                type="text"
+                readOnly
+                value={inviteModalData.fullInviteUrl}
+                className="text-xs bg-transparent text-[#001B48] flex-1 outline-none font-mono truncate"
+              />
+              <button
+                type="button"
+                onClick={handleCopyInviteLink}
+                className="px-3 py-1.5 rounded-lg bg-[#0068FF] hover:bg-[#0052cc] text-white text-xs font-bold shrink-0 transition-colors cursor-pointer"
+              >
+                {copiedInvite ? "✓ Đã copy" : "Sao chép link"}
+              </button>
+            </div>
+
+            <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-[11px] text-[#02457A] space-y-1">
+              <span className="font-bold block">💡 Lợi ích của cơ chế này:</span>
+              <span>- Giúp đơn hàng được ghi nhận vào hệ thống để bảo lưu Product Passport Đời chủ #2.</span>
+              <span>- Khóa ngay món đồ để người mua khác không đặt trùng (BR11).</span>
+            </div>
           </div>
         </div>
       )}

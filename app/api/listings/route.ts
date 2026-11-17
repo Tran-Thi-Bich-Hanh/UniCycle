@@ -5,9 +5,13 @@ import prisma from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { removeVietnameseTones } from "@/lib/utils/vietnamese";
 import { checkProhibitedContent } from "@/lib/utils/prohibited-words";
+import { reconcileExpiredOrders } from "@/lib/utils/order-timeouts";
 import { FALLBACK_PRODUCTS } from "@/lib/data/mock-fallback";
 
 export async function GET(req: NextRequest) {
+  // Dọn dẹp các đơn timeout nhả hàng về AVAILABLE (BR37)
+  reconcileExpiredOrders().catch((err) => console.warn("Lỗi reconcile listings:", err));
+
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") || "").trim();
   const categorySlug = searchParams.get("category");
