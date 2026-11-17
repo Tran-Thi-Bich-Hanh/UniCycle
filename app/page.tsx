@@ -1,55 +1,137 @@
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import prisma from "@/lib/prisma";
+import { ProductCardData } from "@/components/products/ProductCard";
+import { CategoryItem } from "@/components/home/CategoryGrid";
+import { HomeProductFeed } from "@/components/home/HomeProductFeed";
+import { PassportBanner } from "@/components/home/PassportBanner";
+import {
+  FALLBACK_PRODUCTS,
+  FALLBACK_CATEGORIES,
+  FALLBACK_SCHOOLS,
+} from "@/lib/data/mock-fallback";
 
-const COLOR_TOKENS = [
-  {
-    name: "Midnight Navy",
-    hex: "#001B48",
-    role: "Text chính, tiêu đề H1, Header dark",
-    bgClass: "bg-[#001B48] text-white",
-  },
-  {
-    name: "Deep Ocean Blue",
-    hex: "#02457A",
-    role: "Tiêu đề phân đoạn, nhãn giá, viền đậm",
-    bgClass: "bg-[#02457A] text-white",
-  },
-  {
-    name: "Cerulean Blue",
-    hex: "#018ABE",
-    role: "CTA chính, nút Đăng bán, trạng thái active",
-    bgClass: "bg-[#018ABE] text-white",
-  },
-  {
-    name: "Soft Sky Blue",
-    hex: "#97CADB",
-    role: "Điểm chuyển gradient, viền thẻ khi hover",
-    bgClass: "bg-[#97CADB] text-[#001B48]",
-  },
-  {
-    name: "Ice Blue Tint",
-    hex: "#D6E8EE",
-    role: "Nền huy hiệu, pill lọc nhanh, nền phụ",
-    bgClass: "bg-[#D6E8EE] text-[#001B48]",
-  },
-  {
-    name: "Zalo Official",
-    hex: "#0068FF",
-    role: "Nút Nhắn qua Zalo (/api/zalo/[listingId])",
-    bgClass: "bg-[#0068FF] text-white",
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function Home() {
+export default async function Home() {
+  // Lấy dữ liệu từ Supabase PostgreSQL qua Prisma (có fallback an toàn)
+  let products: ProductCardData[] = FALLBACK_PRODUCTS;
+  let categories: CategoryItem[] = FALLBACK_CATEGORIES;
+  let schools = FALLBACK_SCHOOLS;
+
+  try {
+    const [dbListings, dbCategories, dbSchools] = await Promise.all([
+      prisma.listing.findMany({
+        where: {
+          status: "AVAILABLE",
+        },
+        include: {
+          school: true,
+          category: true,
+          seller: true,
+          item: {
+            include: {
+              owners: true,
+            },
+          },
+          images: {
+            orderBy: {
+              position: "asc",
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 20,
+      }),
+      prisma.category.findMany(),
+      prisma.school.findMany(),
+    ]);
+
+    if (dbListings && dbListings.length > 0) {
+      products = dbListings.map((l) => ({
+        id: l.id,
+        title: l.title,
+        price: l.price,
+        isFree: l.isFree,
+        condition: l.condition,
+        zaloPhone: l.zaloPhone,
+        createdAt: l.createdAt,
+        school: l.school
+          ? {
+              id: l.school.id,
+              name: l.school.name,
+              shortName: l.school.shortName,
+              area: l.school.area,
+            }
+          : null,
+        category: l.category
+          ? {
+              id: l.category.id,
+              name: l.category.name,
+              slug: l.category.slug,
+            }
+          : null,
+        seller: {
+          id: l.seller.id,
+          displayName: l.seller.displayName,
+          avatarUrl: l.seller.avatarUrl,
+          isStudentVerified: l.seller.isStudentVerified,
+          reputationScore: l.seller.reputationScore,
+          dorm: l.seller.dorm,
+        },
+        item: l.item
+          ? {
+              id: l.item.id,
+              passportEnabled: l.item.passportEnabled,
+              passportId: l.item.passportId,
+              passportStatus: l.item.passportStatus,
+              owners: l.item.owners.map((o) => ({
+                seq: o.seq,
+                showName: o.showName,
+              })),
+            }
+          : null,
+        images: l.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+        })),
+      }));
+    }
+
+    if (dbCategories && dbCategories.length > 0) {
+      categories = dbCategories.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        name: c.name,
+        description: c.description,
+        icon: c.icon,
+        count: "Đang cập nhật",
+      }));
+    }
+
+    if (dbSchools && dbSchools.length > 0) {
+      schools = dbSchools.map((s) => ({
+        id: s.id,
+        name: s.name,
+        shortName: s.shortName,
+      }));
+    }
+  } catch (error) {
+    console.warn("⚠️ Không thể tải trực tiếp từ DB server (dùng dữ liệu mẫu seed):", error);
+  }
+
   return (
     <div className="flex flex-col flex-1">
-      {/* Khối Hero Gradient Bleed: kéo dài hơn, hình ảnh to và sát lề phải hơn */}
-      <section className="hero-gradient-bleed text-white pt-0 pb-36 sm:pt-0 sm:pb-48 relative overflow-hidden">
+      {/* 1. Khối Hero Gradient Bleed: Thông điệp vòng đời đồ vật tuần hoàn & Hình ảnh cân đối */}
+      <section className="hero-gradient-bleed text-white pt-2 pb-16 sm:pt-4 sm:pb-24 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
             {/* Cột trái (6/12 cột): Tiêu đề, thông điệp & CTA */}
-            <div className="lg:col-span-6 space-y-6">
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-semibold text-[#D6E8EE] shadow-sm">
+            <div className="lg:col-span-6 space-y-5">
+              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-semibold text-[#D6E8EE] shadow-sm">
                 <Image
                   src="/icon.png"
                   alt=""
@@ -64,28 +146,28 @@ export default function Home() {
                 Mua bán đồ cũ sinh viên tiết kiệm &amp; trao tay tận cổng trường
               </h1>
 
-              <p className="text-base sm:text-lg text-[#D6E8EE] leading-relaxed max-w-xl font-normal">
+              <p className="text-sm sm:text-base text-[#D6E8EE] leading-relaxed max-w-xl font-normal">
                 Tái sử dụng giáo trình, bàn học gấp, quạt đứng hay đồ dùng ký túc xá qua các thế hệ sinh viên. Kết nối nhanh qua Zalo, đặt hẹn giữ chỗ và kiểm tra chuỗi đời chủ qua Digital Product Passport.
               </p>
 
-              <div className="pt-2 flex flex-wrap items-center gap-3.5">
-                <Link
-                  href="/products"
-                  className="h-12 px-7 rounded-xl bg-white text-[#001B48] hover:bg-[#D6E8EE] font-bold text-sm inline-flex items-center gap-2 shadow-md transition-colors"
+              <div className="pt-1 flex flex-wrap items-center gap-3">
+                <a
+                  href="#live-feed"
+                  className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-white text-[#001B48] hover:bg-[#D6E8EE] font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md transition-colors cursor-pointer"
                 >
                   <span>Khám phá đồ quanh KTX</span>
-                  <span aria-hidden="true">&rarr;</span>
-                </Link>
+                  <span aria-hidden="true">&darr;</span>
+                </a>
                 <Link
                   href="/sell"
-                  className="h-12 px-7 rounded-xl bg-[#018ABE] hover:bg-[#02457A] border border-[#97CADB]/50 text-white font-bold text-sm inline-flex items-center gap-2 shadow-sm transition-colors"
+                  className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-[#018ABE] hover:bg-[#02457A] border border-[#97CADB]/50 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-sm transition-colors"
                 >
                   <span>Đăng bán trong 60 giây</span>
                 </Link>
               </div>
 
               {/* Thống kê nhanh nổi bật */}
-              <div className="pt-6 grid grid-cols-3 gap-4 border-t border-white/15 max-w-lg">
+              <div className="pt-4 grid grid-cols-3 gap-3 border-t border-white/15 max-w-lg">
                 <div>
                   <p className="text-xl sm:text-2xl font-black text-white">300k+</p>
                   <p className="text-xs text-[#97CADB] mt-0.5">Sinh viên KTX TP.HCM</p>
@@ -96,14 +178,14 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-xl sm:text-2xl font-black text-white">100%</p>
-                  <p className="text-xs text-[#97CADB] mt-0.5">QR Passport số màn hình</p>
+                  <p className="text-xs text-[#97CADB] mt-0.5">Product Passport số</p>
                 </div>
               </div>
             </div>
 
-            {/* Cột phải (6/12 cột): Ảnh 3D Vòng đời tái chế & Đồ dùng sinh viên đặt ở vị trí cân đối, kéo sang bên trái cho hài hòa */}
+            {/* Cột phải (6/12 cột): Ảnh 3D Vòng đời tái chế & Đồ dùng sinh viên đặt ở vị trí cân đối */}
             <div className="lg:col-span-6 flex justify-center items-center relative">
-              <div className="relative w-full max-w-[560px] lg:max-w-[620px] aspect-[4/3.5] flex items-center justify-center">
+              <div className="relative w-full max-w-[540px] lg:max-w-[580px] aspect-[4/3.5] flex items-center justify-center">
                 {/* Vầng sáng phía sau ảnh */}
                 <div className="absolute inset-4 bg-[#018ABE]/30 rounded-full blur-3xl scale-105" aria-hidden="true" />
                 <Image
@@ -120,39 +202,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Bảng kiểm tra Design System & Khung điều hướng (Task 1.1) */}
-      <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 -mt-20 relative z-20 pb-20">
-        <div className="bg-white rounded-2xl border border-[#D6E8EE] shadow-lg p-6 sm:p-8 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D6E8EE] pb-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#018ABE]">
-                Sprint 1 · Task 1.1 Hoàn tất
-              </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-[#001B48] mt-0.5">
-                Hệ thống Design Tokens &amp; Khung điều hướng Responsive
-              </h2>
-            </div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D6E8EE] text-[#02457A] text-xs font-bold self-start sm:self-center">
-              Font: Manrope (Vietnamese)
-            </span>
-          </div>
+      {/* 2. Lưới Danh Mục & Feed Sản Phẩm Sinh Viên Tương Tác Trực Tiếp (Lấy cảm hứng từ index.html) */}
+      <HomeProductFeed
+        initialProducts={products}
+        categories={categories}
+        schools={schools}
+      />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
-            {COLOR_TOKENS.map((token) => (
-              <div
-                key={token.hex}
-                className="rounded-xl border border-[#D6E8EE] overflow-hidden flex flex-col justify-between bg-white hover:border-[#018ABE] transition-colors"
-              >
-                <div className={`h-20 p-3 flex flex-col justify-between ${token.bgClass}`}>
-                  <span className="text-xs font-bold">{token.name}</span>
-                  <code className="text-xs font-mono opacity-90">{token.hex}</code>
-                </div>
-                <p className="p-3 text-xs text-slate-600 leading-snug">{token.role}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* 3. Banner Giới Thiệu Đặc Quyền: Digital Product Passport (off-chain & Fuji ready) */}
+      <PassportBanner />
     </div>
   );
 }
