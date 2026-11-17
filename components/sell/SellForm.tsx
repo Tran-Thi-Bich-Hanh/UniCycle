@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { compressImage, CompressedImageResult } from "@/lib/utils/image-compress";
 import { checkProhibitedContent } from "@/lib/utils/prohibited-words";
 
@@ -108,11 +108,21 @@ function getNextImageId(prefix: string): string {
 
 export function SellForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const resellItemId = searchParams?.get("resellItemId") || null;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Người dùng hiện tại
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+
+  // Thông tin món đồ bán lại (BR24, BR25, BR33)
+  const [resellItemData, setResellItemData] = useState<{
+    id: string;
+    title: string;
+    passportId: string;
+    categorySlug: string;
+  } | null>(null);
 
   // Danh mục và Trường học
   const [categories] = useState<CategoryOption[]>(DEFAULT_CATEGORIES);
@@ -170,6 +180,42 @@ export function SellForm() {
 
     checkAuth();
   }, [router]);
+
+  // 1b. Tải thông tin món đồ nếu là luồng Bán Lại (Resell - BR24, BR25, BR33)
+  useEffect(() => {
+    if (!resellItemId) return;
+
+    let ignore = false;
+    async function loadResellInfo() {
+      try {
+        const res = await fetch("/api/my-items");
+        if (res.ok) {
+          const data = await res.json();
+          const found = (data.items || []).find((i: { id: string }) => i.id === resellItemId);
+          if (found && !ignore) {
+            setResellItemData({
+              id: found.id,
+              title: found.title,
+              passportId: found.passportId,
+              categorySlug: found.category.slug,
+            });
+            setTitle(found.title);
+            const matchingCat = categories.find((c) => c.slug === found.category.slug);
+            if (matchingCat) setCategoryId(matchingCat.id);
+            setPassportEnabled(true);
+            setShowNameOnPassport(Boolean(found.showNameOnPassport));
+          }
+        }
+      } catch (err) {
+        console.warn("Lỗi tải thông tin bán lại:", err);
+      }
+    }
+
+    loadResellInfo();
+    return () => {
+      ignore = true;
+    };
+  }, [resellItemId, categories]);
 
   // Xử lý nén và tải ảnh lên từ máy
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -307,6 +353,7 @@ export function SellForm() {
         hidePhone,
         passportEnabled,
         showNameOnPassport,
+        resellItemId: resellItemId || undefined,
         images: images.map((img) => ({
           url: img.url,
           sha256: img.sha256,
@@ -370,24 +417,41 @@ export function SellForm() {
           Tiếp nối vòng đời đồ dùng học tập, kết nối trao tay an toàn tại cổng KTX và trường học.
         </p>
 
-        {/* Nút bấm điền nhanh dữ liệu mẫu 1-chạm */}
-        <div className="mt-4 p-3.5 bg-white rounded-2xl border border-[#D6E8EE] shadow-xs">
-          <div className="text-xs font-bold text-[#001B48] mb-2 flex items-center gap-1.5">
-            <span>✨ Thử nhanh mẫu tin sinh viên phổ biến (1 chạm):</span>
+        {/* Banner Bán lại kế thừa Passport nếu có resellItemId (BR24, BR25, BR33) */}
+        {resellItemData && (
+          <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs sm:text-sm flex items-start gap-3 shadow-xs">
+            <span className="text-2xl shrink-0">🔄</span>
+            <div className="space-y-1">
+              <strong className="block text-emerald-900 font-extrabold uppercase tracking-wider text-xs">
+                Bán Lại 1-Chạm Kế Thừa Digital Product Passport (BR24, BR25, BR33)
+              </strong>
+              <p className="text-emerald-900/90 leading-relaxed text-xs sm:text-[13px]">
+                Bạn đang đăng bán lại món đồ <strong>{resellItemData.title}</strong>. Món đồ được kế thừa nguyên vẹn mã <strong>Passport ID: {resellItemData.passportId}</strong> và chuỗi đời chủ trên hệ thống. <strong>Quy tắc BR24:</strong> Bạn bắt buộc phải chụp và tải lên bộ ảnh mới phản ánh trung thực tình trạng hiện tại để người mua sau đối chiếu trực quan.
+              </p>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {DEMO_PRESETS.map((preset, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleApplyPreset(preset, idx)}
-                className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-[#D6E8EE]/60 text-[#001B48] transition-colors cursor-pointer border border-slate-200"
-              >
-                {preset.label}
-              </button>
-            ))}
+        )}
+
+        {/* Nút bấm điền nhanh dữ liệu mẫu 1-chạm (Ẩn khi đang bán lại món đồ có sẵn) */}
+        {!resellItemId && (
+          <div className="mt-4 p-3.5 bg-white rounded-2xl border border-[#D6E8EE] shadow-xs">
+            <div className="text-xs font-bold text-[#001B48] mb-2 flex items-center gap-1.5">
+              <span>✨ Thử nhanh mẫu tin sinh viên phổ biến (1 chạm):</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {DEMO_PRESETS.map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleApplyPreset(preset, idx)}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-[#D6E8EE]/60 text-[#001B48] transition-colors cursor-pointer border border-slate-200"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Thông báo lỗi nếu có */}
@@ -671,15 +735,21 @@ export function SellForm() {
                 </span>
               </div>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={passportEnabled}
-                onChange={(e) => setPassportEnabled(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#018ABE]" />
-            </label>
+            {resellItemId ? (
+              <span className="text-[11px] font-bold text-emerald-300 bg-emerald-500/20 px-3 py-1 rounded-xl border border-emerald-500/30 shrink-0">
+                🔒 Bắt buộc kế thừa (BR33)
+              </span>
+            ) : (
+              <label className="relative inline-flex items-center cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={passportEnabled}
+                  onChange={(e) => setPassportEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#018ABE]" />
+              </label>
+            )}
           </div>
 
           {passportEnabled && (
@@ -751,17 +821,20 @@ export function SellForm() {
               🎉
             </div>
             <h3 className="text-xl sm:text-2xl font-extrabold text-[#001B48]">
-              Đăng Tin Thành Công!
+              {resellItemId ? "Đăng Bán Lại Thành Công! 🔄" : "Đăng Tin Thành Công! 🎉"}
             </h3>
             <p className="text-xs sm:text-sm text-[#02457A]">
-              Món đồ <span className="font-bold text-[#001B48]">&quot;{createdListingResult.title}&quot;</span> đã được đăng lên sàn UniCycle và sẵn sàng kết nối người mua.
+              Món đồ <span className="font-bold text-[#001B48]">&quot;{createdListingResult.title}&quot;</span> {resellItemId ? "đã kế thừa trọn vẹn Digital Passport và sẵn sàng kết nối đời chủ kế tiếp." : "đã được đăng lên sàn UniCycle và sẵn sàng kết nối người mua."}
             </p>
 
             {createdListingResult.passportId && (
               <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-1">
-                <span className="text-[11px] font-bold text-[#018ABE] block uppercase tracking-wider">
-                  📜 Digital Product Passport đã cấp:
-                </span>
+                <div className="flex items-center justify-between text-[11px] font-bold text-[#018ABE] uppercase tracking-wider">
+                  <span>📜 Digital Product Passport:</span>
+                  <Link href={`/passport/${createdListingResult.passportId}`} className="hover:underline">
+                    Xem Passport ↗
+                  </Link>
+                </div>
                 <span className="text-xs font-mono text-[#001B48] break-all block">
                   {createdListingResult.passportId}
                 </span>

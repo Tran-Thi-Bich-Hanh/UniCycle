@@ -214,6 +214,7 @@ export async function POST(req: NextRequest) {
       hidePhone,
       passportEnabled,
       showNameOnPassport,
+      resellItemId,
       images,
     } = body;
 
@@ -323,7 +324,47 @@ export async function POST(req: NextRequest) {
         let createdItem = null;
         let generatedPassportId: string | null = null;
 
-        if (shouldEnablePassport) {
+        // Nếu là luồng Bán Lại (Resell) món đồ đang sở hữu (BR24, BR25, BR33)
+        if (resellItemId) {
+          const existingItem = await tx.item.findUnique({
+            where: { id: resellItemId },
+            include: {
+              listings: {
+                where: {
+                  status: { in: ["AVAILABLE", "RESERVED"] },
+                },
+              },
+              owners: {
+                where: { userId: user.id },
+                orderBy: { seq: "desc" },
+                take: 1,
+              },
+            },
+          });
+
+          if (!existingItem) {
+            throw new Error("Không tìm thấy món đồ gốc để đăng bán lại.");
+          }
+
+          if (existingItem.currentOwnerId !== user.id) {
+            throw new Error("Chỉ chủ sở hữu hiện tại mới có quyền đăng bán lại món đồ này (BR25).");
+          }
+
+          if (existingItem.listings.length > 0) {
+            throw new Error("Món đồ này hiện đang có tin đăng mở bán hoặc đang giữ chỗ trên sàn (BR18).");
+          }
+
+          // Cập nhật tùy chọn hiển thị tên nếu người dùng thay đổi (BR29)
+          if (existingItem.owners[0] && typeof showNameOnPassport === "boolean") {
+            await tx.passportOwner.update({
+              where: { id: existingItem.owners[0].id },
+              data: { showName: Boolean(showNameOnPassport) },
+            });
+          }
+
+          createdItem = existingItem;
+          generatedPassportId = existingItem.passportId;
+        } else if (shouldEnablePassport) {
           generatedPassportId = "0x" + crypto.randomBytes(32).toString("hex");
           const itemSalt = crypto.randomBytes(16).toString("hex");
           const itemCommit = crypto
@@ -407,6 +448,17 @@ export async function POST(req: NextRequest) {
       createdListing = txResult.listing;
       finalPassportId = txResult.passportId;
     } catch (dbError) {
+      if (
+        dbError instanceof Error &&
+        (dbError.message.includes("BR") ||
+          dbError.message.includes("Không tìm thấy món đồ") ||
+          dbError.message.includes("quyền"))
+      ) {
+        return NextResponse.json(
+          { error: dbError.message },
+          { status: 400 }
+        );
+      }
       console.warn("⚠️ Lỗi Prisma khi tạo tin đăng (chuyển sang demo response):", dbError);
 
       // Demo/Fallback response nếu Database đang offline
