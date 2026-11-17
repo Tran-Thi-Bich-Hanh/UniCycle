@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { DisputeModal } from "@/components/orders/DisputeModal";
 
 export interface OrderItem {
   id: string;
@@ -24,6 +25,11 @@ export interface OrderItem {
     | "REJECTED"
     | "CANCELLED"
     | "EXPIRED";
+  confirmedFirstBy?: "BUYER" | "SELLER" | null;
+  buyerConfirmedAt?: string | null;
+  sellerConfirmedAt?: string | null;
+  disputeReason?: string | null;
+  disputedAt?: string | null;
   expiresAt: string;
   createdAt: string;
   listing: {
@@ -35,6 +41,12 @@ export interface OrderItem {
     status: string;
     school?: { name?: string; shortName?: string } | null;
     category?: { name?: string; slug?: string } | null;
+    item?: {
+      id: string;
+      passportEnabled?: boolean;
+      passportId?: string | null;
+      passportStatus?: string;
+    } | null;
     images: Array<{ url: string }>;
   };
   buyer: {
@@ -69,6 +81,11 @@ export function OrdersManager() {
 
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Modal khiếu nại BR13
+  const [disputeTarget, setDisputeTarget] = useState<OrderItem | null>(null);
+  const [disputeError, setDisputeError] = useState<string | null>(null);
+  const [disputeSubmitting, setDisputeSubmitting] = useState(false);
 
   // Tải danh sách đơn
   const loadOrders = useCallback(async () => {
@@ -111,8 +128,11 @@ export function OrdersManager() {
     };
   }, [loadOrders]);
 
-  // Xử lý Chấp nhận (accept), Từ chối (reject), Hủy (cancel)
-  const handleOrderAction = async (orderId: string, action: "accept" | "reject" | "cancel") => {
+  // Xử lý Chấp nhận (accept), Từ chối (reject), Hủy (cancel), Xác nhận bàn giao (confirm_handover)
+  const handleOrderAction = async (
+    orderId: string,
+    action: "accept" | "reject" | "cancel" | "confirm_handover"
+  ) => {
     setActionMessage(null);
 
     if (action === "accept") {
@@ -123,6 +143,12 @@ export function OrdersManager() {
 
     if (action === "cancel") {
       if (!confirm("Bạn có chắc chắn muốn hủy lịch hẹn này? Món đồ sẽ được mở bán lại trên sàn (BR21).")) {
+        return;
+      }
+    }
+
+    if (action === "confirm_handover") {
+      if (!confirm("Bạn xác nhận hai bên đã gặp mặt trực tiếp và bàn giao món đồ thành công?")) {
         return;
       }
     }
@@ -151,6 +177,35 @@ export function OrdersManager() {
     }
   };
 
+  // Gửi khiếu nại chưa nhận hàng (BR13)
+  const handleDisputeSubmit = async (reason: string) => {
+    if (!disputeTarget) return;
+    setDisputeSubmitting(true);
+    setDisputeError(null);
+
+    try {
+      const res = await fetch(`/api/orders/${disputeTarget.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "dispute", disputeReason: reason }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setDisputeError(data.error || "Không thể gửi khiếu nại.");
+        return;
+      }
+
+      setDisputeTarget(null);
+      setActionMessage({ type: "success", text: data.message });
+      await loadOrders();
+    } catch {
+      setDisputeError("Lỗi kết nối khi gửi khiếu nại.");
+    } finally {
+      setDisputeSubmitting(false);
+    }
+  };
+
   // Phân loại đơn theo tab Người Bán / Người Mua
   const sellerOrders = orders.filter((o) => o.sellerId === currentUserId);
   const buyerOrders = orders.filter((o) => o.buyerId === currentUserId);
@@ -163,7 +218,9 @@ export function OrdersManager() {
   const filteredOrders = currentTabOrders.filter((o) => {
     if (statusFilter === "all") return true;
     if (statusFilter === "PENDING") return o.status === "PENDING";
-    if (statusFilter === "ACCEPTED") return o.status === "ACCEPTED";
+    if (statusFilter === "ACCEPTED") {
+      return ["ACCEPTED", "WAITING_CONFIRMATION", "DISPUTED"].includes(o.status);
+    }
     if (statusFilter === "COMPLETED") return ["COMPLETED", "AUTO_COMPLETED"].includes(o.status);
     if (statusFilter === "CANCELLED") return ["CANCELLED", "REJECTED", "EXPIRED"].includes(o.status);
     return true;
@@ -280,7 +337,7 @@ export function OrdersManager() {
           },
           {
             key: "ACCEPTED",
-            label: `Đang giữ chỗ (${currentTabOrders.filter((o) => o.status === "ACCEPTED").length})`,
+            label: `Giữ chỗ / Bàn giao (${currentTabOrders.filter((o) => ["ACCEPTED", "WAITING_CONFIRMATION", "DISPUTED"].includes(o.status)).length})`,
           },
           {
             key: "COMPLETED",
@@ -339,9 +396,16 @@ export function OrdersManager() {
             const partner = isSellerRole ? order.buyer : order.seller;
             const isPending = order.status === "PENDING";
             const isAccepted = order.status === "ACCEPTED";
+            const isWaitingConfirmation = order.status === "WAITING_CONFIRMATION";
+            const isDisputed = order.status === "DISPUTED";
             const isCompleted = ["COMPLETED", "AUTO_COMPLETED"].includes(order.status);
             const isCancelled = ["CANCELLED", "REJECTED", "EXPIRED"].includes(order.status);
+            const isHandoverPhase = isAccepted || isWaitingConfirmation;
             const isActing = actionLoadingId === order.id;
+
+            const hasConfirmedSelf = isSellerRole
+              ? Boolean(order.sellerConfirmedAt)
+              : Boolean(order.buyerConfirmedAt);
 
             const mainImage =
               order.listing.images && order.listing.images.length > 0
@@ -352,7 +416,11 @@ export function OrdersManager() {
               <div
                 key={order.id}
                 className={`bg-white rounded-3xl p-5 sm:p-6 border transition-all ${
-                  isAccepted
+                  isDisputed
+                    ? "border-rose-300 bg-rose-50/30 shadow-xs"
+                    : isWaitingConfirmation
+                    ? "border-indigo-300 bg-indigo-50/20 shadow-xs"
+                    : isAccepted
                     ? "border-emerald-300 bg-emerald-50/20 shadow-xs"
                     : isPending
                     ? "border-amber-300 bg-amber-50/20 shadow-xs"
@@ -363,7 +431,7 @@ export function OrdersManager() {
                   {/* Cột trái: Ảnh món đồ & Chi tiết hẹn */}
                   <div className="flex items-start gap-4 flex-1 min-w-0">
                     <Link
-                      href={`/products/${order.listingId}`}
+                      href={`/orders/${order.id}`}
                       className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border border-slate-100 bg-slate-50 block"
                     >
                       <Image src={mainImage} alt={order.listing.title} fill className="object-cover" />
@@ -384,9 +452,22 @@ export function OrdersManager() {
                             Đang Giữ Chỗ (RESERVED)
                           </span>
                         )}
+                        {isWaitingConfirmation && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-600 text-white shadow-xs flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            Chờ Xác Nhận Đối Ứng (48h - BR13)
+                          </span>
+                        )}
+                        {isDisputed && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-600 text-white shadow-xs">
+                            🚨 Đang Khiếu Nại (SLA 72h - BR13)
+                          </span>
+                        )}
                         {isCompleted && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-800">
-                            Đã Hoàn Tất Giao Dịch
+                            {order.status === "AUTO_COMPLETED"
+                              ? "Tự Hoàn Tất 48h (BR13)"
+                              : "Đã Hoàn Tất Giao Dịch (BR07)"}
                           </span>
                         )}
                         {isCancelled && (
@@ -402,7 +483,7 @@ export function OrdersManager() {
 
                       {/* Tiêu đề món đồ */}
                       <Link
-                        href={`/products/${order.listingId}`}
+                        href={`/orders/${order.id}`}
                         className="text-base sm:text-lg font-bold text-[#001B48] hover:text-[#018ABE] transition-colors line-clamp-1 block"
                       >
                         {order.listing.title}
@@ -423,11 +504,42 @@ export function OrdersManager() {
                         </span>
                       </div>
 
+                      {/* Trạng thái xác nhận bàn giao 2 chiều */}
+                      {(isHandoverPhase || isCompleted || isDisputed) && (
+                        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                          <span
+                            className={`px-2 py-0.5 rounded-md font-semibold border ${
+                              order.sellerConfirmedAt
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-slate-50 text-slate-500 border-slate-200"
+                            }`}
+                          >
+                            {order.sellerConfirmedAt ? "✓ Người bán đã bàn giao" : "○ Người bán chưa xác nhận"}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md font-semibold border ${
+                              order.buyerConfirmedAt
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-slate-50 text-slate-500 border-slate-200"
+                            }`}
+                          >
+                            {order.buyerConfirmedAt ? "✓ Người mua đã nhận hàng" : "○ Người mua chưa xác nhận"}
+                          </span>
+                        </div>
+                      )}
+
                       {/* Lời nhắn từ người mua */}
                       {order.message && (
                         <p className="text-xs text-slate-600 italic bg-white p-2.5 rounded-xl border border-slate-200">
                           &quot;{order.message}&quot;
                         </p>
+                      )}
+
+                      {/* Lý do khiếu nại nếu DISPUTED */}
+                      {isDisputed && order.disputeReason && (
+                        <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                          <strong>Lý do khiếu nại:</strong> {order.disputeReason}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -460,7 +572,7 @@ export function OrdersManager() {
                     </div>
 
                     {/* Nút hành động theo trạng thái */}
-                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
                       {/* Người bán duyệt đơn PENDING (BR11) */}
                       {isSellerRole && isPending && (
                         <>
@@ -495,9 +607,39 @@ export function OrdersManager() {
                         </button>
                       )}
 
-                      {/* Hai bên với đơn ACCEPTED */}
-                      {isAccepted && (
+                      {/* Hai bên với đơn ACCEPTED hoặc WAITING_CONFIRMATION */}
+                      {isHandoverPhase && (
                         <>
+                          {!hasConfirmedSelf && (
+                            <button
+                              type="button"
+                              disabled={isActing}
+                              onClick={() => handleOrderAction(order.id, "confirm_handover")}
+                              className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              {isActing
+                                ? "Đang xử lý..."
+                                : isSellerRole
+                                ? "🤝 Đã bàn giao đồ"
+                                : "📦 Đã nhận được đồ"}
+                            </button>
+                          )}
+
+                          {/* Nút khiếu nại BR13 cho người mua khi người bán đã bấm trước */}
+                          {!isSellerRole && isWaitingConfirmation && !hasConfirmedSelf && (
+                            <button
+                              type="button"
+                              disabled={isActing}
+                              onClick={() => {
+                                setDisputeError(null);
+                                setDisputeTarget(order);
+                              }}
+                              className="px-3.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              🚨 Tôi chưa nhận hàng
+                            </button>
+                          )}
+
                           <Link
                             href={`/products/${order.listingId}?action=zalo`}
                             className="px-3.5 py-2.5 rounded-xl bg-[#0068FF] hover:bg-[#0052cc] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
@@ -505,23 +647,35 @@ export function OrdersManager() {
                             <span>💬 Nhắn Zalo</span>
                           </Link>
 
-                          <button
-                            type="button"
-                            disabled={isActing}
-                            onClick={() => handleOrderAction(order.id, "cancel")}
-                            className="px-3 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold border border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
-                            title="Hủy lịch hẹn và mở bán lại món đồ (BR21)"
-                          >
-                            Hủy hẹn
-                          </button>
+                          {isAccepted && (
+                            <button
+                              type="button"
+                              disabled={isActing}
+                              onClick={() => handleOrderAction(order.id, "cancel")}
+                              className="px-3 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold border border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Hủy lịch hẹn và mở bán lại món đồ (BR21)"
+                            >
+                              Hủy hẹn
+                            </button>
+                          )}
                         </>
                       )}
 
-                      {isCompleted && (
-                        <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200">
-                          ✓ Giao dịch đã hoàn tất
-                        </span>
+                      {isCompleted && !isSellerRole && order.listing.item?.passportEnabled && (
+                        <Link
+                          href="/my-items"
+                          className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-xl border border-emerald-200 transition-colors"
+                        >
+                          📜 Xem trong Đồ của tôi
+                        </Link>
                       )}
+
+                      <Link
+                        href={`/orders/${order.id}`}
+                        className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-[#02457A] text-xs font-bold border border-[#D6E8EE] transition-colors"
+                      >
+                        Chi tiết ↗
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -532,11 +686,23 @@ export function OrdersManager() {
                     <span className="flex items-center gap-1.5 font-medium">
                       <span>💡</span>
                       <span>
-                        Hai bên hãy gặp mặt tại <strong>{order.meetPlace}</strong> lúc <strong>{formatDateTime(order.meetTime)}</strong> để kiểm tra đồ và thanh toán trực tiếp.
+                        Gặp mặt tại <strong>{order.meetPlace}</strong> lúc <strong>{formatDateTime(order.meetTime)}</strong>, kiểm tra kỹ đồ rồi thanh toán trực tiếp và bấm xác nhận bàn giao.
                       </span>
                     </span>
                     <span className="text-[11px] text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200 font-semibold">
-                      🤝 Bàn giao 48h & Đánh giá (Sprint 4)
+                      Cửa sổ xác nhận 48h (BR13)
+                    </span>
+                  </div>
+                )}
+
+                {/* Banner nhắc xác nhận đối ứng 48h khi WAITING_CONFIRMATION */}
+                {isWaitingConfirmation && (
+                  <div className="mt-4 pt-3 border-t border-indigo-200/70 flex flex-wrap items-center justify-between gap-2 text-xs text-indigo-900">
+                    <span className="font-medium">
+                      ⏳{" "}
+                      {hasConfirmedSelf
+                        ? `Bạn đã xác nhận thành công. Đang chờ đối tác xác nhận đối ứng trước ${formatDateTime(order.expiresAt)} (tự động hoàn tất sau 48h theo BR13).`
+                        : `Đối tác đã xác nhận bàn giao! Vui lòng xác nhận trước ${formatDateTime(order.expiresAt)} hoặc bấm "Tôi chưa nhận hàng" nếu có sự cố (BR13).`}
                     </span>
                   </div>
                 )}
@@ -545,6 +711,18 @@ export function OrdersManager() {
           })}
         </div>
       )}
+
+      {/* Modal Khiếu nại BR13 */}
+      <DisputeModal
+        isOpen={Boolean(disputeTarget)}
+        orderTitle={disputeTarget?.listing.title || ""}
+        submitting={disputeSubmitting}
+        error={disputeError}
+        onClose={() => {
+          if (!disputeSubmitting) setDisputeTarget(null);
+        }}
+        onSubmit={handleDisputeSubmit}
+      />
     </div>
   );
 }
