@@ -70,15 +70,11 @@ export function ProductCard({ product }: ProductCardProps) {
     ? "0 ₫ (Miễn phí)"
     : `${price.toLocaleString("vi-VN")} ₫`;
 
-  // Mở Zalo nhanh
+  // Mở Zalo an toàn (BR01, BR36): Điều hướng tới PDP kèm action=zalo để kiểm tra quyền và rate limit
   const handleZaloClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (product.zaloPhone) {
-      window.open(`https://zalo.me/${product.zaloPhone.replace(/\D/g, "")}`, "_blank");
-    } else {
-      router.push(`/products/${product.id}`);
-    }
+    router.push(`/products/${product.id}?action=zalo`);
   };
 
   return (

@@ -91,7 +91,26 @@ Mỗi Sprint kéo dài từ **1 đến 1.5 tuần** với mục tiêu bàn giao 
 ---
 
 ### 🏃 Sprint 3: Kết Nối Zalo & Đặt Lịch Hẹn Giữ Đồ (Contact & Booking)
-- **Mục tiêu**: Người mua kết nối người bán lập tức qua Zalo hoặc đặt lịch hẹn xem hàng.
+- **Mục tiêu**: Người mua kết nối người bán lập tức qua Zalo (có bảo mật và rate-limit chống cào số) hoặc đặt lịch hẹn xem hàng giữ chỗ (`RESERVED`) trực tiếp trên UniCycle; hỗ trợ người bán chốt đơn cho khách Zalo bằng link/QR 1 lần (BR38).
+- **Phân rã Atomic Tasks**:
+  1. **Task 3.1 (Trang Chi Tiết Sản Phẩm `/products/[id]` & Route bảo mật Zalo `/api/zalo/[listingId]`)**:
+     - PDP chuẩn UX: Gallery ảnh, Dual CTA (Nhắn Zalo `#0068FF` & Đặt lịch hẹn `#018ABE`), Tóm tắt Digital Passport & tuyên bố giới hạn (BR30), Seller Trust Box & Hộp an toàn KTX.
+     - Route trung gian `/api/zalo/[listingId]`: Yêu cầu auth (BR01), rate-limit chống cào số, ẩn SĐT thô nếu `hidePhone=true` (BR36), tạo link & tin nhắn mẫu sẵn.
+     - Khách vãng lai bấm Zalo/Đặt hẹn -> mở modal đăng nhập rồi tự quay lại vị trí (`returnTo`).
+  2. **Task 3.2 (Đặt Lịch Hẹn Giữ Đồ `POST /api/orders` & Quản Lý Đơn Hẹn `/orders`)**:
+     - BookingModal: chọn giá đề xuất, địa điểm công cộng (cổng KTX/căng tin), thời gian hẹn.
+     - Quy tắc BR04 (không tự đặt mua đồ mình), BR05 (cho phép nhiều đơn PENDING cùng lúc).
+     - Người bán duyệt đơn: chuyển đơn thành `ACCEPTED`, listing thành `RESERVED`, tự động `REJECTED` các đơn PENDING khác (BR11).
+     - Quản lý đơn hẹn `/orders`: 2 tab Mua / Bán, hỗ trợ hủy hẹn nhả trạng thái `AVAILABLE` (BR21).
+  3. **Task 3.3 (Chốt Bán Khách Zalo `/invites/[code]` theo BR38 & Timeout BR12, BR37)**:
+     - Người bán tạo link/QR mời chốt bán 1 lần (hạn 24h) gửi qua Zalo (BR38).
+     - Khách Zalo mở link `/invites/[code]`, bấm xác nhận mua -> tự động tạo đơn `ACCEPTED` và listing chuyển `RESERVED`.
+     - Bộ dọn dẹp timeout `reconcileExpiredOrders()`: đơn PENDING quá 48h tự `EXPIRED` (BR12); đơn ACCEPTED quá `meetTime + 24h` tự `EXPIRED` và nhả hàng về `AVAILABLE` (BR37).
+- **Kết quả nghiệm thu (Deliverables)**:
+  - Xem chi tiết sản phẩm không lộ SĐT trong HTML;
+  - Bấm Nhắn Zalo hoạt động mượt mà (có QR & tin nhắn mẫu);
+  - Đặt lịch hẹn và chuyển trạng thái giữ chỗ `RESERVED` độc quyền hoạt động chính xác;
+  - Link chốt bán khách Zalo 24h hoạt động trơn tru.
 
 ---
 
