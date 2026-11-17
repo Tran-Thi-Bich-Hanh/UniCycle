@@ -4,6 +4,7 @@
  */
 
 import prisma from "@/lib/prisma";
+import { executeOrderCompletionAndPassportTransfer } from "@/lib/utils/passport-transfer";
 
 export async function reconcileExpiredOrders(): Promise<void> {
   try {
@@ -92,6 +93,32 @@ export async function reconcileExpiredOrders(): Promise<void> {
         status: "EXPIRED",
       },
     });
+
+    // 4. Quy tắc BR13 & BR31: Đơn WAITING_CONFIRMATION quá 48 giờ mà đối tác im lặng (không khiếu nại)
+    // Tự động chuyển AUTO_COMPLETED, Listing thành SOLD (BR10) và chuyển giao Passport mức ONE_SIDE
+    const autoCompletableOrders = await prisma.order.findMany({
+      where: {
+        status: "WAITING_CONFIRMATION",
+        expiresAt: {
+          lt: now,
+        },
+      },
+      select: { id: true },
+    });
+
+    for (const pendingConfirmOrder of autoCompletableOrders) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          await executeOrderCompletionAndPassportTransfer(
+            tx,
+            pendingConfirmOrder.id,
+            "AUTO_COMPLETED"
+          );
+        });
+      } catch (err) {
+        console.warn(`⚠️ Lỗi tự động hoàn tất đơn ${pendingConfirmOrder.id}:`, err);
+      }
+    }
   } catch (error) {
     // Không làm gián đoạn luồng chính nếu DB offline
     console.warn("⚠️ Bỏ qua reconcileExpiredOrders do lỗi truy vấn DB:", error);
