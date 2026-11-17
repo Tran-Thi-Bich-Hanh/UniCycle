@@ -5,6 +5,7 @@
 
 import prisma from "@/lib/prisma";
 import { executeOrderCompletionAndPassportTransfer } from "@/lib/utils/passport-transfer";
+import { reconcileBlindReviews48h } from "@/lib/utils/reputation";
 
 export async function reconcileExpiredOrders(): Promise<void> {
   try {
@@ -119,6 +120,9 @@ export async function reconcileExpiredOrders(): Promise<void> {
         console.warn(`⚠️ Lỗi tự động hoàn tất đơn ${pendingConfirmOrder.id}:`, err);
       }
     }
+
+    // 5. Quy tắc BR14: Tự động mở khóa các đánh giá Blind Review đã nộp quá 48h
+    await reconcileBlindReviews48h();
   } catch (error) {
     // Không làm gián đoạn luồng chính nếu DB offline
     console.warn("⚠️ Bỏ qua reconcileExpiredOrders do lỗi truy vấn DB:", error);

@@ -1,10 +1,23 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DisputeModal } from "@/components/orders/DisputeModal";
+import { ReviewModal } from "@/components/orders/ReviewModal";
+
+export interface OrderReview {
+  id: string;
+  reviewerId: string;
+  revieweeId: string;
+  rating: number;
+  comment: string;
+  tags: string[];
+  submittedAt: string;
+  visibleAt: string | null;
+  isBlindHidden: boolean;
+}
 
 export interface OrderItem {
   id: string;
@@ -65,6 +78,7 @@ export interface OrderItem {
     reputationScore?: number;
     dorm?: string | null;
   };
+  reviews?: OrderReview[];
 }
 
 export function OrdersManager() {
@@ -87,8 +101,20 @@ export function OrdersManager() {
   const [disputeError, setDisputeError] = useState<string | null>(null);
   const [disputeSubmitting, setDisputeSubmitting] = useState(false);
 
+  // Modal đánh giá Blind Review BR14
+  const [reviewTarget, setReviewTarget] = useState<OrderItem | null>(null);
+
+  const handleReviewSuccess = (isUnlocked: boolean, message: string) => {
+    setReviewTarget(null);
+    setActionMessage({
+      type: "success",
+      text: message,
+    });
+    loadOrders();
+  };
+
   // Tải danh sách đơn
-  const loadOrders = useCallback(async () => {
+  const loadOrders = async () => {
     try {
       const res = await fetch("/api/orders");
       if (res.status === 401) {
@@ -104,29 +130,44 @@ export function OrdersManager() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  };
 
   useEffect(() => {
     let ignore = false;
     async function init() {
       try {
-        const meRes = await fetch("/api/auth/me");
+        const [meRes, ordersRes] = await Promise.all([
+          fetch("/api/auth/me"),
+          fetch("/api/orders"),
+        ]);
+
+        if (ordersRes.status === 401) {
+          router.push("/login?returnTo=/orders");
+          return;
+        }
+
         if (meRes.ok) {
           const meData = await meRes.json();
           if (meData.user?.id && !ignore) {
             setCurrentUserId(meData.user.id);
           }
         }
-        await loadOrders();
+
+        if (ordersRes.ok && !ignore) {
+          const ordersData = await ordersRes.json();
+          setOrders(ordersData.orders || []);
+        }
       } catch (err) {
         console.warn("Lỗi khởi tạo:", err);
+      } finally {
+        if (!ignore) setLoading(false);
       }
     }
     init();
     return () => {
       ignore = true;
     };
-  }, [loadOrders]);
+  }, [router]);
 
   // Xử lý Chấp nhận (accept), Từ chối (reject), Hủy (cancel), Xác nhận bàn giao (confirm_handover)
   const handleOrderAction = async (
@@ -403,6 +444,9 @@ export function OrdersManager() {
             const isHandoverPhase = isAccepted || isWaitingConfirmation;
             const isActing = actionLoadingId === order.id;
 
+            const myReview = order.reviews?.find((r) => r.reviewerId === currentUserId);
+            const partnerReview = order.reviews?.find((r) => r.reviewerId !== currentUserId);
+
             const hasConfirmedSelf = isSellerRole
               ? Boolean(order.sellerConfirmedAt)
               : Boolean(order.buyerConfirmedAt);
@@ -661,13 +705,38 @@ export function OrdersManager() {
                         </>
                       )}
 
-                      {isCompleted && !isSellerRole && order.listing.item?.passportEnabled && (
-                        <Link
-                          href="/my-items"
-                          className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-xl border border-emerald-200 transition-colors"
-                        >
-                          📜 Xem trong Đồ của tôi
-                        </Link>
+                      {isCompleted && (
+                        <>
+                          {!myReview ? (
+                            <button
+                              type="button"
+                              onClick={() => setReviewTarget(order)}
+                              className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <span>⭐ Đánh giá</span>
+                            </button>
+                          ) : !myReview.visibleAt ? (
+                            <span
+                              className="px-3 py-2 rounded-xl bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200 flex items-center gap-1.5"
+                              title="Đánh giá đang được bảo mật - chờ đối tác nộp hoặc sau 48h tự mở khóa (BR14)"
+                            >
+                              <span>🔒 Đã gửi ({myReview.rating}★ - Chờ mở khóa)</span>
+                            </span>
+                          ) : (
+                            <span className="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200 flex items-center gap-1.5">
+                              <span>✓ Đã đánh giá ({myReview.rating}★)</span>
+                            </span>
+                          )}
+
+                          {!isSellerRole && order.listing.item?.passportEnabled && (
+                            <Link
+                              href="/my-items"
+                              className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-xl border border-emerald-200 transition-colors"
+                            >
+                              📜 Xem trong Đồ của tôi
+                            </Link>
+                          )}
+                        </>
                       )}
 
                       <Link
@@ -706,6 +775,62 @@ export function OrdersManager() {
                     </span>
                   </div>
                 )}
+
+                {/* Khối Blind Review khi đơn đã hoàn tất (BR14) */}
+                {isCompleted && partnerReview && (
+                  <div className="mt-4 pt-3 border-t border-slate-100">
+                    {partnerReview.isBlindHidden ? (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-900 bg-amber-50/80 border border-amber-200/80 p-3 rounded-xl">
+                        <span className="flex items-center gap-2">
+                          <span>🔔</span>
+                          <span>
+                            Đối tác đã gửi đánh giá cho bạn!{" "}
+                            {!myReview ? (
+                              <strong>Hãy gửi đánh giá đối ứng để cùng mở khóa xem nhận xét (BR14).</strong>
+                            ) : (
+                              <span>Đang chờ hoàn tất theo quy tắc Blind Review 48h (BR14).</span>
+                            )}
+                          </span>
+                        </span>
+                        {!myReview && (
+                          <button
+                            type="button"
+                            onClick={() => setReviewTarget(order)}
+                            className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0 cursor-pointer self-start sm:self-auto"
+                          >
+                            Đánh giá đối tác ngay
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1.5 text-xs text-slate-700 bg-slate-50 border border-slate-200/70 p-3.5 rounded-xl">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-[#001B48]">
+                            Nhận xét từ {isSellerRole ? order.buyer.displayName : order.seller.displayName}:
+                          </span>
+                          <span className="font-extrabold text-amber-500 text-sm">
+                            {"★".repeat(partnerReview.rating)}{"☆".repeat(5 - partnerReview.rating)} ({partnerReview.rating}/5)
+                          </span>
+                        </div>
+                        {partnerReview.comment && (
+                          <p className="italic text-slate-600">&ldquo;{partnerReview.comment}&rdquo;</p>
+                        )}
+                        {partnerReview.tags && partnerReview.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {partnerReview.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded-full font-semibold text-slate-600"
+                              >
+                                ✓ {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -723,6 +848,23 @@ export function OrdersManager() {
         }}
         onSubmit={handleDisputeSubmit}
       />
+
+      {/* Modal Đánh giá Blind Review BR14 */}
+      {reviewTarget && (
+        <ReviewModal
+          isOpen={Boolean(reviewTarget)}
+          orderId={reviewTarget.id}
+          orderTitle={reviewTarget.listing.title}
+          partnerName={
+            activeTab === "seller"
+              ? reviewTarget.buyer.displayName
+              : reviewTarget.seller.displayName
+          }
+          isSellerRole={activeTab === "seller"}
+          onClose={() => setReviewTarget(null)}
+          onSuccess={handleReviewSuccess}
+        />
+      )}
     </div>
   );
 }

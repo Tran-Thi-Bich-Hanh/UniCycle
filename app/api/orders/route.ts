@@ -60,11 +60,55 @@ export async function GET(req: NextRequest) {
               dorm: true,
             },
           },
+          reviews: {
+            select: {
+              id: true,
+              reviewerId: true,
+              revieweeId: true,
+              rating: true,
+              comment: true,
+              tags: true,
+              submittedAt: true,
+              visibleAt: true,
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
       });
 
-      return NextResponse.json({ orders, total: orders.length });
+      const sanitizedOrders = orders.map((order) => ({
+        ...order,
+        reviews: (order.reviews || []).map((rev) => {
+          const isPublic = Boolean(rev.visibleAt);
+          const isAuthor = rev.reviewerId === user.id;
+          if (isPublic || isAuthor) {
+            let parsedTags: string[] = [];
+            try {
+              parsedTags = rev.tags ? JSON.parse(rev.tags) : [];
+            } catch {
+              parsedTags = [];
+            }
+            return {
+              ...rev,
+              tags: parsedTags,
+              isBlindHidden: false,
+            };
+          }
+          return {
+            id: rev.id,
+            reviewerId: rev.reviewerId,
+            revieweeId: rev.revieweeId,
+            rating: 0,
+            comment: "",
+            tags: [],
+            submittedAt: rev.submittedAt,
+            visibleAt: null,
+            isBlindHidden: true,
+          };
+        }),
+      }));
+
+      return NextResponse.json({ orders: sanitizedOrders, total: sanitizedOrders.length });
     } catch (dbError) {
       console.warn("⚠️ Lỗi Prisma trong GET /api/orders (dùng mock data):", dbError);
 

@@ -70,6 +70,18 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
             dorm: true,
           },
         },
+        reviews: {
+          select: {
+            id: true,
+            reviewerId: true,
+            revieweeId: true,
+            rating: true,
+            comment: true,
+            tags: true,
+            submittedAt: true,
+            visibleAt: true,
+          },
+        },
       },
     });
 
@@ -92,7 +104,39 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json({ order });
+    const sanitizedOrder = {
+      ...order,
+      reviews: (order.reviews || []).map((rev) => {
+        const isPublic = Boolean(rev.visibleAt);
+        const isAuthor = rev.reviewerId === user.id;
+        if (isPublic || isAuthor) {
+          let parsedTags: string[] = [];
+          try {
+            parsedTags = rev.tags ? JSON.parse(rev.tags) : [];
+          } catch {
+            parsedTags = [];
+          }
+          return {
+            ...rev,
+            tags: parsedTags,
+            isBlindHidden: false,
+          };
+        }
+        return {
+          id: rev.id,
+          reviewerId: rev.reviewerId,
+          revieweeId: rev.revieweeId,
+          rating: 0,
+          comment: "",
+          tags: [],
+          submittedAt: rev.submittedAt,
+          visibleAt: null,
+          isBlindHidden: true,
+        };
+      }),
+    };
+
+    return NextResponse.json({ order: sanitizedOrder });
   } catch (error) {
     console.error("Lỗi GET /api/orders/[id]:", error);
     return NextResponse.json(
