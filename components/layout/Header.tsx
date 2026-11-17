@@ -1,9 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+
+interface HeaderUser {
+  id: string;
+  email: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  role: "USER" | "ADMIN";
+  isStudentVerified: boolean;
+  reputationScore: number;
+  schoolShortName?: string | null;
+  dorm?: string | null;
+}
 
 const CAMPUS_AREAS = [
   { id: "all", name: "Tất cả KTX & Trường ĐH TP.HCM", shortName: "Toàn TP.HCM" },
@@ -73,6 +85,42 @@ export function Header() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const [accountPopupOpen, setAccountPopupOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<HeaderUser | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadUser = () => {
+      fetch("/api/auth/me", { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (active && data) {
+            setCurrentUser(data.user || null);
+          }
+        })
+        .catch(() => {});
+    };
+
+    loadUser();
+    window.addEventListener("unicycle-auth-change", loadUser);
+    return () => {
+      active = false;
+      window.removeEventListener("unicycle-auth-change", loadUser);
+    };
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setCurrentUser(null);
+      setAccountPopupOpen(false);
+      setMobileMenuOpen(false);
+      window.dispatchEvent(new Event("unicycle-auth-change"));
+      router.refresh();
+    } catch {
+      // Ignore
+    }
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -405,10 +453,33 @@ export function Header() {
                 aria-label="Tài khoản và đăng nhập"
                 className="h-11 px-3 rounded-xl border border-[#D6E8EE] hover:border-[#97CADB] bg-white text-[#001B48] inline-flex items-center gap-2 text-sm font-semibold transition-colors cursor-pointer"
               >
-                <div className="w-7 h-7 rounded-full bg-[#D6E8EE] text-[#02457A] flex items-center justify-center font-bold text-xs">
-                  SV
-                </div>
-                <span className="hidden xl:inline">Tài khoản</span>
+                {currentUser ? (
+                  <>
+                    <div className="w-7 h-7 rounded-full bg-[#018ABE] text-white flex items-center justify-center font-bold text-xs overflow-hidden relative">
+                      {currentUser.avatarUrl ? (
+                        <Image
+                          src={currentUser.avatarUrl}
+                          alt={currentUser.displayName}
+                          fill
+                          sizes="28px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        currentUser.displayName.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <span className="hidden xl:inline max-w-[110px] truncate">
+                      {currentUser.displayName}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-7 h-7 rounded-full bg-[#D6E8EE] text-[#02457A] flex items-center justify-center font-bold text-xs">
+                      SV
+                    </div>
+                    <span className="hidden xl:inline">Tài khoản</span>
+                  </>
+                )}
               </button>
 
               {accountPopupOpen && (
@@ -419,63 +490,152 @@ export function Header() {
                     aria-hidden="true"
                   />
                   <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl bg-white border border-[#D6E8EE] shadow-xl p-4 z-50">
-                    <div className="pb-3 border-b border-[#D6E8EE]">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-[#018ABE]">
-                        Cộng đồng sinh viên UniCycle
-                      </p>
-                      <p className="text-xs text-slate-600 mt-1">
-                        Đăng nhập 1 chạm bằng Google để nhắn Zalo người bán, đặt lịch hẹn và lưu Hộ chiếu đồ vật.
-                      </p>
-                    </div>
+                    {currentUser ? (
+                      <>
+                        <div className="pb-3 border-b border-[#D6E8EE] flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-full bg-[#D6E8EE] overflow-hidden relative shrink-0 border border-[#97CADB]">
+                            {currentUser.avatarUrl ? (
+                              <Image
+                                src={currentUser.avatarUrl}
+                                alt={currentUser.displayName}
+                                fill
+                                sizes="44px"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <span className="w-full h-full flex items-center justify-center font-bold text-[#001B48]">
+                                {currentUser.displayName.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-extrabold text-[#001B48] truncate">
+                              {currentUser.displayName}
+                            </p>
+                            <p className="text-[11px] text-[#02457A] truncate">
+                              {currentUser.email}
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              {currentUser.isStudentVerified && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                                  ✓ SV Đã duyệt
+                                </span>
+                              )}
+                              <span className="text-[10px] font-semibold text-[#02457A] bg-[#D6E8EE]/60 px-1.5 py-0.5 rounded-full truncate">
+                                {currentUser.schoolShortName || "KTX ĐHQG"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                    <div className="py-3 space-y-2">
-                      <Link
-                        href="/login"
-                        onClick={() => setAccountPopupOpen(false)}
-                        className="w-full h-10 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                          <path d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81Z" />
-                        </svg>
-                        <span>Đăng nhập Google / Email</span>
-                      </Link>
-                      <Link
-                        href="/register"
-                        onClick={() => setAccountPopupOpen(false)}
-                        className="w-full h-9 rounded-xl border border-[#D6E8EE] hover:bg-[#F4F9FB] text-[#001B48] text-xs font-semibold flex items-center justify-center transition-colors"
-                      >
-                        Tạo tài khoản sinh viên mới
-                      </Link>
-                    </div>
+                        <div className="py-2 space-y-1 text-xs">
+                          <Link
+                            href="/my-products"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                          >
+                            <span>Sản phẩm của tôi</span>
+                            <span className="text-slate-400">/my-products</span>
+                          </Link>
+                          <Link
+                            href="/my-items"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                          >
+                            <span>Đồ của tôi (Passport &amp; Bán lại)</span>
+                            <span className="text-[#018ABE] font-semibold">QR</span>
+                          </Link>
+                          <Link
+                            href="/orders"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                          >
+                            <span>Đơn hẹn xem hàng</span>
+                            <span className="text-[#02457A] font-semibold">Lịch hẹn</span>
+                          </Link>
+                          <Link
+                            href="/verify-student"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                          >
+                            <span>Xác minh thẻ sinh viên</span>
+                            <span className="px-1.5 py-0.5 rounded bg-[#D6E8EE] text-[#02457A] text-[10px] font-bold">
+                              Huy hiệu SV
+                            </span>
+                          </Link>
+                        </div>
 
-                    <div className="pt-2 border-t border-[#D6E8EE] space-y-1 text-xs">
-                      <Link
-                        href="/my-products"
-                        onClick={() => setAccountPopupOpen(false)}
-                        className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
-                      >
-                        <span>Sản phẩm của tôi</span>
-                        <span className="text-slate-400">/my-products</span>
-                      </Link>
-                      <Link
-                        href="/my-items"
-                        onClick={() => setAccountPopupOpen(false)}
-                        className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
-                      >
-                        <span>Đồ của tôi (Passport &amp; Bán lại)</span>
-                        <span className="text-[#018ABE] font-semibold">QR</span>
-                      </Link>
-                      <Link
-                        href="/verify-student"
-                        onClick={() => setAccountPopupOpen(false)}
-                        className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
-                      >
-                        <span>Xác minh thẻ sinh viên</span>
-                        <span className="px-1.5 py-0.5 rounded bg-[#D6E8EE] text-[#02457A] text-[10px] font-bold">
-                          Huy hiệu SV
-                        </span>
-                      </Link>
-                    </div>
+                        <div className="pt-2 border-t border-[#D6E8EE]">
+                          <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="w-full h-9 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            Đăng xuất tài khoản
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="pb-3 border-b border-[#D6E8EE]">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-[#018ABE]">
+                            Cộng đồng sinh viên UniCycle
+                          </p>
+                          <p className="text-xs text-slate-600 mt-1">
+                            Đăng nhập 1 chạm bằng Google để nhắn Zalo người bán, đặt lịch hẹn và lưu Hộ chiếu đồ vật.
+                          </p>
+                        </div>
+
+                        <div className="py-3 space-y-2">
+                          <Link
+                            href="/login"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="w-full h-10 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                              <path d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81Z" />
+                            </svg>
+                            <span>Đăng nhập Google / Email</span>
+                          </Link>
+                          <Link
+                            href="/register"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="w-full h-9 rounded-xl border border-[#D6E8EE] hover:bg-[#F4F9FB] text-[#001B48] text-xs font-semibold flex items-center justify-center transition-colors"
+                          >
+                            Tạo tài khoản sinh viên mới
+                          </Link>
+                        </div>
+
+                        <div className="pt-2 border-t border-[#D6E8EE] space-y-1 text-xs">
+                          <Link
+                            href="/my-products"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                          >
+                            <span>Sản phẩm của tôi</span>
+                            <span className="text-slate-400">/my-products</span>
+                          </Link>
+                          <Link
+                            href="/my-items"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                          >
+                            <span>Đồ của tôi (Passport &amp; Bán lại)</span>
+                            <span className="text-[#018ABE] font-semibold">QR</span>
+                          </Link>
+                          <Link
+                            href="/verify-student"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                          >
+                            <span>Xác minh thẻ sinh viên</span>
+                            <span className="px-1.5 py-0.5 rounded bg-[#D6E8EE] text-[#02457A] text-[10px] font-bold">
+                              Huy hiệu SV
+                            </span>
+                          </Link>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </>
               )}
@@ -618,13 +778,33 @@ export function Header() {
 
             {/* Drawer Footer (kế thừa header-mobile-bottom từ index.html) */}
             <div className="p-4 border-t border-[#D6E8EE] bg-[#F4F9FB] space-y-2.5">
-              <Link
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full h-11 rounded-xl bg-[#001B48] text-white font-bold text-sm flex items-center justify-center gap-2"
-              >
-                Đăng nhập / Đăng ký
-              </Link>
+              {currentUser ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-extrabold text-[#001B48] truncate">
+                      {currentUser.displayName}
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      ✓ SV Đã duyệt
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full h-10 rounded-xl bg-rose-600 text-white font-bold text-xs flex items-center justify-center cursor-pointer"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full h-11 rounded-xl bg-[#001B48] text-white font-bold text-sm flex items-center justify-center gap-2"
+                >
+                  Đăng nhập / Đăng ký
+                </Link>
+              )}
               <p className="text-[11px] text-center text-slate-600">
                 Giao dịch an toàn tại cổng trường &amp; KTX TP.HCM
               </p>
