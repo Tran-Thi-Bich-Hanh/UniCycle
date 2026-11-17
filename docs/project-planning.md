@@ -115,7 +115,24 @@ Mỗi Sprint kéo dài từ **1 đến 1.5 tuần** với mục tiêu bàn giao 
 ---
 
 ### 🏃 Sprint 4: Hoàn Tất Đơn 48H, Đánh Giá & Digital Passport (Trust & Passport)
-- **Mục tiêu**: Hoàn tất chu kỳ giao dịch trao tay, đánh giá uy tín và quản lý vòng đời món đồ (giảm tải phạm vi, chuyển Chuyển quyền trực tiếp sang P1).
+- **Mục tiêu**: Hoàn tất chu kỳ giao dịch trao tay trong 48 giờ, đánh giá uy tín bí mật đối ứng (Blind Review) và quản lý trọn vẹn vòng đời món đồ qua Digital Product Passport (giảm tải phạm vi, chuyển Chuyển quyền trực tiếp không qua tin đăng sang P1).
+- **Phân rã Atomic Tasks**:
+  1. **Task 4.1 (Xác Nhận Bàn Giao 48H, Khiếu Nại `BR07, BR13` & Tự Động Chuyển Giao Passport `BR26, BR31`)**:
+     - Luồng xác nhận bàn giao 2 chiều (`ACCEPTED` ➔ `WAITING_CONFIRMATION` ➔ `COMPLETED` / `AUTO_COMPLETED` sau 48h) và chuyển tin đăng sang `SOLD` (BR10).
+     - Nút khiếu nại **"Tôi chưa nhận hàng"** trong cửa sổ 48h lập tức chặn auto-complete và chuyển đơn sang `DISPUTED` cho Admin xử lý (BR13).
+     - Khi đơn hoàn tất: Tự động cập nhật `Item.currentOwnerId` sang người mua, sinh `PassportOwner` đời chủ kế tiếp (`seq + 1`, `ownerHash` ngẫu nhiên độc lập theo BR34, ẩn danh mặc định theo BR29), ghi `PassportEvent` (`TRANSFERRED`, mức xác nhận `BOTH` hoặc `ONE_SIDE` theo BR31) và tạo `ChainTx` (`QUEUED`).
+  2. **Task 4.2 (Đánh Giá Uy Tín Bí Mật 48 Giờ - Blind Review `BR08, BR09, BR14, BR23, BR35`)**:
+     - API & Modal đánh giá 1-5 sao kèm tag nhanh cho đơn đã `COMPLETED` / `AUTO_COMPLETED` (mỗi bên 1 lần theo BR08, BR09).
+     - Cơ chế **Blind Review 48h (BR14)**: Giữ bí mật nội dung đánh giá cho đến khi cả hai bên cùng nộp hoặc sau 48 giờ để chống trả đũa.
+     - Tự động tính toán lại điểm uy tín sinh viên (`reputationScore` theo BR23) và chặn cộng điểm ảo nếu lặp lại giao dịch bất thường giữa cùng cặp tài khoản (BR35).
+  3. **Task 4.3 (Trang Xác Minh Passport `/passport/[id]`, "Đồ Của Tôi" `/my-items` & Bán Lại Kế Thừa Passport `BR24, BR25, BR29, BR30, BR33`)**:
+     - Trang công khai `/passport/[id]`: Hiển thị timeline chuỗi đời chủ (Chủ #1 ➔ Chủ #2...), đối chiếu trực quan ảnh qua các đời chủ (BR24), mã QR số màn hình và tuyên bố giới hạn bắt buộc (BR30).
+     - Trang `/my-items` ("Đồ của tôi"): Quản lý các món đồ đang sở hữu, bật/tắt hiển thị tên trên lịch sử Passport (BR29), hiển thị mã QR số khi gặp mặt.
+     - Luồng **"Bán lại 1-chạm"** (`/sell?resellItemId=...`): Chỉ cho phép chủ sở hữu hiện tại (BR25), kế thừa nguyên vẹn `passportId` duy nhất (BR33) và bắt buộc tải lên bộ ảnh mới phản ánh tình trạng hiện tại (BR24).
+- **Kết quả nghiệm thu (Deliverables)**:
+  - Xác nhận bàn giao 2 chiều hoặc khiếu nại chặn auto-complete hoạt động chuẩn xác;
+  - Đánh giá Blind Review ẩn/hiện đúng quy tắc 48h và cập nhật điểm sao;
+  - Món đồ sau khi mua tự động xuất hiện trong `/my-items` của người mua, xem được timeline `/passport/[id]` và đăng "Bán lại" kế thừa lịch sử thành công.
 
 ---
 
