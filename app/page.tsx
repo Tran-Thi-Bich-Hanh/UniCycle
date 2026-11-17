@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
@@ -12,10 +12,7 @@ import {
   FALLBACK_SCHOOLS,
 } from "@/lib/data/mock-fallback";
 
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
-  // Lấy dữ liệu từ Supabase PostgreSQL qua Prisma (có fallback an toàn)
+async function LiveMarketplaceFeed() {
   let products: ProductCardData[] = FALLBACK_PRODUCTS;
   let categories: CategoryItem[] = FALLBACK_CATEGORIES;
   let schools = FALLBACK_SCHOOLS;
@@ -58,7 +55,7 @@ export default async function Home() {
         isFree: l.isFree,
         condition: l.condition,
         zaloPhone: l.zaloPhone,
-        createdAt: l.createdAt,
+        createdAt: l.createdAt.toISOString(),
         school: l.school
           ? {
               id: l.school.id,
@@ -123,6 +120,16 @@ export default async function Home() {
     console.warn("⚠️ Không thể tải trực tiếp từ DB server (dùng dữ liệu mẫu seed):", error);
   }
 
+  return (
+    <HomeProductFeed
+      initialProducts={products}
+      categories={categories}
+      schools={schools}
+    />
+  );
+}
+
+export default function Home() {
   return (
     <div className="flex flex-col flex-1">
       {/* 1. Khối Hero Gradient Bleed: Thông điệp vòng đời đồ vật tuần hoàn & Hình ảnh cân đối */}
@@ -202,12 +209,18 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 2. Lưới Danh Mục & Feed Sản Phẩm Sinh Viên Tương Tác Trực Tiếp (Lấy cảm hứng từ index.html) */}
-      <HomeProductFeed
-        initialProducts={products}
-        categories={categories}
-        schools={schools}
-      />
+      {/* 2. Lưới Danh Mục & Feed Sản Phẩm Sinh Viên (Bọc Suspense chuẩn Next.js 16 cacheComponents) */}
+      <Suspense
+        fallback={
+          <HomeProductFeed
+            initialProducts={FALLBACK_PRODUCTS}
+            categories={FALLBACK_CATEGORIES}
+            schools={FALLBACK_SCHOOLS}
+          />
+        }
+      >
+        <LiveMarketplaceFeed />
+      </Suspense>
 
       {/* 3. Banner Giới Thiệu Đặc Quyền: Digital Product Passport (off-chain & Fuji ready) */}
       <PassportBanner />
