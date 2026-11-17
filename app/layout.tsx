@@ -27,8 +27,12 @@ export const metadata: Metadata = {
   description:
     "Nền tảng mua bán, thanh lý và tặng lại giáo trình, bàn ghế, đồ gia dụng ký túc xá dành cho sinh viên TP.HCM. Liên hệ nhanh qua Zalo, đặt lịch hẹn giữ chỗ và kiểm tra lịch sử món đồ qua Digital Product Passport.",
   icons: {
-    icon: "/icon.png",
-    apple: "/icon.png",
+    icon: [
+      { url: "/logo.jpg", type: "image/jpeg" },
+      { url: "/favicon.png", type: "image/png" },
+    ],
+    shortcut: "/logo.jpg",
+    apple: "/logo.jpg",
   },
 };
 
