@@ -12,6 +12,8 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+export const instant = false;
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
 
@@ -41,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ProductDetailPage({ params }: PageProps) {
+async function ProductDetailContent({ params }: PageProps) {
   const { id } = await params;
 
   let product: ProductDetailData | null = null;
@@ -203,6 +205,15 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
 
   return (
+    <ProductDetailClient
+      product={product}
+      relatedProducts={relatedProducts}
+    />
+  );
+}
+
+export default function ProductDetailPage({ params }: PageProps) {
+  return (
     <main className="min-h-screen bg-[#F8FAFC]">
       <Suspense
         fallback={
@@ -214,10 +225,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </div>
         }
       >
-        <ProductDetailClient
-          product={product}
-          relatedProducts={relatedProducts}
-        />
+        <ProductDetailContent params={params} />
       </Suspense>
     </main>
   );
