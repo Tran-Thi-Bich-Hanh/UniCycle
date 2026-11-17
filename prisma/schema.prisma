@@ -1,0 +1,445 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ----------------------------------------------------
+// 1. Phân quyền & Người dùng
+// ----------------------------------------------------
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model User {
+  id                  String      @id @default(uuid())
+  email               String      @unique
+  passwordHash        String?     // Cho đăng nhập email/mật khẩu
+  authProvider        String      @default("email") // "email" hoặc "google"
+  displayName         String
+  avatarUrl           String?
+  role                Role        @default(USER)
+  status              UserStatus  @default(ACTIVE)
+  reputationScore     Float       @default(5.0)
+
+  // Xác minh sinh viên (NĐ 13/2023/NĐ-CP - ảnh xóa sau duyệt)
+  isStudentVerified   Boolean     @default(false)
+  studentCardUrl      String?
+  studentVerifiedAt   DateTime?
+
+  // Quan hệ trường học / KTX
+  schoolId            String?
+  school              School?     @relation(fields: [schoolId], references: [id])
+  dorm                String?     // VD: KTX Khu B, Tòa BA1, Phòng 402
+
+  // Quyền riêng tư & Crypto-shredding (BR34)
+  deletedAt           DateTime?
+
+  // Quan hệ giao dịch & Sản phẩm
+  ownedItems          Item[]              @relation("CurrentOwner")
+  listings            Listing[]           @relation("SellerListings")
+  buyingOrders        Order[]             @relation("BuyerOrders")
+  sellingOrders       Order[]             @relation("SellerOrders")
+  givenReviews        Review[]            @relation("Reviewer")
+  receivedReviews     Review[]            @relation("Reviewee")
+  reportsSubmitted    Report[]            @relation("Reporter")
+  notifications       Notification[]
+  acceptedInvites     OrderInvite[]       @relation("InviteBuyer")
+  passportOwners      PassportOwner[]
+
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([email])
+  @@index([schoolId])
+}
+
+// ----------------------------------------------------
+// 2. Trường học & Ký túc xá TP.HCM
+// ----------------------------------------------------
+model School {
+  id          String    @id @default(uuid())
+  name        String
+  shortName   String
+  emailDomain String?   // VD: hcmut.edu.vn, hcmus.edu.vn
+  area        String    // VD: Làng Đại học Thủ Đức, Quận 10
+  users       User[]
+  listings    Listing[]
+}
+
+// ----------------------------------------------------
+// 3. Danh mục sản phẩm sinh viên
+// ----------------------------------------------------
+model Category {
+  id          String    @id @default(uuid())
+  slug        String    @unique
+  name        String
+  description String?
+  icon        String?
+  items       Item[]
+  listings    Listing[]
+}
+
+// ----------------------------------------------------
+// 4. Món đồ vật & Digital Product Passport
+// ----------------------------------------------------
+enum IdentityLevel {
+  LIGHT     // Mặc định: Ảnh thật + QR code số màn hình
+  SERIAL    // Đồ giá trị cao: Kèm số Serial/IMEI nhà sản xuất
+}
+
+enum PassportStatus {
+  NONE                    // Không bật passport
+  ACTIVE                  // Đang hoạt động hợp lệ
+  FLAGGED                 // Bị admin flag do nghi vấn trộm cắp/gian lận (BR32, BR39)
+  ARCHIVED_OWNER_DELETED  // Chủ hiện tại xóa tài khoản, đóng băng (BR34)
+}
+
+model Item {
+  id                String          @id @default(uuid())
+  categoryId        String
+  category          Category        @relation(fields: [categoryId], references: [id])
+
+  // Chủ sở hữu hiện tại
+  currentOwnerId    String?
+  currentOwner      User?           @relation("CurrentOwner", fields: [currentOwnerId], references: [id])
+
+  // Trạng thái Product Passport
+  passportEnabled   Boolean         @default(true)
+  passportId        String?         @unique // bytes32 hex
+  identityLevel     IdentityLevel   @default(LIGHT)
+  itemCommit        String?         // Hash cam kết ảnh + thông tin
+  itemSalt          String?         // Salt bí mật giữ off-chain
+  passportStatus    PassportStatus  @default(ACTIVE)
+  flagReason        String?
+  flaggedAt         DateTime?
+
+  // Lịch sử chuyển nhượng & sự kiện
+  listings          Listing[]
+  owners            PassportOwner[]
+  events            PassportEvent[]
+  chainTxs          ChainTx[]
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([currentOwnerId])
+  @@index([passportStatus])
+}
+
+// Chuỗi đời chủ (Chủ #1 -> Chủ #2 -> Chủ #3)
+model PassportOwner {
+  id          String    @id @default(uuid())
+  itemId      String
+  item        Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  seq         Int       // 1, 2, 3... thứ tự đời chủ
+
+  // Khi người dùng xóa tài khoản (BR34): đặt userId = null, showName = false
+  // giữ nguyên ownerHash, seq, since để không gãy timeline
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  ownerHash   String    // bytes32 ngẫu nhiên độc lập per (user, item)
+  showName    Boolean   @default(false) // BR29: Mặc định ẩn danh
+  since       DateTime  @default(now())
+
+  @@unique([itemId, seq])
+  @@index([itemId])
+  @@index([userId])
+}
+
+// Nhật ký sự kiện Passport (chuyển giao / flag / unflag)
+enum PassportEventType {
+  REGISTERED
+  TRANSFERRED
+  FLAGGED
+  UNFLAGGED
+}
+
+enum ConfirmationLevel {
+  BOTH      // Hai bên xác nhận
+  ONE_SIDE  // Một bên xác nhận (tự hoàn tất sau 48h)
+}
+
+enum TransferKind {
+  SALE
+  DIRECT
+}
+
+model PassportEvent {
+  id                String            @id @default(uuid())
+  itemId            String
+  item              Item              @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  seq               Int
+
+  eventType         PassportEventType @default(TRANSFERRED)
+  fromOwnerHash     String?
+  toOwnerHash       String?
+  orderId           String?
+  order             Order?            @relation(fields: [orderId], references: [id])
+  transferKind      TransferKind      @default(SALE)
+  confirmationLevel ConfirmationLevel @default(BOTH)
+
+  // Ghi log xử lý cờ vi phạm của Admin (BR39)
+  actorAdminId      String?
+  reason            String?
+
+  chainTxId         String?
+  occurredAt        DateTime          @default(now())
+
+  @@index([itemId, seq])
+}
+
+// ----------------------------------------------------
+// 5. Tin đăng bán / tặng (Listing)
+// ----------------------------------------------------
+enum ListingStatus {
+  DRAFT
+  AVAILABLE
+  RESERVED    // Đang giữ chỗ cho đơn hẹn ACCEPTED
+  SOLD
+  HIDDEN      // Tạm ẩn bởi người bán hoặc do Passport bị Flag (BR39)
+  EXPIRED     // Hết hạn sau 30 ngày (BR15)
+  REMOVED     // Bị admin xóa do vi phạm
+}
+
+model Listing {
+  id            String          @id @default(uuid())
+  itemId        String?
+  item          Item?           @relation(fields: [itemId], references: [id])
+  sellerId      String
+  seller        User            @relation("SellerListings", fields: [sellerId], references: [id])
+  schoolId      String?
+  school        School?         @relation(fields: [schoolId], references: [id])
+  categoryId    String
+  category      Category        @relation(fields: [categoryId], references: [id])
+
+  title         String
+  description   String
+  price         Int             @default(0) // VNĐ
+  isFree        Boolean         @default(false)
+  condition     String          // "Mới 99%", "Còn rất tốt", "Đã sử dụng"
+
+  // Liên hệ Zalo & Chống cào số hàng loạt (BR36)
+  zaloPhone     String
+  hidePhone     Boolean         @default(false) // Ẩn SĐT công khai, đi qua route trung gian
+
+  status        ListingStatus   @default(AVAILABLE)
+  expiresAt     DateTime        // BR15: 30 ngày
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  images        ListingImage[]
+  orders        Order[]
+  invites       OrderInvite[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([categoryId])
+  @@index([schoolId])
+}
+
+model ListingImage {
+  id          String    @id @default(uuid())
+  listingId   String
+  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url         String
+  sha256      String?   // Hash toàn vẹn ảnh khi đăng
+  position    Int       @default(0)
+
+  @@index([listingId])
+}
+
+// ----------------------------------------------------
+// 6. Giao dịch & Lời mời chốt bán (Order & Invites)
+// ----------------------------------------------------
+enum OrderStatus {
+  PENDING               // Người mua gửi yêu cầu hẹn
+  ACCEPTED              // Người bán đồng ý, listing chuyển RESERVED
+  WAITING_CONFIRMATION  // Một bên đã bấm xác nhận trao tay
+  COMPLETED             // Cả hai đã xác nhận xong
+  AUTO_COMPLETED        // Tự hoàn tất sau 48h nếu 1 bên im lặng (BR13)
+  DISPUTED              // Người mua khiếu nại "Tôi chưa nhận hàng", chờ Admin (SLA 72h)
+  REJECTED              // Người bán từ chối hoặc bị từ chối tự động
+  CANCELLED             // Một bên hủy hoặc no-show
+  EXPIRED               // Quá meet_time + 24h cả hai im lặng (BR37)
+}
+
+enum ConfirmedFirstBy {
+  BUYER
+  SELLER
+}
+
+model Order {
+  id                String            @id @default(uuid())
+  listingId         String
+  listing           Listing           @relation(fields: [listingId], references: [id])
+  buyerId           String
+  buyer             User              @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId          String
+  seller            User              @relation("SellerOrders", fields: [sellerId], references: [id])
+
+  proposedPrice     Int
+  meetPlace         String            // Cổng KTX, Căng tin, Thư viện...
+  meetTime          DateTime          // Thời gian hẹn gặp mặt
+  message           String?
+
+  status            OrderStatus       @default(PENDING)
+
+  // Xác nhận bàn giao trao tay 48 giờ
+  confirmedFirstBy  ConfirmedFirstBy?
+  buyerConfirmedAt  DateTime?
+  sellerConfirmedAt DateTime?
+
+  // Khiếu nại nhận hàng & phân xử Admin (SLA 72h)
+  disputeReason     String?
+  disputedAt        DateTime?
+  resolvedBy        String?           // Admin ID
+  resolvedAt        DateTime?
+  resolutionNote    String?
+
+  expiresAt         DateTime          // Hạn xử lý PENDING (48h) hoặc timeout
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  reviews           Review[]
+  passportEvents    PassportEvent[]
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+// Lời mời chốt bán cho khách Zalo 24h (BR38)
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+model OrderInvite {
+  id          String        @id @default(uuid())
+  listingId   String
+  listing     Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  codeHash    String        @unique // Hash token lời mời dùng một lần
+  status      InviteStatus  @default(PENDING)
+  expiresAt   DateTime      // Hạn 24 giờ
+  acceptedById String?
+  acceptedBy  User?         @relation("InviteBuyer", fields: [acceptedById], references: [id])
+  createdAt   DateTime      @default(now())
+
+  @@index([listingId])
+  @@index([codeHash])
+}
+
+// ----------------------------------------------------
+// 7. Đánh giá uy tín bí mật 48 giờ (Blind Review - BR14)
+// ----------------------------------------------------
+model Review {
+  id            String    @id @default(uuid())
+  orderId       String
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reviewerId    String
+  reviewer      User      @relation("Reviewer", fields: [reviewerId], references: [id])
+  revieweeId    String
+  reviewee      User      @relation("Reviewee", fields: [revieweeId], references: [id])
+
+  rating        Int       // 1 - 5 sao
+  comment       String
+  tags          String?   // JSON chuỗi tag nhanh: "Đúng giờ", "Thân thiện", "Đồ đúng mô tả"
+
+  submittedAt   DateTime  @default(now())
+  visibleAt     DateTime? // Chỉ hiển thị khi cả 2 đã nộp hoặc sau 48h (BR14)
+
+  @@unique([orderId, reviewerId])
+  @@index([orderId])
+  @@index([revieweeId])
+}
+
+// ----------------------------------------------------
+// 8. Báo cáo & Kiểm duyệt
+// ----------------------------------------------------
+enum ReportTargetType {
+  LISTING
+  USER
+  PASSPORT
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id          String            @id @default(uuid())
+  reporterId  String
+  reporter    User              @relation("Reporter", fields: [reporterId], references: [id])
+  targetType  ReportTargetType
+  targetId    String
+  reason      String
+  status      ReportStatus      @default(PENDING)
+  handledBy   String?           // Admin ID
+  createdAt   DateTime          @default(now())
+
+  @@index([targetType, targetId])
+  @@index([status])
+}
+
+// ----------------------------------------------------
+// 9. Thông báo người dùng
+// ----------------------------------------------------
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String    // "ORDER_ACCEPTED", "HANDOVER_CONFIRMED", "DISPUTE_OPENED", "REVIEW_VISIBLE"...
+  title       String
+  message     String
+  payload     String?   // JSON dữ liệu link/id
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+// ----------------------------------------------------
+// 10. Giao dịch On-chain Avalanche Fuji (Lát cắt P1)
+// ----------------------------------------------------
+enum ChainTxStatus {
+  QUEUED
+  SUBMITTED
+  CONFIRMED
+  FAILED
+  NEEDS_ATTENTION
+}
+
+model ChainTx {
+  id            String        @id @default(uuid())
+  itemId        String
+  item          Item          @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  kind          String        // "REGISTER", "TRANSFER"
+  payloadHash   String        // Chống gửi trùng lặp (idempotency)
+  status        ChainTxStatus @default(QUEUED)
+  txHash        String?       // Transaction Hash trên Snowtrace Fuji
+  attempts      Int           @default(0)
+  lastError     String?
+  submittedAt   DateTime?
+  confirmedAt   DateTime?
+  createdAt     DateTime      @default(now())
+
+  @@index([itemId, status])
+}
+
