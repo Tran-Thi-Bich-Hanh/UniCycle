@@ -33,11 +33,12 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/";
+  const urlError = searchParams.get("error");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(urlError);
 
   const performLogin = async (targetEmail: string, targetPassword: string) => {
     setLoading(true);
@@ -73,7 +74,8 @@ function LoginContent() {
 
   const handleGoogleLogin = () => {
     setLoading(true);
-    router.push(`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`);
+    // Bắt buộc dùng window.location.href để trình duyệt rời trang Next.js và chuyển sang Google OAuth
+    window.location.href = `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`;
   };
 
   return (

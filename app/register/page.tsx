@@ -10,6 +10,7 @@ function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/";
+  const urlError = searchParams.get("error");
 
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,13 +18,14 @@ function RegisterContent() {
   const [schoolId, setSchoolId] = useState("ktx-b");
   const [dorm, setDorm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(urlError);
 
   const isEduEmail = email.trim().toLowerCase().endsWith(".edu.vn");
 
   const handleGoogleAuth = () => {
     setLoading(true);
-    router.push(`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`);
+    // Bắt buộc dùng window.location.href để trình duyệt rời trang Next.js và chuyển sang Google OAuth
+    window.location.href = `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

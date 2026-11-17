@@ -40,9 +40,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="vi"
+      suppressHydrationWarning
       className={`${manrope.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white text-[#001B48]">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-white text-[#001B48]"
+      >
         <Suspense
           fallback={
             <div className="h-16 sm:h-20 w-full bg-white border-b border-[#D6E8EE]" />

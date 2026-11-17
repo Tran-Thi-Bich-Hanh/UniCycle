@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const returnTo = searchParams.get("returnTo") || "/";
 
-  // Tạo URL callback
   const origin = req.nextUrl.origin;
   const redirectTo = `${origin}/api/auth/callback?returnTo=${encodeURIComponent(returnTo)}`;
 
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
