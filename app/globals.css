@@ -1,71 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  /* UniCycle 5-Level Blue Palette + Pure White Canvas (docs/ui-ux.md) */
-  --color-navy-900: #001B48;
-  --color-ocean-800: #02457A;
-  --color-cerulean-600: #018ABE;
-  --color-sky-300: #97CADB;
-  --color-ice-100: #D6E8EE;
-  --color-canvas: #FFFFFF;
-  --color-zalo: #0068FF;
-
-  /* Semantic surface & text tokens */
-  --background: #FFFFFF;
-  --foreground: #001B48;
-  --surface-muted: #F4F9FB;
-  --border-subtle: #D6E8EE;
+  --background: #ffffff;
+  --foreground: #001b48;
+  --brand-dark: #001b48;
+  --brand-deep: #02457a;
+  --brand-primary: #018abe;
+  --brand-soft: #97cadb;
+  --brand-ice: #d6e8ee;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-navy-900: var(--color-navy-900);
-  --color-ocean-800: var(--color-ocean-800);
-  --color-cerulean-600: var(--color-cerulean-600);
-  --color-sky-300: var(--color-sky-300);
-  --color-ice-100: var(--color-ice-100);
-  --color-canvas: var(--color-canvas);
-  --color-zalo: var(--color-zalo);
-  --color-surface-muted: var(--surface-muted);
-  --color-border-subtle: var(--border-subtle);
-  --font-sans: var(--font-manrope), system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-}
-
-html {
-  scroll-behavior: smooth;
-  background-color: var(--background);
-  color: var(--foreground);
+@theme {
+  --color-brand-dark: #001b48;
+  --color-brand-deep: #02457a;
+  --color-brand-primary: #018abe;
+  --color-brand-soft: #97cadb;
+  --color-brand-ice: #d6e8ee;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  overflow-x: hidden;
+  background-color: #ffffff;
+  color: #001b48;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Hero Gradient Bleed effect from docs/ui-ux.md §2.3 */
+::selection {
+  background-color: #018abe;
+  color: #ffffff;
+}
+
+button,
+a,
+input {
+  transition-duration: 180ms;
+}
+
+/* Hero Gradient Bleed - kéo dài mượt hơn xuống dưới */
 .hero-gradient-bleed {
   background:
-    radial-gradient(circle at 85% 20%, rgba(151, 202, 219, 0.35) 0%, transparent 45%),
-    linear-gradient(180deg, #001B48 0%, #02457A 48%, #018ABE 78%, #D6E8EE 93%, #FFFFFF 100%);
+    radial-gradient(circle at 80% 25%, rgba(151, 202, 219, 0.45) 0%, transparent 55%),
+    radial-gradient(circle at 20% 70%, rgba(1, 138, 190, 0.3) 0%, transparent 50%),
+    linear-gradient(180deg, #001B48 0%, #013264 35%, #02457A 60%, #018ABE 82%, #75B9CF 92%, #D6E8EE 97%, #FFFFFF 100%);
 }
 
-/* Visible keyboard focus ring following WCAG 2.2 & ui-ux-pro-max */
-:focus-visible {
-  outline: 2px solid var(--color-cerulean-600);
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+/* Hero Gradient Bleed - kéo dài mượt hơn xuống dưới */
+.hero-gradient-bleed {
+  background:
+    radial-gradient(circle at 80% 25%, rgba(151, 202, 219, 0.45) 0%, transparent 55%),
+    radial-gradient(circle at 20% 70%, rgba(1, 138, 190, 0.3) 0%, transparent 50%),
+    linear-gradient(180deg, #001B48 0%, #013264 35%, #02457A 60%, #018ABE 82%, #75B9CF 92%, #D6E8EE 97%, #FFFFFF 100%);
 }

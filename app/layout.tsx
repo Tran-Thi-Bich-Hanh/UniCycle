@@ -41,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-white text-[#001B48]">
         <Suspense
           fallback={
-            <div className="h-[100px] w-full bg-[#001B48] border-b border-[#D6E8EE]" />
+            <div className="h-16 sm:h-20 w-full bg-white border-b border-[#D6E8EE]" />
           }
         >
           <Header />
