@@ -153,6 +153,8 @@ export function SellForm() {
   const [createdListingResult, setCreatedListingResult] = useState<{
     id: string;
     passportId: string | null;
+    txHash?: string | null;
+    snowtraceUrl?: string | null;
     title: string;
   } | null>(null);
 
@@ -377,6 +379,10 @@ export function SellForm() {
       setCreatedListingResult({
         id: data.listing.id,
         passportId: data.passportId,
+        txHash: data.txHash || null,
+        snowtraceUrl:
+          data.snowtraceUrl ||
+          (data.txHash ? `https://testnet.snowtrace.io/tx/${data.txHash}` : null),
         title: data.listing.title,
       });
     } catch (err) {
@@ -828,7 +834,7 @@ export function SellForm() {
             </p>
 
             {createdListingResult.passportId && (
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-1">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2">
                 <div className="flex items-center justify-between text-[11px] font-bold text-[#018ABE] uppercase tracking-wider">
                   <span>📜 Digital Product Passport:</span>
                   <Link href={`/passport/${createdListingResult.passportId}`} className="hover:underline">
@@ -838,6 +844,22 @@ export function SellForm() {
                 <span className="text-xs font-mono text-[#001B48] break-all block">
                   {createdListingResult.passportId}
                 </span>
+                {createdListingResult.txHash && createdListingResult.snowtraceUrl && (
+                  <div className="pt-2 border-t border-slate-200/80 space-y-1.5">
+                    <span className="text-[11px] font-mono text-slate-600 break-all block">
+                      Tx Fuji: {createdListingResult.txHash.slice(0, 14)}...
+                      {createdListingResult.txHash.slice(-8)}
+                    </span>
+                    <a
+                      href={createdListingResult.snowtraceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-extrabold transition-colors"
+                    >
+                      <span>⛓️ Xem trực tiếp trên Snowtrace Fuji ↗</span>
+                    </a>
+                  </div>
+                )}
               </div>
             )}
 

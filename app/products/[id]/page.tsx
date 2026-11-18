@@ -77,6 +77,15 @@ async function ProductDetailContent({ params }: PageProps) {
               },
               orderBy: { seq: "asc" },
             },
+            chainTxs: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: {
+                id: true,
+                status: true,
+                txHash: true,
+              },
+            },
           },
         },
         images: {
@@ -107,6 +116,7 @@ async function ProductDetailContent({ params }: PageProps) {
               passportId: dbListing.item.passportId,
               passportStatus: dbListing.item.passportStatus,
               identityLevel: dbListing.item.identityLevel,
+              latestTxHash: dbListing.item.chainTxs?.[0]?.txHash || null,
               owners: dbListing.item.owners.map((o) => ({
                 seq: o.seq,
                 showName: o.showName,

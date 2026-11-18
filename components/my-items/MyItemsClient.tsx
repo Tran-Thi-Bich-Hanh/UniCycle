@@ -214,7 +214,7 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
 
                     {/* Khung Passport ID */}
                     {item.passportId && (
-                      <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                      <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="font-bold text-[#001B48] flex items-center gap-1">
                             <span>📜</span>
@@ -230,6 +230,21 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
                         <div className="font-mono text-[11px] text-slate-600 truncate bg-white px-2.5 py-1 rounded-lg border border-slate-200">
                           {item.passportId}
                         </div>
+                        {item.chainTx?.txHash && (
+                          <div className="flex items-center justify-between gap-2 pt-0.5 text-[11px]">
+                            <span className="text-emerald-700 font-semibold">
+                              ✓ On-chain ({item.chainTx.status})
+                            </span>
+                            <a
+                              href={`https://testnet.snowtrace.io/tx/${item.chainTx.txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-bold text-[#018ABE] hover:underline font-mono"
+                            >
+                              ⛓️ Snowtrace ({item.chainTx.txHash.slice(0, 8)}...) ↗
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
 

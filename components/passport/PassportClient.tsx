@@ -102,7 +102,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
   const [reportModalOpen, setReportModalOpen] = useState(false);
 
   // Trạng thái kiểm chứng On-Chain và Đồng bộ Relayer (Sprint 5 Task 5.1)
-  const [activeChainTxs] = useState(chainTxs);
+  const [activeChainTxs, setActiveChainTxs] = useState(chainTxs);
   const [verificationReport, setVerificationReport] = useState<OnChainVerificationReport | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -126,6 +126,9 @@ export function PassportClient({ initialData }: PassportClientProps) {
         throw new Error(data.error || "Không thể kiểm chứng dữ liệu on-chain.");
       }
       setVerificationReport(data.report);
+      if (Array.isArray(data.chainTxs)) {
+        setActiveChainTxs(data.chainTxs);
+      }
       setFeedback({
         type: "success",
         message: data.report?.message || "Kiểm chứng trực tiếp trên Avalanche Fuji RPC hoàn tất!",
@@ -153,6 +156,9 @@ export function PassportClient({ initialData }: PassportClientProps) {
       }
       if (data.report) {
         setVerificationReport(data.report);
+      }
+      if (Array.isArray(data.chainTxs)) {
+        setActiveChainTxs(data.chainTxs);
       }
       setFeedback({
         type: "success",
@@ -182,6 +188,22 @@ export function PassportClient({ initialData }: PassportClientProps) {
 
   const latestListing = listingsTimeline[listingsTimeline.length - 1];
   const itemTitle = latestListing?.title || "Món đồ sinh viên có Digital Passport";
+
+  const latestTxHash =
+    verificationReport?.latestTxHash ||
+    activeChainTxs.find((tx) => Boolean(tx.txHash))?.txHash ||
+    null;
+  const latestSnowtraceTxUrl = latestTxHash
+    ? `https://testnet.snowtrace.io/tx/${latestTxHash}`
+    : null;
+
+  const chronologicalTxs = [...activeChainTxs].reverse();
+  const registerTx =
+    chronologicalTxs.find((tx) => tx.kind === "REGISTER" && Boolean(tx.txHash)) ||
+    chronologicalTxs.find((tx) => tx.kind === "REGISTER") ||
+    chronologicalTxs[0] ||
+    null;
+  const transferTxs = chronologicalTxs.filter((tx) => tx.kind === "TRANSFER");
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 sm:py-12">
@@ -283,6 +305,38 @@ export function PassportClient({ initialData }: PassportClientProps) {
                   </button>
                 </div>
               </div>
+
+              {/* Liên kết mở trực tiếp Snowtrace Fuji Testnet */}
+              <div className="pt-1 flex flex-wrap items-center gap-2">
+                {latestSnowtraceTxUrl && latestTxHash ? (
+                  <a
+                    href={latestSnowtraceTxUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-300/40 text-emerald-100 text-xs font-bold transition-all backdrop-blur-md shadow-xs"
+                  >
+                    <span>⛓️</span>
+                    <span>
+                      Xem trực tiếp giao dịch trên Snowtrace Fuji ({latestTxHash.slice(0, 10)}...
+                      {latestTxHash.slice(-6)}) ↗
+                    </span>
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSyncRelayer}
+                    disabled={isSyncing || isVerifying}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-300/40 text-amber-100 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    <span>⚡</span>
+                    <span>
+                      {isSyncing
+                        ? "Đang đồng bộ lên Fuji..."
+                        : "Đồng bộ lấy mã giao dịch Snowtrace Fuji ngay"}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Khung Mã QR số màn hình */}
@@ -337,6 +391,10 @@ export function PassportClient({ initialData }: PassportClientProps) {
               const isCurrentOwner = idx === owners.length - 1;
               const matchingEvent = events.find((e) => e.seq === owner.seq);
               const matchingListing = listingsTimeline[idx];
+              const ownerTx =
+                idx === 0
+                  ? registerTx
+                  : transferTxs[idx - 1] || chronologicalTxs[idx] || null;
 
               return (
                 <div key={owner.id} className="relative group">
@@ -412,6 +470,35 @@ export function PassportClient({ initialData }: PassportClientProps) {
                               : "Một bên xác nhận / Tự hoàn tất 48h (BR31)"}
                           </span>
                         </span>
+                      </div>
+                    )}
+
+                    {/* Giao dịch Blockchain tương ứng trên Snowtrace Fuji */}
+                    {ownerTx && (
+                      <div className="mb-3 p-2.5 rounded-xl bg-white/90 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-bold text-[#001B48] shrink-0">
+                            {idx === 0
+                              ? "⛓️ Khởi tạo Passport (REGISTER):"
+                              : "⛓️ Chuyển giao sở hữu (TRANSFER):"}
+                          </span>
+                          <span className="font-mono text-slate-600 truncate">
+                            {ownerTx.txHash
+                              ? `${ownerTx.txHash.slice(0, 12)}...${ownerTx.txHash.slice(-8)}`
+                              : `Trạng thái: ${ownerTx.status}`}
+                          </span>
+                        </div>
+                        {ownerTx.txHash && (
+                          <a
+                            href={`https://testnet.snowtrace.io/tx/${ownerTx.txHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-[#018ABE] border border-sky-200 font-bold transition-colors shrink-0"
+                          >
+                            <span>Xem mã giao dịch trên Snowtrace Fuji</span>
+                            <span>↗</span>
+                          </a>
+                        )}
                       </div>
                     )}
 
@@ -515,12 +602,14 @@ export function PassportClient({ initialData }: PassportClientProps) {
             </button>
 
             <a
-              href="https://testnet.snowtrace.io"
+              href={latestSnowtraceTxUrl || "https://testnet.snowtrace.io"}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#02457A] hover:bg-slate-100 transition-colors ml-auto border border-slate-200"
             >
-              <span>Snowtrace Fuji Explorer</span>
+              <span>
+                {latestSnowtraceTxUrl ? "Xem giao dịch trên Snowtrace Fuji" : "Snowtrace Fuji Explorer"}
+              </span>
               <span>↗</span>
             </a>
           </div>
@@ -741,10 +830,10 @@ export function PassportClient({ initialData }: PassportClientProps) {
                         <a
                           href={`https://testnet.snowtrace.io/tx/${tx.txHash}`}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-[#018ABE] hover:bg-sky-50 transition-colors shadow-2xs"
                         >
-                          Snowtrace ↗
+                          Xem trên Snowtrace ↗
                         </a>
                       )}
                     </div>

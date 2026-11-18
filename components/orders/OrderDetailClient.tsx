@@ -56,6 +56,12 @@ interface OrderDetailPayload {
         since: string;
         user?: { id: string; displayName: string } | null;
       }>;
+      chainTxs?: Array<{
+        id: string;
+        kind: string;
+        status: string;
+        txHash?: string | null;
+      }>;
     } | null;
   };
   buyer: {
@@ -567,39 +573,77 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
         )}
 
         {/* 4. Hộp Digital Product Passport sau khi chuyển giao (BR26, BR31) */}
-        {order.listing.item?.passportEnabled && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-[#001B48] text-white space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs sm:text-sm font-bold flex items-center gap-2">
-                <span>📜 Digital Product Passport</span>
-                {latestOwner && (
-                  <span className="text-[11px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                    Đời chủ hiện tại: #{latestOwner.seq}
+        {order.listing.item?.passportEnabled &&
+          (() => {
+            const passportItem = order.listing.item;
+            const latestChainTx =
+              passportItem.chainTxs?.find((tx) => Boolean(tx.txHash)) ||
+              passportItem.chainTxs?.[0] ||
+              null;
+            const passportRouteId = passportItem.passportId || passportItem.id;
+
+            return (
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-[#001B48] text-white space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs sm:text-sm font-bold flex items-center gap-2">
+                    <span>📜 Digital Product Passport</span>
+                    {latestOwner && (
+                      <span className="text-[11px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                        Đời chủ hiện tại: #{latestOwner.seq}
+                      </span>
+                    )}
                   </span>
+                  {passportItem.passportId && (
+                    <span className="text-[11px] font-mono text-slate-300">
+                      {passportItem.passportId.slice(0, 12)}...
+                      {passportItem.passportId.slice(-6)}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-300">
+                  {isCompleted
+                    ? "Quyền sở hữu món đồ đã được ghi nhận chuyển giao thành công sang người mua trên hệ thống (BR26)."
+                    : "Sau khi hai bên xác nhận hoàn tất giao dịch, món đồ sẽ tự động chuyển giao sang người mua và xuất hiện trong mục Đồ của tôi."}
+                </p>
+
+                {latestChainTx?.txHash && (
+                  <div className="text-[11px] font-mono text-sky-200 bg-black/25 px-3 py-1.5 rounded-xl border border-white/10 truncate">
+                    Tx ({latestChainTx.kind}): {latestChainTx.txHash}
+                  </div>
                 )}
-              </span>
-              {order.listing.item.passportId && (
-                <span className="text-[11px] font-mono text-slate-300">
-                  {order.listing.item.passportId.slice(0, 12)}...
-                  {order.listing.item.passportId.slice(-6)}
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-300">
-              {isCompleted
-                ? "Quyền sở hữu món đồ đã được ghi nhận chuyển giao thành công sang người mua trên hệ thống (BR26)."
-                : "Sau khi hai bên xác nhận hoàn tất giao dịch, món đồ sẽ tự động chuyển giao sang người mua và xuất hiện trong mục Đồ của tôi."}
-            </p>
-            {isCompleted && isBuyer && (
-              <Link
-                href="/my-items"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors"
-              >
-                <span>Mở Đồ của tôi (/my-items) ↗</span>
-              </Link>
-            )}
-          </div>
-        )}
+
+                <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+                  <Link
+                    href={`/passport/${passportRouteId}`}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition-colors"
+                  >
+                    <span>📜 Xem trang Passport chi tiết ↗</span>
+                  </Link>
+
+                  {latestChainTx?.txHash && (
+                    <a
+                      href={`https://testnet.snowtrace.io/tx/${latestChainTx.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 border border-sky-400/40 text-xs font-bold transition-colors"
+                    >
+                      <span>⛓️ Xem giao dịch trên Snowtrace Fuji ↗</span>
+                    </a>
+                  )}
+
+                  {isCompleted && isBuyer && (
+                    <Link
+                      href="/my-items"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors"
+                    >
+                      <span>Mở Đồ của tôi (/my-items) ↗</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
         {/* Khối Đánh Giá Blind Review 48 Giờ (BR14) */}
         {isCompleted && (

@@ -42,6 +42,7 @@ export interface ProductDetailData {
     passportId?: string | null;
     passportStatus?: string;
     identityLevel?: string;
+    latestTxHash?: string | null;
     owners?: Array<{
       seq: number;
       showName: boolean;
@@ -373,6 +374,27 @@ export function ProductDetailClient({
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Nút tra cứu trang Passport & Snowtrace Fuji */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <Link
+                  href={`/passport/${product.item?.passportId || product.item?.id}`}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition-colors"
+                >
+                  <span>📜 Tra cứu chi tiết Digital Passport ↗</span>
+                </Link>
+
+                {product.item?.latestTxHash && (
+                  <a
+                    href={`https://testnet.snowtrace.io/tx/${product.item.latestTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-xs font-bold transition-colors"
+                  >
+                    <span>⛓️ Xem giao dịch trên Snowtrace Fuji ↗</span>
+                  </a>
+                )}
               </div>
 
               {/* Tuyên bố giới hạn bắt buộc (BR30) */}
