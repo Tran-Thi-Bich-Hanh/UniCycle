@@ -131,7 +131,7 @@ export function HomeProductFeed({
                   onChange={(e) => setSelectedSchoolId(e.target.value)}
                   className="h-10 pl-3 pr-8 rounded-xl border border-[#D6E8EE] bg-white text-xs sm:text-sm font-semibold text-[#001B48] focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20 outline-none appearance-none cursor-pointer"
                 >
-                  <option value="all">📍 Tất cả KTX & Trường</option>
+                  <option value="all">Tất cả KTX &amp; Trường</option>
                   {schools.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.shortName}
@@ -152,9 +152,9 @@ export function HomeProductFeed({
                   onChange={(e) => setSortBy(e.target.value as "newest" | "price-asc" | "price-desc")}
                   className="h-10 pl-3 pr-8 rounded-xl border border-[#D6E8EE] bg-white text-xs sm:text-sm font-semibold text-[#001B48] focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20 outline-none appearance-none cursor-pointer"
                 >
-                  <option value="newest">🕒 Mới đăng nhất</option>
-                  <option value="price-asc">💵 Giá sinh viên (Thấp - Cao)</option>
-                  <option value="price-desc">💎 Giá trị (Cao - Thấp)</option>
+                  <option value="newest">Mới đăng nhất</option>
+                  <option value="price-asc">Giá: Thấp đến Cao</option>
+                  <option value="price-desc">Giá: Cao đến Thấp</option>
                 </select>
                 <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#02457A]">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -199,9 +199,13 @@ export function HomeProductFeed({
                       : "bg-[#D6E8EE]/30 text-[#02457A] hover:bg-[#D6E8EE]/60"
                   }`}
                 >
-                  {isFree && <span>🎁</span>}
+                  {isFree && (
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                    </svg>
+                  )}
                   <span>{cat.name}</span>
-                  <span className={`text-[11px] px-1.5 py-0.2 rounded-full ${isSelected ? "bg-white/20 text-white" : "bg-[#02457A]/10 text-[#02457A]"}`}>
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${isSelected ? "bg-white/20 text-white" : "bg-[#02457A]/10 text-[#02457A]"}`}>
                     {count}
                   </span>
                 </button>
@@ -214,9 +218,9 @@ export function HomeProductFeed({
             <button
               type="button"
               onClick={() => setOnlyPassport(!onlyPassport)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer border ${
+              className={`h-9 px-3 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer border ${
                 onlyPassport
-                  ? "bg-[#018ABE] text-white border-[#018ABE]"
+                  ? "bg-[#018ABE] text-white border-[#018ABE] shadow-xs"
                   : "bg-white text-[#02457A] border-[#D6E8EE] hover:border-[#018ABE]"
               }`}
             >
@@ -229,13 +233,16 @@ export function HomeProductFeed({
             <button
               type="button"
               onClick={() => setOnlyFree(!onlyFree)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer border ${
+              className={`h-9 px-3 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer border ${
                 onlyFree
-                  ? "bg-emerald-600 text-white border-emerald-600"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
                   : "bg-white text-emerald-700 border-emerald-200 hover:border-emerald-500"
               }`}
             >
-              <span>🎁 Chỉ hiện đồ tặng 0đ</span>
+              <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+              </svg>
+              <span>Chỉ hiện đồ tặng 0đ</span>
             </button>
 
             {(activeCategorySlug !== "all" || selectedSchoolId !== "all" || onlyPassport || onlyFree) && (

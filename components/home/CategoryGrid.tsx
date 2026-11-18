@@ -229,18 +229,20 @@ export function CategoryGrid({
               >
                 {/* Chỉ báo trạng thái đang chọn lọc */}
                 {isSelected && (
-                  <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 bg-[#018ABE] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+                  <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 bg-[#018ABE] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
                     <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
-                    <span>Đang lọc</span>
+                    <span className="hidden sm:inline">Đang lọc</span>
                   </span>
                 )}
 
                 {/* Huy hiệu Góc 0đ Cho Tặng nổi bật */}
                 {isFree && (
-                  <span className="absolute -top-2.5 right-2 sm:right-3 z-10 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] sm:text-[11px] font-extrabold px-2.5 py-0.5 rounded-full shadow-sm ring-2 ring-white inline-flex items-center gap-1">
-                    <span>🎁</span>
+                  <span className="absolute -top-2.5 right-2 sm:right-3 z-10 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] sm:text-[11px] font-extrabold px-2.5 py-0.5 rounded-full shadow-sm ring-2 ring-white inline-flex items-center gap-1 shrink-0">
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                    </svg>
                     <span>0đ Tặng</span>
                   </span>
                 )}

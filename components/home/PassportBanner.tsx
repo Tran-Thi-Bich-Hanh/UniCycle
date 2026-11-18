@@ -43,28 +43,40 @@ export function PassportBanner() {
 
             {/* 3 Lợi ích cốt lõi */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3.5 border border-white/15">
-                <div className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                  <span>📜</span>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15">
+                <div className="text-base sm:text-lg font-bold text-white mb-1.5 flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                  </span>
                   <span>Chuỗi đời chủ</span>
                 </div>
-                <p className="text-xs text-[#D6E8EE]">Biết món đồ đã qua mấy sinh viên KTX sử dụng.</p>
+                <p className="text-xs text-[#D6E8EE]/90 leading-relaxed">Biết món đồ đã qua mấy sinh viên KTX sử dụng.</p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3.5 border border-white/15">
-                <div className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                  <span>🔒</span>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15">
+                <div className="text-base sm:text-lg font-bold text-white mb-1.5 flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                    </svg>
+                  </span>
                   <span>Chống trộm cắp</span>
                 </div>
-                <p className="text-xs text-[#D6E8EE]">Khóa vĩnh viễn và gắn cờ các món đồ nghi vấn trộm cắp.</p>
+                <p className="text-xs text-[#D6E8EE]/90 leading-relaxed">Khóa vĩnh viễn và gắn cờ các món đồ nghi vấn trộm cắp.</p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3.5 border border-white/15">
-                <div className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                  <span>🔁</span>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15">
+                <div className="text-base sm:text-lg font-bold text-white mb-1.5 flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                  </span>
                   <span>Bán lại 1-click</span>
                 </div>
-                <p className="text-xs text-[#D6E8EE]">Kế thừa hồ sơ, chuyển giao quyền sở hữu trong 30s.</p>
+                <p className="text-xs text-[#D6E8EE]/90 leading-relaxed">Kế thừa hồ sơ, chuyển giao quyền sở hữu trong 30s.</p>
               </div>
             </div>
 

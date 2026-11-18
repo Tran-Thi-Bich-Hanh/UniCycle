@@ -58,18 +58,18 @@ async function LiveMarketplaceFeed() {
         createdAt: l.createdAt.toISOString(),
         school: l.school
           ? {
-              id: l.school.id,
-              name: l.school.name,
-              shortName: l.school.shortName,
-              area: l.school.area,
-            }
+            id: l.school.id,
+            name: l.school.name,
+            shortName: l.school.shortName,
+            area: l.school.area,
+          }
           : null,
         category: l.category
           ? {
-              id: l.category.id,
-              name: l.category.name,
-              slug: l.category.slug,
-            }
+            id: l.category.id,
+            name: l.category.name,
+            slug: l.category.slug,
+          }
           : null,
         seller: {
           id: l.seller.id,
@@ -81,15 +81,15 @@ async function LiveMarketplaceFeed() {
         },
         item: l.item
           ? {
-              id: l.item.id,
-              passportEnabled: l.item.passportEnabled,
-              passportId: l.item.passportId,
-              passportStatus: l.item.passportStatus,
-              owners: l.item.owners.map((o) => ({
-                seq: o.seq,
-                showName: o.showName,
-              })),
-            }
+            id: l.item.id,
+            passportEnabled: l.item.passportEnabled,
+            passportId: l.item.passportId,
+            passportStatus: l.item.passportStatus,
+            owners: l.item.owners.map((o) => ({
+              seq: o.seq,
+              showName: o.showName,
+            })),
+          }
           : null,
         images: l.images.map((img) => ({
           id: img.id,
@@ -144,21 +144,11 @@ export default function Home() {
   return (
     <div className="flex flex-col flex-1">
       {/* 1. Khối Hero Gradient Bleed: Thông điệp vòng đời đồ vật tuần hoàn & Hình ảnh cân đối */}
-      <section className="hero-gradient-bleed text-white pt-2 pb-16 sm:pt-4 sm:pb-24 relative overflow-hidden">
+      <section className="hero-gradient-bleed text-white pt-8 pb-16 sm:pt-12 sm:pb-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
             {/* Cột trái (6/12 cột): Tiêu đề, thông điệp & CTA */}
             <div className="lg:col-span-6 space-y-5">
-              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-semibold text-[#D6E8EE] shadow-sm">
-                <Image
-                  src="/icon.png"
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="rounded-sm"
-                />
-                <span>Chợ đồ cũ sinh viên TP.HCM · Vòng đời đồ vật tuần hoàn</span>
-              </div>
 
               <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.16] text-white">
                 Mua bán đồ cũ sinh viên tiết kiệm &amp; trao tay tận cổng trường
@@ -173,14 +163,13 @@ export default function Home() {
                   href="#live-feed"
                   className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-white text-[#001B48] hover:bg-[#D6E8EE] font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md transition-colors cursor-pointer"
                 >
-                  <span>Khám phá đồ quanh KTX</span>
-                  <span aria-hidden="true">&darr;</span>
+                  <span>Khám phá đồ</span>
                 </a>
                 <Link
                   href="/sell"
                   className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-[#018ABE] hover:bg-[#02457A] border border-[#97CADB]/50 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-sm transition-colors"
                 >
-                  <span>Đăng bán trong 60 giây</span>
+                  <span>Đăng bán</span>
                 </Link>
               </div>
 
