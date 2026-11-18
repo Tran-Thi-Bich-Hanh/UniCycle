@@ -341,7 +341,7 @@ export function ProfileClient() {
           </div>
 
           {/* Stats Grid + Quick Links */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-100">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 pt-5 border-t border-slate-100">
             <Link
               href="/my-products"
               className="p-3.5 rounded-2xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/50 border border-[#D6E8EE] transition-colors"
@@ -349,18 +349,7 @@ export function ProfileClient() {
               <div className="text-lg sm:text-xl font-black text-[#001B48]">
                 {stats.listingsCount}
               </div>
-              <div className="text-[11px] font-semibold text-[#02457A]">Tin đăng của tôi &rarr;</div>
-            </Link>
-            <Link
-              href="/my-items"
-              className="p-3.5 rounded-2xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/50 border border-[#D6E8EE] transition-colors"
-            >
-              <div className="text-lg sm:text-xl font-black text-[#001B48]">
-                {stats.ownedItemsCount}
-              </div>
-              <div className="text-[11px] font-semibold text-[#02457A]">
-                Đồ có Passport &rarr;
-              </div>
+              <div className="text-[11px] font-semibold text-[#02457A]">Sản phẩm của tôi &rarr;</div>
             </Link>
             <Link
               href="/orders"

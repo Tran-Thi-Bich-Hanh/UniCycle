@@ -634,10 +634,10 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
 
                   {isCompleted && isBuyer && (
                     <Link
-                      href="/my-items"
+                      href="/my-products"
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors"
                     >
-                      <span>Mở Đồ của tôi (/my-items) ↗</span>
+                      <span>Mở Sản phẩm của tôi (/my-products) ↗</span>
                     </Link>
                   )}
                 </div>
@@ -841,10 +841,10 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
 
               {isBuyer && order.listing.item?.passportEnabled && (
                 <Link
-                  href="/my-items"
+                  href="/my-products"
                   className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm"
                 >
-                  📜 Mở Đồ của tôi (/my-items)
+                  📜 Mở Sản phẩm của tôi
                 </Link>
               )}
             </>

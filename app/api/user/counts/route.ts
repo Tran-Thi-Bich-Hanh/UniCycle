@@ -8,6 +8,7 @@ export async function GET() {
     if (!user) {
       return NextResponse.json({
         itemsCount: 0,
+        productsCount: 0,
         ordersCount: 0,
         activeOrdersCount: 0,
         totalOrdersCount: 0,
@@ -20,9 +21,12 @@ export async function GET() {
     });
     const resolvedUserId = dbUser?.id || user.id;
 
-    const [itemsCount, activeOrdersCount, totalOrdersCount] = await Promise.all([
+    const [itemsCount, productsCount, activeOrdersCount, totalOrdersCount] = await Promise.all([
       prisma.item.count({
         where: { currentOwnerId: resolvedUserId },
+      }),
+      prisma.listing.count({
+        where: { sellerId: resolvedUserId },
       }),
       prisma.order.count({
         where: {
@@ -40,7 +44,8 @@ export async function GET() {
     ]);
 
     return NextResponse.json({
-      itemsCount,
+      itemsCount: productsCount,
+      productsCount,
       ordersCount: totalOrdersCount,
       activeOrdersCount,
       totalOrdersCount,

@@ -573,14 +573,19 @@ export function MyProductsManager() {
 
                       {/* Huy hiệu Passport */}
                       {listing.item?.passportEnabled && (
-                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-mono">
-                          <span className="text-emerald-400">
+                        <Link
+                          href={`/passport/${listing.item.passportId || listing.item.id}`}
+                          className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-mono transition-colors group cursor-pointer"
+                          title="Xem Digital Product Passport trên Blockchain"
+                        >
+                          <span className="text-emerald-400 group-hover:underline">
                             📜 Đời chủ #{listing.item.owners?.length || 1}
                           </span>
-                          <span className="text-slate-400 truncate max-w-[150px] sm:max-w-[200px]">
+                          <span className="text-slate-400 group-hover:text-slate-200 truncate max-w-[150px] sm:max-w-[200px]">
                             {listing.item.passportId || "0x..."}
                           </span>
-                        </div>
+                          <span className="text-slate-500 group-hover:text-white text-[10px]">↗</span>
+                        </Link>
                       )}
                     </div>
                   </div>

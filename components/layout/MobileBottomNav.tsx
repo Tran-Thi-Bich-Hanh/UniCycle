@@ -16,7 +16,6 @@ export function MobileBottomNav() {
   const isOrders = pathname?.startsWith("/orders");
   const isAccount =
     pathname?.startsWith("/profile") ||
-    pathname?.startsWith("/my-items") ||
     pathname?.startsWith("/my-products") ||
     pathname?.startsWith("/login") ||
     pathname?.startsWith("/register");

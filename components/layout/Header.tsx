@@ -88,9 +88,10 @@ export function Header() {
   const [currentUser, setCurrentUser] = useState<HeaderUser | null>(null);
   const [userCounts, setUserCounts] = useState<{
     itemsCount: number;
+    productsCount?: number;
     ordersCount: number;
     activeOrdersCount: number;
-  }>({ itemsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
+  }>({ itemsCount: 0, productsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
 
   useEffect(() => {
     let active = true;
@@ -115,11 +116,12 @@ export function Header() {
           const countsData = await countsRes.json();
           setUserCounts({
             itemsCount: countsData.itemsCount || 0,
+            productsCount: countsData.productsCount || countsData.itemsCount || 0,
             ordersCount: countsData.ordersCount || 0,
             activeOrdersCount: countsData.activeOrdersCount || 0,
           });
         } else {
-          setUserCounts({ itemsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
+          setUserCounts({ itemsCount: 0, productsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
         }
       } catch {
         // Ignore
@@ -138,7 +140,7 @@ export function Header() {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setCurrentUser(null);
-      setUserCounts({ itemsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
+      setUserCounts({ itemsCount: 0, productsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
       setAccountPopupOpen(false);
       setMobileMenuOpen(false);
       window.dispatchEvent(new Event("unicycle-auth-change"));
@@ -404,11 +406,11 @@ export function Header() {
               </svg>
             </button>
 
-            {/* Nút Đồ của tôi (Passport) trên Desktop */}
+            {/* Nút Sản phẩm của tôi trên Desktop */}
             <Link
-              href="/my-items"
+              href="/my-products"
               className={`hidden xl:inline-flex items-center gap-2 h-11 px-3 rounded-xl text-sm font-semibold transition-colors ${
-                pathname?.startsWith("/my-items")
+                pathname?.startsWith("/my-products")
                   ? "bg-[#D6E8EE] text-[#001B48]"
                   : "text-[#001B48] hover:bg-[#F4F9FB]"
               }`}
@@ -424,18 +426,13 @@ export function Header() {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"
+                  d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
                 />
               </svg>
-              <span>Đồ của tôi</span>
+              <span>Sản phẩm của tôi</span>
               {currentUser && (
                 <span className="px-1.5 py-0.5 text-[11px] font-bold rounded-full bg-[#D6E8EE] text-[#02457A] leading-none">
-                  {userCounts.itemsCount}
+                  {userCounts.productsCount ?? userCounts.itemsCount}
                 </span>
               )}
             </Link>
@@ -499,35 +496,27 @@ export function Header() {
                 onClick={() => setAccountPopupOpen((prev) => !prev)}
                 aria-expanded={accountPopupOpen}
                 aria-haspopup="true"
-                aria-label="Tài khoản và đăng nhập"
-                className="h-11 px-3 rounded-xl border border-[#D6E8EE] hover:border-[#97CADB] bg-white text-[#001B48] inline-flex items-center gap-2 text-sm font-semibold transition-colors cursor-pointer"
+                aria-label={currentUser ? `Tài khoản ${currentUser.displayName}` : "Tài khoản và đăng nhập"}
+                className="w-11 h-11 rounded-xl border border-[#D6E8EE] hover:border-[#97CADB] bg-white text-[#001B48] inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
               >
                 {currentUser ? (
-                  <>
-                    <div className="w-7 h-7 rounded-full bg-[#018ABE] text-white flex items-center justify-center font-bold text-xs overflow-hidden relative">
-                      {currentUser.avatarUrl ? (
-                        <Image
-                          src={currentUser.avatarUrl}
-                          alt={currentUser.displayName}
-                          fill
-                          sizes="28px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        currentUser.displayName.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    <span className="hidden xl:inline max-w-[110px] truncate">
-                      {currentUser.displayName}
-                    </span>
-                  </>
+                  <div className="w-8 h-8 rounded-full bg-[#018ABE] text-white flex items-center justify-center font-bold text-xs overflow-hidden relative">
+                    {currentUser.avatarUrl ? (
+                      <Image
+                        src={currentUser.avatarUrl}
+                        alt={currentUser.displayName}
+                        fill
+                        sizes="32px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      currentUser.displayName.charAt(0).toUpperCase()
+                    )}
+                  </div>
                 ) : (
-                  <>
-                    <div className="w-7 h-7 rounded-full bg-[#D6E8EE] text-[#02457A] flex items-center justify-center font-bold text-xs">
-                      SV
-                    </div>
-                    <span className="hidden xl:inline">Tài khoản</span>
-                  </>
+                  <div className="w-8 h-8 rounded-full bg-[#D6E8EE] text-[#02457A] flex items-center justify-center font-bold text-xs">
+                    SV
+                  </div>
                 )}
               </button>
 
@@ -538,113 +527,105 @@ export function Header() {
                     onClick={() => setAccountPopupOpen(false)}
                     aria-hidden="true"
                   />
-                  <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl bg-white border border-[#D6E8EE] shadow-xl p-4 z-50">
+                  <div className="absolute right-0 top-full mt-2 w-64 sm:w-72 rounded-2xl bg-white border border-[#D6E8EE] shadow-xl p-2.5 z-50">
                     {currentUser ? (
                       <>
-                        <div className="pb-3 border-b border-[#D6E8EE] flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-full bg-[#D6E8EE] overflow-hidden relative shrink-0 border border-[#97CADB]">
-                            {currentUser.avatarUrl ? (
-                              <Image
-                                src={currentUser.avatarUrl}
-                                alt={currentUser.displayName}
-                                fill
-                                sizes="44px"
-                                className="object-cover"
-                              />
-                            ) : (
-                              <span className="w-full h-full flex items-center justify-center font-bold text-[#001B48]">
-                                {currentUser.displayName.charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-extrabold text-[#001B48] truncate">
-                              {currentUser.displayName}
-                            </p>
-                            <p className="text-[11px] text-[#02457A] truncate">
-                              {currentUser.email}
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-1">
-                              {currentUser.isStudentVerified && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                                  ✓ SV Đã duyệt
-                                </span>
-                              )}
-                              <span className="text-[10px] font-semibold text-[#02457A] bg-[#D6E8EE]/60 px-1.5 py-0.5 rounded-full truncate">
-                                {currentUser.schoolShortName || "KTX ĐHQG"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="py-2 space-y-1 text-xs">
+                        <div className="space-y-1 text-xs">
                           <Link
                             href="/profile"
                             onClick={() => setAccountPopupOpen(false)}
-                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                            className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-semibold transition-colors group"
                           >
-                            <span>Hồ sơ cá nhân &amp; Cài đặt</span>
-                            <span className="text-slate-400">/profile</span>
+                            <div className="flex items-center gap-2.5">
+                              <svg className="w-4 h-4 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                              </svg>
+                              <span>Hồ sơ cá nhân &amp; Cài đặt</span>
+                            </div>
+                            <span className="text-slate-400 font-normal">/profile</span>
                           </Link>
+
                           <Link
                             href="/my-products"
                             onClick={() => setAccountPopupOpen(false)}
-                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                            className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-semibold transition-colors group"
                           >
-                            <span>Sản phẩm của tôi</span>
-                            <span className="text-slate-400">/my-products</span>
-                          </Link>
-                          <Link
-                            href="/my-items"
-                            onClick={() => setAccountPopupOpen(false)}
-                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
-                          >
-                            <span>Đồ của tôi (Passport &amp; Bán lại)</span>
-                            <span className="text-[#018ABE] font-bold text-xs">
-                              {userCounts.itemsCount > 0 ? `${userCounts.itemsCount} món` : "QR"}
+                            <div className="flex items-center gap-2.5">
+                              <svg className="w-4 h-4 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                              </svg>
+                              <span>Sản phẩm của tôi</span>
+                            </div>
+                            <span className="text-[#018ABE] font-bold text-xs bg-[#D6E8EE]/50 px-2 py-0.5 rounded-full">
+                              {(userCounts.productsCount ?? userCounts.itemsCount) > 0 ? `${userCounts.productsCount ?? userCounts.itemsCount} món` : "0 món"}
                             </span>
                           </Link>
+
                           <Link
                             href="/orders"
                             onClick={() => setAccountPopupOpen(false)}
-                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                            className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-semibold transition-colors group"
                           >
-                            <span>Đơn hẹn xem hàng</span>
-                            <span className="text-[#02457A] font-bold text-xs">
-                              {userCounts.ordersCount > 0 ? `${userCounts.ordersCount} đơn` : "Lịch hẹn"}
+                            <div className="flex items-center gap-2.5">
+                              <svg className="w-4 h-4 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                              </svg>
+                              <span>Đơn hẹn xem hàng</span>
+                            </div>
+                            <span className="text-[#02457A] font-bold text-xs bg-[#D6E8EE]/50 px-2 py-0.5 rounded-full">
+                              {userCounts.ordersCount > 0 ? `${userCounts.ordersCount} đơn` : "0 đơn"}
                             </span>
                           </Link>
+
                           <Link
                             href="/verify-student"
                             onClick={() => setAccountPopupOpen(false)}
-                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                            className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-semibold transition-colors group"
                           >
-                            <span>Xác minh thẻ sinh viên</span>
-                            <span className="px-1.5 py-0.5 rounded bg-[#D6E8EE] text-[#02457A] text-[10px] font-bold">
-                              Huy hiệu SV
-                            </span>
+                            <div className="flex items-center gap-2.5">
+                              <svg className="w-4 h-4 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342" />
+                              </svg>
+                              <span>Xác minh thẻ sinh viên</span>
+                            </div>
+                            {currentUser.isStudentVerified ? (
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold">
+                                ✓ Đã duyệt
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded bg-[#D6E8EE] text-[#02457A] text-[10px] font-bold">
+                                Huy hiệu SV
+                              </span>
+                            )}
                           </Link>
+
                           {currentUser.role === "ADMIN" && (
                             <Link
                               href="/admin"
                               onClick={() => setAccountPopupOpen(false)}
-                              className="flex items-center justify-between px-2.5 py-2 rounded-lg bg-[#001B48]/5 hover:bg-[#001B48]/10 text-[#001B48] font-bold border border-[#D6E8EE]"
+                              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#001B48]/5 hover:bg-[#001B48]/10 text-[#001B48] font-bold border border-[#D6E8EE]"
                             >
-                              <span>🛡️ Quản trị hệ thống</span>
-                              <span className="text-[10px] font-extrabold text-[#018ABE]">
-                                /admin
-                              </span>
+                              <div className="flex items-center gap-2.5">
+                                <svg className="w-4 h-4 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                                </svg>
+                                <span>Quản trị hệ thống</span>
+                              </div>
+                              <span className="text-[10px] font-extrabold text-[#018ABE]">/admin</span>
                             </Link>
                           )}
                         </div>
 
-                        <div className="pt-2 border-t border-[#D6E8EE]">
+                        <div className="pt-2 mt-1 border-t border-[#D6E8EE]">
                           <button
                             type="button"
                             onClick={handleLogout}
-                            className="w-full h-9 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold flex items-center justify-center transition-colors cursor-pointer"
+                            className="w-full h-9 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                           >
-                            Đăng xuất tài khoản
+                            <svg className="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                            </svg>
+                            <span>Đăng xuất tài khoản</span>
                           </button>
                         </div>
                       </>
@@ -689,12 +670,12 @@ export function Header() {
                             <span className="text-slate-400">/my-products</span>
                           </Link>
                           <Link
-                            href="/my-items"
+                            href="/orders"
                             onClick={() => setAccountPopupOpen(false)}
                             className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
                           >
-                            <span>Đồ của tôi (Passport &amp; Bán lại)</span>
-                            <span className="text-[#018ABE] font-semibold">QR</span>
+                            <span>Đơn hẹn xem hàng</span>
+                            <span className="text-slate-400">/orders</span>
                           </Link>
                           <Link
                             href="/verify-student"
@@ -831,14 +812,14 @@ export function Header() {
                       Hồ sơ cá nhân &amp; Quyền riêng tư
                     </Link>
                     <Link
-                      href="/my-items"
+                      href="/my-products"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
                     >
-                      <span>Đồ của tôi (Mã QR &amp; Bán lại)</span>
-                      {currentUser && userCounts.itemsCount > 0 && (
+                      <span>Sản phẩm của tôi</span>
+                      {currentUser && (userCounts.productsCount ?? userCounts.itemsCount) > 0 && (
                         <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-[#D6E8EE] text-[#02457A]">
-                          {userCounts.itemsCount} món
+                          {userCounts.productsCount ?? userCounts.itemsCount} món
                         </span>
                       )}
                     </Link>
@@ -853,13 +834,6 @@ export function Header() {
                           {userCounts.ordersCount} đơn
                         </span>
                       )}
-                    </Link>
-                    <Link
-                      href="/my-products"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
-                    >
-                      Quản lý tin đăng bán
                     </Link>
                     <Link
                       href="/verify-student"
