@@ -347,7 +347,7 @@ export function ProfileClient() {
           {/* Stats Grid + Quick Links */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 pt-5 border-t border-slate-100">
             <Link
-              href="/my-products"
+              href="/my-items"
               className="p-3.5 rounded-2xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/50 border border-[#D6E8EE] transition-colors"
             >
               <div className="text-lg sm:text-xl font-black text-[#001B48]">

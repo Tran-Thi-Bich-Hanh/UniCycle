@@ -753,7 +753,7 @@ export function OrdersManager() {
                               href={
                                 order.listing.item?.passportId
                                   ? `/passport/${order.listing.item.passportId}`
-                                  : "/my-products"
+                                  : "/my-items"
                               }
                               className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-xl border border-emerald-200 transition-colors inline-flex items-center gap-1.5"
                             >

@@ -1,29 +1,10 @@
-import React, { Suspense } from "react";
-import { Metadata } from "next";
-import { MyProductsManager } from "@/components/my-products/MyProductsManager";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Đồ Của Tôi & Tin Đăng Cá Nhân | UniCycle Sinh Viên",
-  description:
-    "Quản lý danh sách đồ dùng, tin đăng bán, cập nhật trạng thái giữ chỗ (RESERVED), đánh dấu đã bán và tra cứu Digital Product Passport.",
+export const metadata = {
+  title: "Đồ Của Tôi & Digital Product Passport | UniCycle Sinh Viên",
+  description: "Quản lý đồ dùng và tin đăng bán có Digital Product Passport.",
 };
 
 export default function MyProductsPage() {
-  return (
-    <main className="min-h-screen bg-[#F8FAFC]">
-      <Suspense
-        fallback={
-          <div className="max-w-7xl mx-auto px-4 py-20 flex flex-col items-center justify-center">
-            <div className="w-8 h-8 border-3 border-[#018ABE] border-t-transparent rounded-full animate-spin mb-3" />
-            <span className="text-xs font-semibold text-[#02457A]">
-              Đang tải danh sách tin đăng của bạn...
-            </span>
-          </div>
-        }
-      >
-        <MyProductsManager />
-      </Suspense>
-    </main>
-  );
+  redirect("/my-items");
 }
-

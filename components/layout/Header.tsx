@@ -408,9 +408,9 @@ export function Header() {
 
             {/* Nút Đồ của tôi trên Desktop */}
             <Link
-              href="/my-products"
+              href="/my-items"
               className={`hidden lg:inline-flex items-center gap-1.5 xl:gap-2 h-11 px-2.5 xl:px-3 rounded-xl text-sm font-semibold transition-colors shrink-0 ${
-                pathname?.startsWith("/my-products")
+                pathname?.startsWith("/my-items") || pathname?.startsWith("/my-products")
                   ? "bg-[#D6E8EE] text-[#001B48]"
                   : "text-[#001B48] hover:bg-[#F4F9FB]"
               }`}
@@ -548,7 +548,7 @@ export function Header() {
                           </Link>
 
                           <Link
-                            href="/my-products"
+                            href="/my-items"
                             onClick={() => setAccountPopupOpen(false)}
                             className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-semibold transition-colors group"
                           >
@@ -666,7 +666,7 @@ export function Header() {
 
                         <div className="pt-2 border-t border-[#D6E8EE] space-y-1 text-xs">
                           <Link
-                            href="/my-products"
+                            href="/my-items"
                             onClick={() => setAccountPopupOpen(false)}
                             className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium group transition-colors"
                           >
@@ -820,7 +820,7 @@ export function Header() {
                       Hồ sơ cá nhân &amp; Quyền riêng tư
                     </Link>
                     <Link
-                      href="/my-products"
+                      href="/my-items"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
                     >
