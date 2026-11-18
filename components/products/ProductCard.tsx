@@ -107,8 +107,11 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
 
           {(isFree || price === 0) && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-600 text-white shadow-sm border border-emerald-400/30 animate-pulse">
-              <span>🎁 Tặng 0đ</span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-600 text-white shadow-sm border border-emerald-400/30">
+              <svg className="w-3 h-3 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+              </svg>
+              <span>Tặng 0đ</span>
             </span>
           )}
         </div>
@@ -146,15 +149,9 @@ export function ProductCard({ product }: ProductCardProps) {
         <div>
           {/* Giá bán / Tặng 0đ */}
           <div className="flex items-baseline justify-between pt-1">
-            <div className={`text-base sm:text-lg font-extrabold ${isFree || price === 0 ? "text-emerald-600" : "text-[#001B48]"}`}>
+            <div className={`text-base sm:text-lg font-extrabold truncate ${isFree || price === 0 ? "text-emerald-600" : "text-[#001B48]"}`}>
               {formattedPrice}
             </div>
-
-            {hasPassport && (
-              <span className="text-[10px] text-[#018ABE] bg-[#D6E8EE]/50 px-1.5 py-0.5 rounded font-medium">
-                Passport
-              </span>
-            )}
           </div>
 
           {/* Người bán & Xác minh sinh viên */}
@@ -192,14 +189,14 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Link
               href={`/products/${product.id}`}
-              className="w-full py-1.5 px-2 text-center text-xs font-semibold text-[#02457A] bg-[#D6E8EE]/40 hover:bg-[#D6E8EE] rounded-xl transition-colors cursor-pointer"
+              className="w-full h-9 sm:h-10 px-2 text-center text-xs font-semibold text-[#02457A] bg-[#D6E8EE]/40 hover:bg-[#D6E8EE] rounded-xl transition-colors cursor-pointer inline-flex items-center justify-center whitespace-nowrap"
             >
-              Xem chi tiết
+              <span>Xem chi tiết</span>
             </Link>
             <button
               type="button"
               onClick={handleZaloClick}
-              className="w-full py-1.5 px-2 inline-flex items-center justify-center gap-1 text-xs font-bold text-white bg-[#0068FF] hover:bg-[#0052cc] rounded-xl transition-colors shadow-xs cursor-pointer"
+              className="w-full h-9 sm:h-10 px-2 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-[#0068FF] hover:bg-[#0052cc] rounded-xl transition-colors shadow-xs cursor-pointer whitespace-nowrap"
             >
               <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.02l-.95 3.51a.6.6 0 0 0 .78.71l3.9-1.62c.76.22 1.57.38 2.41.38 5.52 0 10-4.03 10-9s-4.48-9-10-9zm5.54 11.23c-.23.63-1.18 1.18-1.65 1.25-.43.06-.99.09-1.6-.11a14.28 14.28 0 0 1-4.45-2.73 13.9 13.9 0 0 1-2.65-4.17c-.22-.61-.22-1.17-.15-1.6.07-.47.62-1.42 1.25-1.65.23-.09.49-.07.69.05.27.16 1.09 1.93 1.19 2.13.06.13.07.28.02.41-.09.23-.39.69-.47.81-.11.16-.2.27-.08.48.24.42.78 1.26 1.48 1.91.7.64 1.55 1.13 1.98 1.34.22.11.33.02.48-.09.12-.08.58-.38.81-.47.13-.05.28-.04.41.02.2.1 1.97.92 2.13 1.19.12.2.14.46.05.69z" />
