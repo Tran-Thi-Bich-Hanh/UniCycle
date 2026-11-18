@@ -571,6 +571,18 @@ export function Header() {
                               Huy hiệu SV
                             </span>
                           </Link>
+                          {currentUser.role === "ADMIN" && (
+                            <Link
+                              href="/admin"
+                              onClick={() => setAccountPopupOpen(false)}
+                              className="flex items-center justify-between px-2.5 py-2 rounded-lg bg-[#001B48]/5 hover:bg-[#001B48]/10 text-[#001B48] font-bold border border-[#D6E8EE]"
+                            >
+                              <span>🛡️ Quản trị hệ thống</span>
+                              <span className="text-[10px] font-extrabold text-[#018ABE]">
+                                /admin
+                              </span>
+                            </Link>
+                          )}
                         </div>
 
                         <div className="pt-2 border-t border-[#D6E8EE]">
@@ -786,6 +798,15 @@ export function Header() {
                     >
                       Xác minh thẻ sinh viên
                     </Link>
+                    {currentUser?.role === "ADMIN" && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-3 py-2 rounded-xl bg-[#001B48] text-white font-bold"
+                      >
+                        🛡️ Quản trị hệ thống (/admin)
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
