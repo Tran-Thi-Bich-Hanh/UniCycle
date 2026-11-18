@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ReportModal } from "@/components/reports/ReportModal";
 
 export interface PassportOwnerData {
   id: string;
@@ -98,9 +99,10 @@ export function PassportClient({ initialData }: PassportClientProps) {
   const [copied, setCopied] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   // Trạng thái kiểm chứng On-Chain và Đồng bộ Relayer (Sprint 5 Task 5.1)
-  const [activeChainTxs, setActiveChainTxs] = useState(chainTxs);
+  const [activeChainTxs] = useState(chainTxs);
   const [verificationReport, setVerificationReport] = useState<OnChainVerificationReport | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -184,18 +186,29 @@ export function PassportClient({ initialData }: PassportClientProps) {
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 sm:py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* 1. Thanh điều hướng breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs font-semibold text-[#02457A]">
-          <Link href="/" className="hover:text-[#018ABE] transition-colors">
-            Trang chủ
-          </Link>
-          <span>/</span>
-          <Link href="/products" className="hover:text-[#018ABE] transition-colors">
-            Sàn trao đổi
-          </Link>
-          <span>/</span>
-          <span className="text-[#001B48] font-bold">Digital Product Passport</span>
-        </nav>
+        {/* 1. Thanh điều hướng breadcrumb & Nút báo cáo */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <nav className="flex items-center gap-2 text-xs font-semibold text-[#02457A]">
+            <Link href="/" className="hover:text-[#018ABE] transition-colors">
+              Trang chủ
+            </Link>
+            <span>/</span>
+            <Link href="/products" className="hover:text-[#018ABE] transition-colors">
+              Sàn trao đổi
+            </Link>
+            <span>/</span>
+            <span className="text-[#001B48] font-bold">Digital Product Passport</span>
+          </nav>
+
+          <button
+            type="button"
+            onClick={() => setReportModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer"
+          >
+            <span>🚩</span>
+            <span>Báo cáo Passport nghi vấn</span>
+          </button>
+        </div>
 
         {/* 2. Banner Tuyên Bố Giới Hạn Bắt Buộc (BR30) */}
         <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200/90 text-amber-950 text-xs sm:text-sm space-y-1.5 shadow-2xs">
@@ -819,6 +832,14 @@ export function PassportClient({ initialData }: PassportClientProps) {
           </div>
         </div>
       )}
+      {/* Modal Báo cáo Passport nghi vấn (Task 5.3) */}
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        targetType="PASSPORT"
+        targetId={passport.itemId || passport.passportId}
+        targetLabel={`Báo cáo Passport #${passport.passportId.slice(0, 12)}...`}
+      />
     </div>
   );
 }

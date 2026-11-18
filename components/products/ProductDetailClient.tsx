@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BookingModal } from "@/components/orders/BookingModal";
+import { ReportModal } from "@/components/reports/ReportModal";
 
 export interface ProductDetailData {
   id: string;
@@ -92,6 +93,9 @@ export function ProductDetailClient({
 
   // Booking Modal State (Task 3.2)
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+
+  // Report Modal State (Task 5.3)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // Mở Zalo qua route bảo mật /api/zalo/[listingId]
   const handleOpenZalo = useCallback(async () => {
@@ -210,6 +214,7 @@ export function ProductDetailClient({
 
   const isReserved = product.status === "RESERVED";
   const isSold = product.status === "SOLD";
+  const isFlaggedPassport = product.item?.passportStatus === "FLAGGED";
   const hasPassport = product.item?.passportEnabled !== false && Boolean(product.item?.passportId);
 
   return (
@@ -454,6 +459,10 @@ export function ProductDetailClient({
                 >
                   Món đồ này đã bán thành công
                 </button>
+              ) : isFlaggedPassport ? (
+                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold text-center">
+                  🚨 Món đồ này đang bị gắn cờ nghi vấn tranh chấp / vi phạm (BR32, BR39), tạm khóa giao dịch mới.
+                </div>
               ) : isReserved ? (
                 <div className="space-y-2">
                   <button
@@ -554,6 +563,18 @@ export function ProductDetailClient({
             <p className="text-xs text-amber-800/90 leading-relaxed">
               Khuyến nghị gặp mặt trực tiếp tại các địa điểm công cộng đông người (cổng trường, căng tin, sảnh KTX). Kiểm tra món đồ cẩn thận trước khi thanh toán. <strong>Tuyệt đối không chuyển tiền cọc trước</strong> dưới mọi hình thức.
             </p>
+            {!isOwner && (
+              <div className="pt-2 border-t border-amber-200/60 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="text-xs font-bold text-rose-700 hover:text-rose-900 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <span>🚩</span>
+                  <span>Báo cáo tin đăng vi phạm (BR17)</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -683,6 +704,15 @@ export function ProductDetailClient({
           setIsBookingModalOpen(false);
           router.push("/orders");
         }}
+      />
+
+      {/* 4b. MODAL BÁO CÁO VI PHẠM (Report Modal - Task 5.3) */}
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        targetType="LISTING"
+        targetId={product.id}
+        targetLabel={`Báo cáo tin đăng: ${product.title}`}
       />
 
       {/* 5. Món đồ tương tự (nếu có) */}
