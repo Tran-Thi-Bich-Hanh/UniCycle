@@ -349,7 +349,7 @@ export function ProfileClient() {
               <div className="text-lg sm:text-xl font-black text-[#001B48]">
                 {stats.listingsCount}
               </div>
-              <div className="text-[11px] font-semibold text-[#02457A]">Sản phẩm của tôi &rarr;</div>
+              <div className="text-[11px] font-semibold text-[#02457A]">Đồ của tôi &rarr;</div>
             </Link>
             <Link
               href="/orders"

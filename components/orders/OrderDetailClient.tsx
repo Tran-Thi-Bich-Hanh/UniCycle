@@ -637,7 +637,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                       href="/my-products"
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors"
                     >
-                      <span>Mở Sản phẩm của tôi (/my-products) ↗</span>
+                      <span>Mở Đồ của tôi (/my-products) ↗</span>
                     </Link>
                   )}
                 </div>
@@ -844,7 +844,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                   href="/my-products"
                   className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm"
                 >
-                  📜 Mở Sản phẩm của tôi
+                  📜 Mở Đồ của tôi
                 </Link>
               )}
             </>

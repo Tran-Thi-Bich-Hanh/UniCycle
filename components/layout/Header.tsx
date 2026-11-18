@@ -406,7 +406,7 @@ export function Header() {
               </svg>
             </button>
 
-            {/* Nút Sản phẩm của tôi trên Desktop */}
+            {/* Nút Đồ của tôi trên Desktop */}
             <Link
               href="/my-products"
               className={`hidden xl:inline-flex items-center gap-2 h-11 px-3 rounded-xl text-sm font-semibold transition-colors ${
@@ -429,7 +429,7 @@ export function Header() {
                   d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
                 />
               </svg>
-              <span>Sản phẩm của tôi</span>
+              <span>Đồ của tôi</span>
               {currentUser && (
                 <span className="px-1.5 py-0.5 text-[11px] font-bold rounded-full bg-[#D6E8EE] text-[#02457A] leading-none">
                   {userCounts.productsCount ?? userCounts.itemsCount}
@@ -554,7 +554,7 @@ export function Header() {
                               <svg className="w-4 h-4 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
                               </svg>
-                              <span>Sản phẩm của tôi</span>
+                              <span>Đồ của tôi</span>
                             </div>
                             <span className="text-[#018ABE] font-bold text-xs bg-[#D6E8EE]/50 px-2 py-0.5 rounded-full">
                               {(userCounts.productsCount ?? userCounts.itemsCount) > 0 ? `${userCounts.productsCount ?? userCounts.itemsCount} món` : "0 món"}
@@ -666,7 +666,7 @@ export function Header() {
                             onClick={() => setAccountPopupOpen(false)}
                             className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
                           >
-                            <span>Sản phẩm của tôi</span>
+                            <span>Đồ của tôi</span>
                             <span className="text-slate-400">/my-products</span>
                           </Link>
                           <Link
@@ -816,7 +816,7 @@ export function Header() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
                     >
-                      <span>Sản phẩm của tôi</span>
+                      <span>Đồ của tôi</span>
                       {currentUser && (userCounts.productsCount ?? userCounts.itemsCount) > 0 && (
                         <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-[#D6E8EE] text-[#02457A]">
                           {userCounts.productsCount ?? userCounts.itemsCount} món

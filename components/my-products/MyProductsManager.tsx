@@ -341,10 +341,10 @@ export function MyProductsManager() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE] block mb-1">
-            Không Gian Người Bán
+            Không Gian Đồ Dùng Cá Nhân
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
-            Quản Lý Tin Đăng Cá Nhân
+            Đồ Của Tôi &amp; Tin Đăng
           </h1>
           <p className="text-xs sm:text-sm text-[#02457A] mt-1">
             Theo dõi tình trạng đơn hẹn, bảo quản vòng đời món đồ và quản lý trao tay an toàn

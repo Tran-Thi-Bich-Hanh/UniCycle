@@ -3,9 +3,9 @@ import { Metadata } from "next";
 import { MyProductsManager } from "@/components/my-products/MyProductsManager";
 
 export const metadata: Metadata = {
-  title: "Quản Lý Tin Đăng Cá Nhân | UniCycle Sinh Viên",
+  title: "Đồ Của Tôi & Tin Đăng Cá Nhân | UniCycle Sinh Viên",
   description:
-    "Quản lý danh sách tin đăng bán đồ, cập nhật thông tin, điều chỉnh trạng thái giữ chỗ (RESERVED), đánh dấu đã bán và gia hạn hạn đăng tin 30 ngày.",
+    "Quản lý danh sách đồ dùng, tin đăng bán, cập nhật trạng thái giữ chỗ (RESERVED), đánh dấu đã bán và tra cứu Digital Product Passport.",
 };
 
 export default function MyProductsPage() {
