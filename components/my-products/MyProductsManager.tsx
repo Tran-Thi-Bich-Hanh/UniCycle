@@ -574,7 +574,9 @@ export function MyProductsManager() {
                       {/* Huy hiệu Passport */}
                       {listing.item?.passportEnabled && (
                         <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-mono">
-                          <span className="text-emerald-400">📜 Đời chủ #1</span>
+                          <span className="text-emerald-400">
+                            📜 Đời chủ #{listing.item.owners?.length || 1}
+                          </span>
                           <span className="text-slate-400 truncate max-w-[150px] sm:max-w-[200px]">
                             {listing.item.passportId || "0x..."}
                           </span>
@@ -881,7 +883,7 @@ export function MyProductsManager() {
 
             <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-[11px] text-[#02457A] space-y-1">
               <span className="font-bold block">💡 Lợi ích của cơ chế này:</span>
-              <span>- Giúp đơn hàng được ghi nhận vào hệ thống để bảo lưu Product Passport Đời chủ #2.</span>
+              <span>- Giúp đơn hàng được ghi nhận vào hệ thống để bảo lưu và tiếp nối chuỗi Đời chủ Product Passport.</span>
               <span>- Khóa ngay món đồ để người mua khác không đặt trùng (BR11).</span>
             </div>
           </div>

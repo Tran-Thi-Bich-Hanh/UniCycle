@@ -72,16 +72,21 @@ async function ProductDetailContent({ params }: PageProps) {
                 user: {
                   select: {
                     displayName: true,
+                    school: {
+                      select: {
+                        shortName: true,
+                      },
+                    },
                   },
                 },
               },
               orderBy: { seq: "asc" },
             },
             chainTxs: {
-              orderBy: { createdAt: "desc" },
-              take: 1,
+              orderBy: { createdAt: "asc" },
               select: {
                 id: true,
+                kind: true,
                 status: true,
                 txHash: true,
               },
@@ -110,19 +115,36 @@ async function ProductDetailContent({ params }: PageProps) {
         category: dbListing.category,
         seller: dbListing.seller,
         item: dbListing.item
-          ? {
-              id: dbListing.item.id,
-              passportEnabled: dbListing.item.passportEnabled,
-              passportId: dbListing.item.passportId,
-              passportStatus: dbListing.item.passportStatus,
-              identityLevel: dbListing.item.identityLevel,
-              latestTxHash: dbListing.item.chainTxs?.[0]?.txHash || null,
-              owners: dbListing.item.owners.map((o) => ({
-                seq: o.seq,
-                showName: o.showName,
-                user: o.showName && o.user ? { displayName: o.user.displayName } : null,
-              })),
-            }
+          ? (() => {
+              const registerTx = dbListing.item.chainTxs.find(
+                (t) => t.kind === "REGISTER" && Boolean(t.txHash)
+              );
+              const transferTxs = dbListing.item.chainTxs.filter(
+                (t) => t.kind === "TRANSFER" && Boolean(t.txHash)
+              );
+              const confirmedTxs = dbListing.item.chainTxs.filter((t) => Boolean(t.txHash));
+              const latestTxHash = confirmedTxs[confirmedTxs.length - 1]?.txHash || null;
+
+              return {
+                id: dbListing.item.id,
+                passportEnabled: dbListing.item.passportEnabled,
+                passportId: dbListing.item.passportId,
+                passportStatus: dbListing.item.passportStatus,
+                identityLevel: dbListing.item.identityLevel,
+                latestTxHash,
+                owners: dbListing.item.owners.map((o) => ({
+                  seq: o.seq,
+                  showName: o.showName,
+                  since: o.since.toISOString(),
+                  schoolShortName: o.user?.school?.shortName || null,
+                  txHash:
+                    o.seq === 1
+                      ? registerTx?.txHash || null
+                      : transferTxs[o.seq - 2]?.txHash || null,
+                  user: o.showName && o.user ? { displayName: o.user.displayName } : null,
+                })),
+              };
+            })()
           : null,
         images: dbListing.images.map((img) => ({
           id: img.id,

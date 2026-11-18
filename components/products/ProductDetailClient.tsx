@@ -46,6 +46,9 @@ export interface ProductDetailData {
     owners?: Array<{
       seq: number;
       showName: boolean;
+      since?: string;
+      schoolShortName?: string | null;
+      txHash?: string | null;
       user?: {
         displayName: string;
       } | null;
@@ -236,6 +239,21 @@ export function ProductDetailClient({
   const isSold = product.status === "SOLD";
   const isFlaggedPassport = product.item?.passportStatus === "FLAGGED";
   const hasPassport = product.item?.passportEnabled !== false && Boolean(product.item?.passportId);
+  const ownersList: NonNullable<NonNullable<ProductDetailData["item"]>["owners"]> =
+    product.item?.owners && product.item.owners.length > 0
+      ? product.item.owners
+      : [
+          {
+            seq: 1,
+            showName: true,
+            since: product.createdAt,
+            schoolShortName: product.school?.shortName || null,
+            txHash: product.item?.latestTxHash || null,
+            user: { displayName: product.seller.displayName },
+          },
+        ];
+  const currentOwnerSeq = ownersList[ownersList.length - 1]?.seq || ownersList.length || 1;
+  const nextOwnerSeq = currentOwnerSeq + 1;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
@@ -304,7 +322,7 @@ export function ProductDetailClient({
             {/* Badge Passport trên ảnh */}
             {hasPassport && (
               <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-xs text-white text-xs font-mono px-3 py-1.5 rounded-xl border border-white/10 flex items-center gap-2 shadow-lg">
-                <span className="text-emerald-400">📜 Đời chủ #1</span>
+                <span className="text-emerald-400">📜 Đời chủ #{currentOwnerSeq}</span>
                 <span className="text-slate-300">
                   {product.item?.passportId?.slice(0, 10)}...{product.item?.passportId?.slice(-6)}
                 </span>
@@ -362,33 +380,78 @@ export function ProductDetailClient({
               {/* Chuỗi đời chủ (BR29: Ẩn danh hóa danh tính sinh viên) */}
               <div className="space-y-4 py-2">
                 <div className="relative pl-6 before:content-[''] before:absolute before:left-2 before:top-3 before:bottom-0 before:w-0.5 before:bg-[#018ABE]/40 space-y-4">
-                  {/* Đời chủ #1 */}
-                  <div className="relative">
-                    <span className="absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full bg-[#018ABE] ring-4 ring-slate-900" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white">
-                          ● Đời chủ #1: {product.seller.displayName}
-                        </span>
-                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
-                          Khởi tạo
-                        </span>
+                  {ownersList.map((owner) => {
+                    const isFirst = owner.seq === 1;
+                    const isCurrent = owner.seq === currentOwnerSeq;
+                    const ownerDisplayName = owner.showName
+                      ? owner.user?.displayName ||
+                        (isCurrent ? product.seller.displayName : `Sinh viên Đời #${owner.seq}`)
+                      : `Sinh viên ẩn danh (${owner.schoolShortName || (isCurrent ? product.school?.shortName : null) || "UniCycle"})`;
+                    const statusBadge = isFirst
+                      ? "Khởi tạo"
+                      : isCurrent
+                      ? "Chủ hiện tại (Đang bán lại)"
+                      : "Đã chuyển nhượng";
+
+                    return (
+                      <div key={owner.seq} className="relative">
+                        <span
+                          className={`absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full ring-4 ring-slate-900 ${
+                            isCurrent ? "bg-[#018ABE]" : "bg-sky-700"
+                          }`}
+                        />
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-bold text-white">
+                              ● Đời chủ #{owner.seq}: {ownerDisplayName}
+                            </span>
+                            <span
+                              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                                isFirst
+                                  ? "text-emerald-400 bg-emerald-950/80 border-emerald-800"
+                                  : isCurrent
+                                  ? "text-sky-300 bg-sky-950/80 border-sky-800"
+                                  : "text-slate-300 bg-slate-800/80 border-slate-700"
+                              }`}
+                            >
+                              {statusBadge}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-300 mt-0.5">
+                            {owner.schoolShortName ||
+                              (isCurrent ? product.school?.name : null) ||
+                              "Khuôn viên Đại học"}
+                            {owner.since
+                              ? ` • Từ ${new Date(owner.since).toLocaleDateString("vi-VN")}`
+                              : ""}
+                            {isFirst
+                              ? " • Đăng ký vào hệ thống UniCycle"
+                              : " • Xác nhận bàn giao kế thừa Passport"}
+                          </p>
+                          {owner.txHash && (
+                            <a
+                              href={`https://testnet.snowtrace.io/tx/${owner.txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-mono font-bold text-[#97CADB] hover:text-white hover:underline"
+                            >
+                              <span>⛓️ Snowtrace ({owner.txHash.slice(0, 8)}...) ↗</span>
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-300 mt-0.5">
-                        {product.school?.name || "Khuôn viên Đại học"} • Đăng ký vào hệ thống UniCycle
-                      </p>
-                    </div>
-                  </div>
+                    );
+                  })}
 
                   {/* Đời chủ kế tiếp */}
                   <div className="relative">
                     <span className="absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-slate-900 animate-pulse" />
                     <div>
                       <span className="text-xs font-bold text-emerald-300">
-                        ● Đời chủ #2: Bạn đang xem món đồ này!
+                        ● Đời chủ #{nextOwnerSeq}: Bạn đang xem món đồ này!
                       </span>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Kế thừa toàn bộ hồ sơ xuất xứ khi hoàn tất xác nhận trao tay
+                        Kế thừa tiếp nối hồ sơ xuất xứ (từ Đời chủ #{currentOwnerSeq}) khi hoàn tất xác nhận trao tay
                       </p>
                     </div>
                   </div>
