@@ -227,7 +227,9 @@ export function PassportClient({ initialData }: PassportClientProps) {
             onClick={() => setReportModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer"
           >
-            <span>🚩</span>
+            <svg className="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+            </svg>
             <span>Báo cáo Passport nghi vấn</span>
           </button>
         </div>
@@ -235,7 +237,9 @@ export function PassportClient({ initialData }: PassportClientProps) {
         {/* 2. Banner Tuyên Bố Giới Hạn Bắt Buộc (BR30) */}
         <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200/90 text-amber-950 text-xs sm:text-sm space-y-1.5 shadow-2xs">
           <div className="flex items-center gap-2 font-black text-amber-900 uppercase tracking-wider text-xs">
-            <span className="text-base">⚠️</span>
+            <svg className="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
             <span>Tuyên Bố Giới Hạn Trách Nhiệm Bắt Buộc (Quy tắc BR30)</span>
           </div>
           <p className="text-amber-900/90 leading-relaxed text-xs sm:text-[13px]">
@@ -246,7 +250,9 @@ export function PassportClient({ initialData }: PassportClientProps) {
         {/* Cảnh báo nếu Passport bị gắn cờ vi phạm (BR39) */}
         {passport.isFlagged && (
           <div className="p-4 rounded-2xl bg-rose-600 text-white text-xs sm:text-sm shadow-md flex items-start gap-3 animate-in fade-in">
-            <span className="text-2xl">🚨</span>
+            <svg className="w-6 h-6 text-white shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
             <div>
               <strong className="block text-sm font-black uppercase tracking-wider">
                 Món đồ này đang bị gắn cờ vi phạm (Flagged)!
@@ -315,7 +321,9 @@ export function PassportClient({ initialData }: PassportClientProps) {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-300/40 text-emerald-100 text-xs font-bold transition-all backdrop-blur-md shadow-xs"
                   >
-                    <span>⛓️</span>
+                    <svg className="w-4 h-4 text-emerald-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
                     <span>
                       Xem trực tiếp giao dịch trên Snowtrace Fuji ({latestTxHash.slice(0, 10)}...
                       {latestTxHash.slice(-6)}) ↗
@@ -445,7 +453,13 @@ export function PassportClient({ initialData }: PassportClientProps) {
                       {owner.area && (
                         <>
                           <span>•</span>
-                          <span>📍 {owner.area}</span>
+                          <span className="inline-flex items-center gap-1">
+                            <svg className="w-3 h-3 text-[#018ABE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {owner.area}
+                          </span>
                         </>
                       )}
                       <span>•</span>
@@ -478,10 +492,13 @@ export function PassportClient({ initialData }: PassportClientProps) {
                     {ownerTx && (
                       <div className="mb-3 p-2.5 rounded-xl bg-white/90 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[11px]">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-bold text-[#001B48] shrink-0">
+                          <span className="font-bold text-[#001B48] shrink-0 inline-flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5 text-[#018ABE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
                             {idx === 0
-                              ? "⛓️ Khởi tạo Passport (REGISTER):"
-                              : "⛓️ Chuyển giao sở hữu (TRANSFER):"}
+                              ? "Khởi tạo Passport (REGISTER):"
+                              : "Chuyển giao sở hữu (TRANSFER):"}
                           </span>
                           <span className="font-mono text-slate-600 truncate">
                             {ownerTx.txHash
@@ -626,8 +643,20 @@ export function PassportClient({ initialData }: PassportClientProps) {
                   : "bg-sky-50 text-sky-900 border-sky-200"
               }`}
             >
-              <span className="text-base leading-none">
-                {feedback.type === "success" ? "✓" : feedback.type === "error" ? "⚠️" : "ℹ️"}
+              <span className="text-base leading-none shrink-0">
+                {feedback.type === "success" ? (
+                  <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                ) : feedback.type === "error" ? (
+                  <svg className="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
               </span>
               <div className="flex-1">{feedback.message}</div>
             </div>
@@ -652,11 +681,11 @@ export function PassportClient({ initialData }: PassportClientProps) {
                         : "bg-rose-100 text-rose-800 border border-rose-300"
                     }`}
                   >
-                    {verificationReport.status === "VERIFIED_MATCH" && "Khớp toàn vẹn 100% ✓"}
-                    {verificationReport.status === "PENDING_SYNC" && "Chờ Relayer đồng bộ ⏳"}
-                    {verificationReport.status === "SIMULATED_MODE" && "Chế độ mô phỏng xác định 🧪"}
+                    {verificationReport.status === "VERIFIED_MATCH" && "Khớp toàn vẹn 100%"}
+                    {verificationReport.status === "PENDING_SYNC" && "Chờ Relayer đồng bộ"}
+                    {verificationReport.status === "SIMULATED_MODE" && "Chế độ mô phỏng"}
                     {verificationReport.status === "NOT_ANCHORED_YET" && "Chưa neo on-chain"}
-                    {verificationReport.status === "MISMATCH_DETECTED" && "Cảnh báo sai lệch ⚠️"}
+                    {verificationReport.status === "MISMATCH_DETECTED" && "Cảnh báo sai lệch"}
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-500 font-mono">
@@ -702,7 +731,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
                           verificationReport.checks.flagStatusMatch.offChain ? "text-rose-600" : "text-emerald-600"
                         }`}
                       >
-                        {verificationReport.checks.flagStatusMatch.offChain ? "Đang bị gắn cờ ⚠️" : "An toàn ✓"}
+                        {verificationReport.checks.flagStatusMatch.offChain ? "Đang bị gắn cờ" : "An toàn"}
                       </span>
                     </div>
                   </div>
@@ -712,7 +741,10 @@ export function PassportClient({ initialData }: PassportClientProps) {
                 <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <span className="font-bold text-[#02457A] flex items-center gap-1.5">
-                      <span>⛓️</span> Smart Contract (Avalanche Fuji)
+                      <svg className="w-4 h-4 text-[#018ABE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      Smart Contract (Avalanche Fuji)
                     </span>
                     <span className="text-[10px] font-mono text-sky-800 font-semibold bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
                       Chain ID: 43113
@@ -757,7 +789,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
                           verificationReport.checks.flagStatusMatch.onChain ? "text-rose-600" : "text-emerald-600"
                         }`}
                       >
-                        {verificationReport.checks.flagStatusMatch.onChain ? "Bị cờ vi phạm ⚠️" : "An toàn ✓"}
+                        {verificationReport.checks.flagStatusMatch.onChain ? "Bị cờ vi phạm" : "An toàn"}
                       </span>
                     </div>
                   </div>

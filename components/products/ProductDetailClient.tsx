@@ -322,7 +322,12 @@ export function ProductDetailClient({
             {/* Badge Passport trên ảnh */}
             {hasPassport && (
               <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-xs text-white text-xs font-mono px-3 py-1.5 rounded-xl border border-white/10 flex items-center gap-2 shadow-lg">
-                <span className="text-emerald-400">📜 Đời chủ #{currentOwnerSeq}</span>
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Đời chủ #{currentOwnerSeq}
+                </span>
                 <span className="text-slate-300">
                   {product.item?.passportId?.slice(0, 10)}...{product.item?.passportId?.slice(-6)}
                 </span>
@@ -340,7 +345,7 @@ export function ProductDetailClient({
                   onClick={() => setSelectedImageIndex(idx)}
                   className={`relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
                     selectedImageIndex === idx
-                      ? "border-[#018ABE] shadow-md scale-102"
+                      ? "ring-2 ring-[#018ABE] ring-offset-1 border-[#018ABE] shadow-md scale-[1.02]"
                       : "border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100"
                   }`}
                 >
@@ -355,8 +360,10 @@ export function ProductDetailClient({
             <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-[#001B48] text-white rounded-3xl p-6 sm:p-7 shadow-lg border border-slate-800 space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-xl">
-                    📜
+                  <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-[#97CADB]">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   </span>
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
@@ -371,8 +378,13 @@ export function ProductDetailClient({
 
                 <div className="text-right">
                   <span className="text-[11px] text-slate-400 block font-mono">Mã định danh (bytes32):</span>
-                  <span className="text-xs text-[#D6E8EE] font-mono break-all font-semibold">
-                    {product.item?.passportId}
+                  <span
+                    className="inline-block text-xs text-[#D6E8EE] font-mono font-semibold bg-white/10 px-2.5 py-0.5 rounded border border-white/15"
+                    title={product.item?.passportId || ""}
+                  >
+                    {product.item?.passportId
+                      ? `${product.item.passportId.slice(0, 10)}...${product.item.passportId.slice(-6)}`
+                      : "Chưa cấp"}
                   </span>
                 </div>
               </div>
@@ -435,7 +447,10 @@ export function ProductDetailClient({
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-mono font-bold text-[#97CADB] hover:text-white hover:underline"
                             >
-                              <span>⛓️ Snowtrace ({owner.txHash.slice(0, 8)}...) ↗</span>
+                              <svg className="w-3 h-3 text-[#97CADB]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                              </svg>
+                              <span>Snowtrace ({owner.txHash.slice(0, 8)}...) ↗</span>
                             </a>
                           )}
                         </div>
@@ -464,7 +479,10 @@ export function ProductDetailClient({
                   href={`/passport/${product.item?.passportId || product.item?.id}`}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition-colors"
                 >
-                  <span>📜 Tra cứu chi tiết Digital Passport ↗</span>
+                  <svg className="w-3.5 h-3.5 text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Tra cứu chi tiết Digital Passport ↗</span>
                 </Link>
 
                 {product.item?.latestTxHash && (
@@ -474,7 +492,10 @@ export function ProductDetailClient({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-xs font-bold transition-colors"
                   >
-                    <span>⛓️ Xem giao dịch trên Snowtrace Fuji ↗</span>
+                    <svg className="w-3.5 h-3.5 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    <span>Xem giao dịch trên Snowtrace Fuji ↗</span>
                   </a>
                 )}
               </div>
@@ -540,8 +561,11 @@ export function ProductDetailClient({
             </div>
 
             {/* Vị trí giao dịch thuận tiện */}
-            <div className="flex items-center gap-2.5 text-xs sm:text-sm text-[#02457A]">
-              <span className="text-base">📍</span>
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-[#02457A]">
+              <svg className="w-4 h-4 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
               <span className="font-semibold">
                 Khu vực: {product.school?.name || "Làng Đại Học TP.HCM"}
               </span>
@@ -555,7 +579,11 @@ export function ProductDetailClient({
                     href="/my-products"
                     className="w-full py-3.5 px-4 rounded-2xl bg-[#001B48] hover:bg-[#02457A] text-white text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
                   >
-                    <span>⚙️ Quản lý tin đăng của bạn (/my-products)</span>
+                    <svg className="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Quản lý tin đăng của bạn</span>
                   </Link>
                   <button
                     type="button"
@@ -616,7 +644,10 @@ export function ProductDetailClient({
                     onClick={handleBookMeeting}
                     className="w-full py-3.5 px-4 rounded-2xl bg-[#018ABE] hover:bg-[#02457A] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>📅 Đặt lịch hẹn</span>
+                    <svg className="w-4 h-4 fill-none stroke-current shrink-0" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Đặt lịch hẹn</span>
                   </button>
                 </div>
               )}
@@ -650,14 +681,17 @@ export function ProductDetailClient({
                 />
               </div>
 
-              <div className="space-y-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-[#001B48] group-hover:text-[#018ABE] transition-colors truncate">
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm font-bold text-[#001B48] group-hover:text-[#018ABE] transition-colors truncate min-w-0">
                     {product.seller.displayName}
                   </span>
                   {product.seller.isStudentVerified && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      ✓ Đã duyệt SV
+                    <span className="shrink-0 whitespace-nowrap inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      <svg className="w-2.5 h-2.5 fill-current text-emerald-600" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Đã duyệt SV
                     </span>
                   )}
                 </div>
@@ -678,7 +712,10 @@ export function ProductDetailClient({
           {/* HỘP LƯU Ý AN TOÀN (Safety First Notice - Section 4.3.D) */}
           <div className="bg-amber-50/70 rounded-3xl p-5 border border-amber-200/80 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
-              <span>🛡️ Giao dịch sinh viên an toàn</span>
+              <svg className="w-4 h-4 text-amber-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span>Giao dịch sinh viên an toàn</span>
             </div>
             <p className="text-xs text-amber-800/90 leading-relaxed">
               Khuyến nghị gặp mặt trực tiếp tại các địa điểm công cộng đông người (cổng trường, căng tin, sảnh KTX). Kiểm tra món đồ cẩn thận trước khi thanh toán. <strong>Tuyệt đối không chuyển tiền cọc trước</strong> dưới mọi hình thức.
@@ -688,9 +725,11 @@ export function ProductDetailClient({
                 <button
                   type="button"
                   onClick={() => setIsReportModalOpen(true)}
-                  className="text-xs font-bold text-rose-700 hover:text-rose-900 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-bold text-rose-700 hover:text-rose-900 hover:underline inline-flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>🚩</span>
+                  <svg className="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                  </svg>
                   <span>Báo cáo tin đăng vi phạm (BR17)</span>
                 </button>
               </div>
@@ -816,8 +855,11 @@ export function ProductDetailClient({
                 </div>
 
                 {zaloData.hidePhone && (
-                  <p className="text-[10px] text-center text-slate-400">
-                    🛡️ Người bán đã bật chế độ bảo vệ số điện thoại chống spam (BR36).
+                  <p className="text-[10px] text-center text-slate-400 flex items-center justify-center gap-1">
+                    <svg className="w-3 h-3 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span>Người bán đã bật chế độ bảo vệ số điện thoại chống spam (BR36).</span>
                   </p>
                 )}
               </div>
