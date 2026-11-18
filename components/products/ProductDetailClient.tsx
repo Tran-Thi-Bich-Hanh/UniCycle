@@ -496,12 +496,20 @@ export function ProductDetailClient({
 
           {/* KHỐI HỒ SƠ NGƯỜI BÁN (Seller Trust Box - Section 4.3.B) */}
           <div className="bg-white rounded-3xl p-6 sm:p-7 border border-[#D6E8EE] shadow-xs space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#018ABE]">
-              Thông tin người bán
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#018ABE]">
+                Thông tin người bán
+              </h3>
+              <Link
+                href={`/users/${product.seller.id}`}
+                className="text-[11px] font-bold text-[#02457A] hover:text-[#018ABE] hover:underline"
+              >
+                Xem hồ sơ &rarr;
+              </Link>
+            </div>
 
-            <div className="flex items-center gap-3.5">
-              <div className="relative w-13 h-13 rounded-2xl overflow-hidden shrink-0 border border-slate-200 bg-slate-100">
+            <Link href={`/users/${product.seller.id}`} className="flex items-center gap-3.5 group">
+              <div className="relative w-13 h-13 rounded-2xl overflow-hidden shrink-0 border border-slate-200 bg-slate-100 group-hover:border-[#018ABE] transition-colors">
                 <Image
                   src={
                     product.seller.avatarUrl ||
@@ -515,7 +523,7 @@ export function ProductDetailClient({
 
               <div className="space-y-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-[#001B48] truncate">
+                  <span className="text-sm font-bold text-[#001B48] group-hover:text-[#018ABE] transition-colors truncate">
                     {product.seller.displayName}
                   </span>
                   {product.seller.isStudentVerified && (
@@ -535,7 +543,7 @@ export function ProductDetailClient({
                   <span className="text-emerald-700 font-medium">⚡ Phản hồi &lt; 15 phút</span>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* HỘP LƯU Ý AN TOÀN (Safety First Notice - Section 4.3.D) */}

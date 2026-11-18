@@ -530,6 +530,14 @@ export function Header() {
 
                         <div className="py-2 space-y-1 text-xs">
                           <Link
+                            href="/profile"
+                            onClick={() => setAccountPopupOpen(false)}
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                          >
+                            <span>Hồ sơ cá nhân &amp; Cài đặt</span>
+                            <span className="text-slate-400">/profile</span>
+                          </Link>
+                          <Link
                             href="/my-products"
                             onClick={() => setAccountPopupOpen(false)}
                             className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
@@ -751,6 +759,13 @@ export function Header() {
                   </p>
                   <div className="space-y-1 text-sm">
                     <Link
+                      href="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                    >
+                      Hồ sơ cá nhân &amp; Quyền riêng tư
+                    </Link>
+                    <Link
                       href="/my-items"
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
@@ -784,9 +799,19 @@ export function Header() {
                     <span className="text-xs font-extrabold text-[#001B48] truncate">
                       {currentUser.displayName}
                     </span>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                      ✓ SV Đã duyệt
-                    </span>
+                    {currentUser.isStudentVerified ? (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        ✓ SV Đã duyệt
+                      </span>
+                    ) : (
+                      <Link
+                        href="/verify-student"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-[11px] font-bold text-[#02457A] bg-[#D6E8EE] px-2 py-0.5 rounded-full"
+                      >
+                        Xác minh SV
+                      </Link>
+                    )}
                   </div>
                   <button
                     type="button"
