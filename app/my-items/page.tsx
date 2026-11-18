@@ -80,7 +80,7 @@ async function MyItemsContent() {
   });
 
   const formattedItems: MyItemData[] = items.map((item) => {
-    const currentOwnerRecord = item.owners.find((o) => o.userId === resolvedUserId);
+    const currentOwnerRecord = [...item.owners].reverse().find((o) => o.userId === resolvedUserId);
     const latestListing = item.listings[0] || null;
     const isCurrentlyListed = latestListing
       ? ["AVAILABLE", "RESERVED"].includes(latestListing.status)

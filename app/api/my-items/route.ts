@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     const protocol = host.includes("localhost") ? "http" : "https";
 
     const formattedItems = items.map((item) => {
-      const currentOwnerRecord = item.owners.find((o) => o.userId === resolvedUserId);
+      const currentOwnerRecord = [...item.owners].reverse().find((o) => o.userId === resolvedUserId);
       const latestListing = item.listings[0] || null;
       const isCurrentlyListed = latestListing
         ? ["AVAILABLE", "RESERVED"].includes(latestListing.status)
