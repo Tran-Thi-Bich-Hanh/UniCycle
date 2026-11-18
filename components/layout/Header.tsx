@@ -261,8 +261,8 @@ export function Header() {
 
             {/* Mega Menu Dropdown */}
             {categoryMenuOpen && (
-              <div className="absolute left-0 top-full pt-2 w-[680px] z-50">
-                <div className="bg-white rounded-2xl border border-[#D6E8EE] shadow-xl p-5 grid grid-cols-12 gap-5">
+              <div className="absolute left-0 top-full pt-2 w-[calc(100vw-2rem)] max-w-[680px] z-50 animate-in fade-in duration-150">
+                <div className="bg-white rounded-2xl border border-[#D6E8EE] shadow-2xl p-5 grid grid-cols-12 gap-5">
                   <div className="col-span-8 grid grid-cols-2 gap-2.5">
                     {CATEGORIES.map((cat) => (
                       <Link
@@ -315,7 +315,7 @@ export function Header() {
           </div>
 
           {/* Desktop Search Bar trung tâm kèm chọn nhanh Khu vực Trường / KTX */}
-          <div className="hidden md:flex flex-1 min-w-[280px] lg:min-w-[380px] max-w-3xl">
+          <div className="hidden md:flex flex-1 min-w-[240px] lg:min-w-[280px] xl:min-w-[340px] max-w-2xl">
             <form onSubmit={handleSearchSubmit} className="w-full relative flex items-center bg-[#F4F9FB] rounded-xl border border-[#D6E8EE] focus-within:bg-white focus-within:border-[#018ABE] transition-colors">
               <label htmlFor="campus-select-in-bar" className="sr-only">Chọn khu vực</label>
               <div className="relative flex items-center shrink-0">
@@ -409,7 +409,7 @@ export function Header() {
             {/* Nút Đồ của tôi trên Desktop */}
             <Link
               href="/my-products"
-              className={`hidden xl:inline-flex items-center gap-2 h-11 px-3 rounded-xl text-sm font-semibold transition-colors ${
+              className={`hidden lg:inline-flex items-center gap-1.5 xl:gap-2 h-11 px-2.5 xl:px-3 rounded-xl text-sm font-semibold transition-colors shrink-0 ${
                 pathname?.startsWith("/my-products")
                   ? "bg-[#D6E8EE] text-[#001B48]"
                   : "text-[#001B48] hover:bg-[#F4F9FB]"
@@ -440,7 +440,7 @@ export function Header() {
             {/* Nút Đơn hẹn (/orders) */}
             <Link
               href="/orders"
-              className={`relative h-11 px-3 rounded-xl inline-flex items-center gap-2 text-sm font-semibold transition-colors ${
+              className={`relative h-11 px-2.5 xl:px-3 rounded-xl inline-flex items-center gap-1.5 xl:gap-2 text-sm font-semibold transition-colors shrink-0 ${
                 pathname?.startsWith("/orders")
                   ? "bg-[#D6E8EE] text-[#001B48]"
                   : "text-[#001B48] hover:bg-[#F4F9FB]"
@@ -542,7 +542,9 @@ export function Header() {
                               </svg>
                               <span>Hồ sơ cá nhân &amp; Cài đặt</span>
                             </div>
-                            <span className="text-slate-400 font-normal">/profile</span>
+                            <svg className="w-4 h-4 text-slate-300 group-hover:text-[#018ABE] group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
                           </Link>
 
                           <Link
@@ -611,7 +613,9 @@ export function Header() {
                                 </svg>
                                 <span>Quản trị hệ thống</span>
                               </div>
-                              <span className="text-[10px] font-extrabold text-[#018ABE]">/admin</span>
+                              <span className="px-1.5 py-0.5 rounded bg-[#018ABE]/10 text-[#018ABE] text-[10px] font-extrabold">
+                                ADMIN
+                              </span>
                             </Link>
                           )}
                         </div>
@@ -664,28 +668,32 @@ export function Header() {
                           <Link
                             href="/my-products"
                             onClick={() => setAccountPopupOpen(false)}
-                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium group transition-colors"
                           >
                             <span>Đồ của tôi</span>
-                            <span className="text-slate-400">/my-products</span>
+                            <svg className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#018ABE] group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
                           </Link>
                           <Link
                             href="/orders"
                             onClick={() => setAccountPopupOpen(false)}
-                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium group transition-colors"
                           >
                             <span>Đơn hẹn xem hàng</span>
-                            <span className="text-slate-400">/orders</span>
+                            <svg className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#018ABE] group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
                           </Link>
                           <Link
                             href="/verify-student"
                             onClick={() => setAccountPopupOpen(false)}
-                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                            className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium group transition-colors"
                           >
                             <span>Xác minh thẻ sinh viên</span>
-                            <span className="px-1.5 py-0.5 rounded bg-[#D6E8EE] text-[#02457A] text-[10px] font-bold">
-                              Huy hiệu SV
-                            </span>
+                            <svg className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#018ABE] group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
                           </Link>
                         </div>
                       </>

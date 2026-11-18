@@ -137,12 +137,12 @@ export function Footer() {
             </li>
             <li>
               <Link href="/orders" className="hover:text-white transition-colors">
-                Quản lý lịch hẹn (/orders)
+                Quản lý lịch hẹn
               </Link>
             </li>
             <li>
               <Link href="/my-products" className="hover:text-white transition-colors">
-                Đồ của tôi (/my-products)
+                Đồ của tôi
               </Link>
             </li>
             <li>
