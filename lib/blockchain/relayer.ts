@@ -15,6 +15,7 @@ import {
   getFujiRpcUrl,
   getPassportContractAddress,
   FUJI_CHAIN_ID,
+  SNOWTRACE_BASE_URL,
 } from "./abi";
 
 // Định nghĩa Avalanche Fuji Chain cho viem
@@ -91,48 +92,150 @@ export interface RelayerProcessResult {
   itemId: string;
   processedCount: number;
   confirmedCount: number;
+  latestTxHash: string | null;
+  snowtraceUrl: string | null;
   errors: string[];
 }
 
 /**
- * Xử lý hàng đợi giao dịch On-chain cho một món đồ (BR28: Chạy bất đồng bộ, chịu lỗi)
- * Xử lý tuần tự các ChainTx ở trạng thái QUEUED hoặc FAILED (attempts < 3)
+ * Tạo payload calldata UTF-8 chuẩn hóa để neo bằng chứng Passport trực tiếp lên Avalanche Fuji
  */
-export async function processItemChainQueue(itemId: string): Promise<RelayerProcessResult> {
+function buildCalldataAnchorHex(params: {
+  kind: string;
+  passportId: string;
+  ownerHash?: string | null;
+  fromHash?: string | null;
+  toHash?: string | null;
+  itemCommit?: string | null;
+  orderId?: string | null;
+  seq?: number;
+}): Hex {
+  const payload = [
+    "UNICYCLE_PASSPORT_V1",
+    `kind=${params.kind}`,
+    `passport=${params.passportId}`,
+    params.ownerHash ? `owner=${params.ownerHash}` : null,
+    params.fromHash ? `from=${params.fromHash}` : null,
+    params.toHash ? `to=${params.toHash}` : null,
+    params.itemCommit ? `commit=${params.itemCommit}` : null,
+    params.orderId ? `order=${params.orderId}` : null,
+    params.seq !== undefined ? `seq=${params.seq}` : null,
+    `ts=${Date.now()}`,
+  ]
+    .filter(Boolean)
+    .join("|");
+  return toHex(payload);
+}
+
+/**
+ * Kiểm tra xem txHash đã thực sự tồn tại trên mạng Avalanche Fuji RPC hay chưa
+ */
+async function isTxOnFujiChain(
+  publicClient: ReturnType<typeof getFujiPublicClient>,
+  txHash?: string | null
+): Promise<boolean> {
+  if (!txHash || !isHex(txHash)) return false;
+  try {
+    const tx = await publicClient.getTransaction({ hash: txHash as Hex });
+    return Boolean(tx?.hash);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Xử lý hàng đợi giao dịch On-chain cho một món đồ (BR28: Chạy bất đồng bộ, chịu lỗi)
+ * Hỗ trợ cơ chế 2 lớp On-Chain:
+ * 1) Gọi trực tiếp Smart Contract UniCyclePassport nếu hợp đồng khớp ABI
+ * 2) On-Chain Calldata Anchor Fallback bằng Ví Chủ để luôn có txHash thật trên Snowtrace Fuji
+ */
+export async function processItemChainQueue(
+  itemId: string,
+  options?: { repairMissingOnChain?: boolean }
+): Promise<RelayerProcessResult> {
   const result: RelayerProcessResult = {
     itemId,
     processedCount: 0,
     confirmedCount: 0,
+    latestTxHash: null,
+    snowtraceUrl: null,
     errors: [],
   };
 
   try {
-    // 1. Lấy thông tin món đồ và danh sách ChainTx đang chờ
+    // 1. Lấy thông tin món đồ và toàn bộ lịch sử ChainTx
     const item = await prisma.item.findUnique({
       where: { id: itemId },
       include: {
         owners: { orderBy: { seq: "asc" } },
         events: { orderBy: { seq: "asc" } },
         chainTxs: {
-          where: {
-            status: { in: ["QUEUED", "FAILED"] },
-            attempts: { lt: 3 },
-          },
           orderBy: { createdAt: "asc" },
         },
       },
     });
 
-    if (!item || !item.passportId || item.chainTxs.length === 0) {
+    if (!item || !item.passportId) {
       return result;
+    }
+
+    const allChainTxs = [...item.chainTxs];
+
+    // Tự động tạo bản ghi ChainTx REGISTER gốc nếu món đồ đã bật Passport nhưng chưa có hàng đợi
+    if (item.passportEnabled && allChainTxs.length === 0) {
+      const payloadHash = keccak256(toHex(`REGISTER:${item.id}:${item.passportId}`));
+      const createdTx = await prisma.chainTx.create({
+        data: {
+          itemId: item.id,
+          kind: "REGISTER",
+          payloadHash,
+          status: "QUEUED",
+        },
+      });
+      allChainTxs.push(createdTx);
     }
 
     const contractAddress = getPassportContractAddress() as Address;
     const publicClient = getFujiPublicClient();
     const relayer = getFujiRelayerWalletClient();
 
-    // 2. Xử lý tuần tự từng giao dịch trong hàng đợi
-    for (const txRecord of item.chainTxs) {
+    // 2. Chọn các giao dịch cần phát sóng / sửa chữa
+    let rpcReachable = false;
+    if (options?.repairMissingOnChain && relayer) {
+      try {
+        await publicClient.getBlockNumber();
+        rpcReachable = true;
+      } catch {
+        rpcReachable = false;
+      }
+    }
+
+    const txsToProcess: typeof allChainTxs = [];
+    for (const tx of allChainTxs) {
+      if (tx.status === "QUEUED" || (tx.status === "FAILED" && tx.attempts < 3)) {
+        txsToProcess.push(tx);
+        continue;
+      }
+
+      if (options?.repairMissingOnChain && relayer && rpcReachable) {
+        if (tx.status === "SUBMITTED" && !tx.txHash) {
+          txsToProcess.push(tx);
+          continue;
+        }
+        if (tx.status === "CONFIRMED") {
+          const existsOnFuji = await isTxOnFujiChain(publicClient, tx.txHash);
+          if (!existsOnFuji) {
+            txsToProcess.push(tx);
+          }
+        }
+      }
+    }
+
+    const transferChainTxs = allChainTxs.filter((t) => t.kind === "TRANSFER");
+    const transferEvents = item.events.filter((e) => e.eventType === "TRANSFERRED");
+
+    // 3. Xử lý tuần tự từng giao dịch
+    for (const txRecord of txsToProcess) {
       result.processedCount++;
       const passportIdBytes32 = ensureBytes32(item.passportId);
 
@@ -148,100 +251,149 @@ export async function processItemChainQueue(itemId: string): Promise<RelayerProc
 
       try {
         let txHash: string | null = null;
+        const firstOwner = item.owners[0];
+        const transferIdx = transferChainTxs.findIndex((t) => t.id === txRecord.id);
+        const transferEvent =
+          transferIdx >= 0
+            ? transferEvents[transferIdx] || transferEvents[transferEvents.length - 1]
+            : transferEvents[transferEvents.length - 1] || item.events[item.events.length - 1];
 
-        // KIỂM TRA: Nếu có ví Relayer và địa chỉ hợp đồng hợp lệ -> Gửi giao dịch thật lên Fuji
-        if (relayer && contractAddress && isHex(contractAddress) && contractAddress !== "0x0000000000000000000000000000000000000000") {
-          // Kiểm tra xem Passport đã tồn tại trên Chain chưa
+        const sendCalldataAnchor = async () => {
+          if (!relayer) {
+            throw new Error("Ví Relayer chưa được cấu hình MASTER_WALLET_PRIVATE_KEY.");
+          }
+          const anchorData = buildCalldataAnchorHex({
+            kind: txRecord.kind,
+            passportId: item.passportId!,
+            ownerHash: firstOwner?.ownerHash,
+            fromHash: transferEvent?.fromOwnerHash,
+            toHash: transferEvent?.toOwnerHash,
+            itemCommit: item.itemCommit,
+            orderId: transferEvent?.orderId,
+            seq: transferEvent?.seq,
+          });
+          return relayer.client.sendTransaction({
+            to: relayer.account.address,
+            value: BigInt(0),
+            data: anchorData,
+          });
+        };
+
+        // KIỂM TRA: Nếu có ví Relayer -> Phát sóng giao dịch thật lên Avalanche Fuji
+        if (relayer) {
+          const hasContractAddress = Boolean(
+            contractAddress &&
+              isHex(contractAddress) &&
+              contractAddress !== "0x0000000000000000000000000000000000000000"
+          );
+
+          let isPassportContract = false;
           let passportExistsOnChain = false;
-          try {
-            const onChainData = await publicClient.readContract({
-              address: contractAddress,
-              abi: UNICYCLE_PASSPORT_ABI,
-              functionName: "passports",
-              args: [passportIdBytes32],
-            });
-            passportExistsOnChain = Boolean(onChainData[4]); // onChainData.exists
-          } catch {
-            passportExistsOnChain = false;
+
+          if (hasContractAddress) {
+            try {
+              const onChainData = await publicClient.readContract({
+                address: contractAddress,
+                abi: UNICYCLE_PASSPORT_ABI,
+                functionName: "passports",
+                args: [passportIdBytes32],
+              });
+              isPassportContract = true;
+              passportExistsOnChain = Boolean(onChainData[4]);
+            } catch {
+              // Hợp đồng chưa deploy hoặc đang là địa chỉ contract khác (VD: UniCyclePoint)
+              isPassportContract = false;
+              passportExistsOnChain = false;
+            }
           }
 
-          if (txRecord.kind === "REGISTER") {
-            if (!passportExistsOnChain) {
-              const firstOwner = item.owners[0];
-              const ownerHashBytes32 = ensureBytes32(firstOwner?.ownerHash);
-              const commitBytes32 = ensureBytes32(item.itemCommit);
+          if (isPassportContract) {
+            try {
+              if (txRecord.kind === "REGISTER") {
+                if (!passportExistsOnChain) {
+                  const ownerHashBytes32 = ensureBytes32(firstOwner?.ownerHash);
+                  const commitBytes32 = ensureBytes32(item.itemCommit);
 
-              txHash = await relayer.client.writeContract({
-                address: contractAddress,
-                abi: UNICYCLE_PASSPORT_ABI,
-                functionName: "register",
-                args: [passportIdBytes32, ownerHashBytes32, commitBytes32],
-              });
-            } else {
-              // Đã tồn tại trên chain từ trước
-              txHash = txRecord.txHash || `0x${keccak256(toHex(`registered:${item.passportId}`)).slice(2)}`;
+                  txHash = await relayer.client.writeContract({
+                    address: contractAddress,
+                    abi: UNICYCLE_PASSPORT_ABI,
+                    functionName: "register",
+                    args: [passportIdBytes32, ownerHashBytes32, commitBytes32],
+                  });
+                } else if (await isTxOnFujiChain(publicClient, txRecord.txHash)) {
+                  txHash = txRecord.txHash;
+                } else {
+                  txHash = await sendCalldataAnchor();
+                }
+              } else if (txRecord.kind === "TRANSFER") {
+                if (!passportExistsOnChain) {
+                  const ownerHashBytes32 = ensureBytes32(firstOwner?.ownerHash);
+                  const commitBytes32 = ensureBytes32(item.itemCommit);
+
+                  const regTx = await relayer.client.writeContract({
+                    address: contractAddress,
+                    abi: UNICYCLE_PASSPORT_ABI,
+                    functionName: "register",
+                    args: [passportIdBytes32, ownerHashBytes32, commitBytes32],
+                  });
+                  await publicClient.waitForTransactionReceipt({ hash: regTx, timeout: 25_000 });
+                }
+
+                const fromHash = ensureBytes32(transferEvent?.fromOwnerHash);
+                const toHash = ensureBytes32(transferEvent?.toOwnerHash);
+                const orderHash = ensureBytes32(
+                  transferEvent?.orderId
+                    ? keccak256(toHex(`${transferEvent.orderId}:${item.itemSalt || "unicycle"}`))
+                    : null
+                );
+                const confirmationCode = transferEvent?.confirmationLevel === "ONE_SIDE" ? 2 : 1;
+
+                txHash = await relayer.client.writeContract({
+                  address: contractAddress,
+                  abi: UNICYCLE_PASSPORT_ABI,
+                  functionName: "transfer",
+                  args: [passportIdBytes32, fromHash, toHash, orderHash, confirmationCode],
+                });
+              } else if (txRecord.kind === "FLAG") {
+                const reasonHash = ensureBytes32(
+                  keccak256(toHex(item.flagReason || "flagged_by_admin"))
+                );
+                txHash = await relayer.client.writeContract({
+                  address: contractAddress,
+                  abi: UNICYCLE_PASSPORT_ABI,
+                  functionName: "flag",
+                  args: [passportIdBytes32, reasonHash],
+                });
+              } else if (txRecord.kind === "UNFLAG") {
+                txHash = await relayer.client.writeContract({
+                  address: contractAddress,
+                  abi: UNICYCLE_PASSPORT_ABI,
+                  functionName: "unflag",
+                  args: [passportIdBytes32],
+                });
+              }
+            } catch (contractErr) {
+              console.warn(
+                `⚠️ Gọi Smart Contract thất bại (${txRecord.kind}), chuyển sang On-Chain Calldata Anchor trên Fuji:`,
+                contractErr instanceof Error ? contractErr.message : contractErr
+              );
+              txHash = await sendCalldataAnchor();
             }
-          } else if (txRecord.kind === "TRANSFER") {
-            // Nếu chưa đăng ký trên chain thì phải register trước
-            if (!passportExistsOnChain) {
-              const firstOwner = item.owners[0];
-              const ownerHashBytes32 = ensureBytes32(firstOwner?.ownerHash);
-              const commitBytes32 = ensureBytes32(item.itemCommit);
-
-              const regTx = await relayer.client.writeContract({
-                address: contractAddress,
-                abi: UNICYCLE_PASSPORT_ABI,
-                functionName: "register",
-                args: [passportIdBytes32, ownerHashBytes32, commitBytes32],
-              });
-              await publicClient.waitForTransactionReceipt({ hash: regTx });
-            }
-
-            // Tìm sự kiện chuyển nhượng tương ứng
-            const transferEvent = item.events.find((e) => e.eventType === "TRANSFERRED") || item.events[item.events.length - 1];
-            const fromHash = ensureBytes32(transferEvent?.fromOwnerHash);
-            const toHash = ensureBytes32(transferEvent?.toOwnerHash);
-            const orderHash = ensureBytes32(
-              transferEvent?.orderId
-                ? keccak256(toHex(`${transferEvent.orderId}:${item.itemSalt || "unicycle"}`))
-                : null
-            );
-            const confirmationCode = transferEvent?.confirmationLevel === "ONE_SIDE" ? 2 : 1;
-
-            txHash = await relayer.client.writeContract({
-              address: contractAddress,
-              abi: UNICYCLE_PASSPORT_ABI,
-              functionName: "transfer",
-              args: [passportIdBytes32, fromHash, toHash, orderHash, confirmationCode],
-            });
-          } else if (txRecord.kind === "FLAG") {
-            const reasonHash = ensureBytes32(keccak256(toHex(item.flagReason || "flagged_by_admin")));
-            txHash = await relayer.client.writeContract({
-              address: contractAddress,
-              abi: UNICYCLE_PASSPORT_ABI,
-              functionName: "flag",
-              args: [passportIdBytes32, reasonHash],
-            });
-          } else if (txRecord.kind === "UNFLAG") {
-            txHash = await relayer.client.writeContract({
-              address: contractAddress,
-              abi: UNICYCLE_PASSPORT_ABI,
-              functionName: "unflag",
-              args: [passportIdBytes32],
-            });
+          } else {
+            // Lớp 2: Gửi giao dịch Calldata Anchor thật 100% lên mạng Avalanche Fuji
+            txHash = await sendCalldataAnchor();
           }
 
           if (txHash && isHex(txHash)) {
             // Chờ nhận biên lai giao dịch (Receipt) trên Fuji
             try {
-              await publicClient.waitForTransactionReceipt({ hash: txHash as Hex, timeout: 30_000 });
+              await publicClient.waitForTransactionReceipt({ hash: txHash as Hex, timeout: 25_000 });
             } catch (waitErr) {
               console.warn("Chờ receipt Fuji timeout, giao dịch đã được phát sóng:", waitErr);
             }
           }
         } else {
-          // CHẾ ĐỘ MÔ PHỎNG AN TOÀN (KHI CHƯA ĐIỀN PRIVATE KEY TRÊN MÔI TRƯỜNG DEV/TEST):
-          // Sinh txHash mô phỏng xác định (deterministic) để giao diện hiển thị liền mạch theo BR28
+          // CHẾ ĐỘ MÔ PHỎNG KHI CHƯA ĐIỀN PRIVATE KEY:
           txHash = `0x${keccak256(toHex(`${item.passportId}:${txRecord.kind}:${txRecord.id}`)).slice(2)}`;
         }
 
@@ -252,6 +404,7 @@ export async function processItemChainQueue(itemId: string): Promise<RelayerProc
             status: "CONFIRMED",
             txHash,
             confirmedAt: new Date(),
+            lastError: null,
           },
         });
         result.confirmedCount++;
@@ -272,6 +425,21 @@ export async function processItemChainQueue(itemId: string): Promise<RelayerProc
         });
       }
     }
+
+    // 4. Lấy txHash mới nhất đã xác nhận của món đồ
+    const latestConfirmed = await prisma.chainTx.findFirst({
+      where: {
+        itemId: item.id,
+        status: "CONFIRMED",
+        txHash: { not: null },
+      },
+      orderBy: [{ confirmedAt: "desc" }, { createdAt: "desc" }],
+    });
+
+    result.latestTxHash = latestConfirmed?.txHash || null;
+    result.snowtraceUrl = result.latestTxHash
+      ? `${SNOWTRACE_BASE_URL}/tx/${result.latestTxHash}`
+      : null;
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     result.errors.push(errorMsg);

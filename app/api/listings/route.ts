@@ -7,6 +7,8 @@ import { removeVietnameseTones } from "@/lib/utils/vietnamese";
 import { checkProhibitedContent } from "@/lib/utils/prohibited-words";
 import { reconcileExpiredOrders } from "@/lib/utils/order-timeouts";
 import { FALLBACK_PRODUCTS } from "@/lib/data/mock-fallback";
+import { processItemChainQueue } from "@/lib/blockchain/relayer";
+import { SNOWTRACE_BASE_URL } from "@/lib/blockchain/abi";
 
 const SCHOOL_CODE_TO_SHORTNAME: Record<string, string> = {
   "ktx-b": "KTX Khu B",
@@ -319,6 +321,7 @@ export async function POST(req: NextRequest) {
     // 7. Phân giải khóa ngoại thực tế trong PostgreSQL (User, Category, School), kiểm tra BR16 và ghi DB qua Transaction
     let createdListing = null;
     let finalPassportId: string | null = null;
+    let finalItemId: string | null = null;
 
     try {
       // 7a. Tìm hoặc đồng bộ người bán trong DB theo id hoặc email
@@ -551,11 +554,16 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        return { listing, passportId: generatedPassportId };
+        return {
+          listing,
+          passportId: generatedPassportId,
+          itemId: createdItem?.id || null,
+        };
       });
 
       createdListing = txResult.listing;
       finalPassportId = txResult.passportId;
+      finalItemId = txResult.itemId;
     } catch (dbError) {
       if (
         dbError instanceof Error &&
@@ -578,11 +586,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let latestTxHash: string | null = null;
+    let snowtraceUrl: string | null = null;
+
+    if (finalItemId && finalPassportId) {
+      try {
+        const syncResult = await processItemChainQueue(finalItemId);
+        latestTxHash = syncResult.latestTxHash;
+        snowtraceUrl =
+          syncResult.snowtraceUrl ||
+          (latestTxHash ? `${SNOWTRACE_BASE_URL}/tx/${latestTxHash}` : null);
+      } catch (chainErr) {
+        console.warn("⚠️ Lỗi phát sóng giao dịch Passport lên Fuji ngay khi đăng tin:", chainErr);
+      }
+    }
+
     return NextResponse.json(
       {
         message: "Đăng tin bán món đồ thành công!",
         listing: createdListing,
         passportId: finalPassportId,
+        txHash: latestTxHash,
+        snowtraceUrl,
       },
       { status: 201 }
     );

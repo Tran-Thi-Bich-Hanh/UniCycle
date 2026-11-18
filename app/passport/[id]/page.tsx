@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { PassportClient, PassportPayload } from "@/components/passport/PassportClient";
 import prisma from "@/lib/prisma";
+import { processItemChainQueue } from "@/lib/blockchain/relayer";
 
 interface PageProps {
   params: Promise<{
@@ -64,7 +65,7 @@ export default async function PassportPage({ params }: PageProps) {
       },
       chainTxs: {
         orderBy: { createdAt: "desc" },
-        take: 5,
+        take: 10,
       },
       listings: {
         orderBy: { createdAt: "asc" },
@@ -117,6 +118,25 @@ export default async function PassportPage({ params }: PageProps) {
         </div>
       </main>
     );
+  }
+
+  // Tự động đồng bộ giao dịch QUEUED/FAILED hoặc chưa khởi tạo lên Fuji khi mở trang Passport
+  let latestChainTxs = item.chainTxs;
+  if (
+    item.passportId &&
+    (latestChainTxs.length === 0 ||
+      latestChainTxs.some((tx) => tx.status === "QUEUED" || tx.status === "FAILED"))
+  ) {
+    try {
+      await processItemChainQueue(item.id, { repairMissingOnChain: true });
+      latestChainTxs = await prisma.chainTx.findMany({
+        where: { itemId: item.id },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      });
+    } catch (syncErr) {
+      console.warn("⚠️ Lỗi tự đồng bộ ChainTx khi mở PassportPage:", syncErr);
+    }
   }
 
   // Chuẩn bị payload cho PassportClient
@@ -182,7 +202,7 @@ export default async function PassportPage({ params }: PageProps) {
       occurredAt: e.occurredAt.toISOString(),
     })),
     listingsTimeline,
-    chainTxs: item.chainTxs.map((tx) => ({
+    chainTxs: latestChainTxs.map((tx) => ({
       id: tx.id,
       kind: tx.kind,
       status: tx.status,

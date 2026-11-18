@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { reconcileExpiredOrders } from "@/lib/utils/order-timeouts";
 import { executeOrderCompletionAndPassportTransfer } from "@/lib/utils/passport-transfer";
+import { processItemChainQueue } from "@/lib/blockchain/relayer";
+import { SNOWTRACE_BASE_URL } from "@/lib/blockchain/abi";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -45,6 +47,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
                 },
                 events: {
                   orderBy: { seq: "desc" },
+                },
+                chainTxs: {
+                  orderBy: { createdAt: "desc" },
+                  take: 5,
                 },
               },
             },
@@ -460,6 +466,21 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         );
       });
 
+      let latestTxHash: string | null = null;
+      let snowtraceUrl: string | null = null;
+
+      if (order.listing.itemId && result.passportId) {
+        try {
+          const syncResult = await processItemChainQueue(order.listing.itemId);
+          latestTxHash = syncResult.latestTxHash;
+          snowtraceUrl =
+            syncResult.snowtraceUrl ||
+            (latestTxHash ? `${SNOWTRACE_BASE_URL}/tx/${latestTxHash}` : null);
+        } catch (chainErr) {
+          console.warn("⚠️ Lỗi phát sóng giao dịch chuyển giao Passport lên Fuji:", chainErr);
+        }
+      }
+
       return NextResponse.json({
         message:
           result.transferredOwnerSeq !== null
@@ -468,6 +489,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         status: "COMPLETED",
         transferredOwnerSeq: result.transferredOwnerSeq,
         passportId: result.passportId,
+        txHash: latestTxHash,
+        snowtraceUrl,
       });
     }
 
