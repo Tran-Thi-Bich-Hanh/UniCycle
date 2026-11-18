@@ -139,8 +139,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full bg-white border-b border-[#D6E8EE] shadow-[0_2px_12px_rgba(0,27,72,0.04)]">
       {/* 1. Main Header Bar (Đã bỏ topbar xanh đen phía trên cho giao diện sạch sẽ, thoáng mắt) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-16 sm:h-20 flex items-center justify-between gap-3 lg:gap-6">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="h-16 sm:h-20 flex items-center justify-between gap-2.5 sm:gap-3 lg:gap-4">
           {/* Mobile: Nút mở Offcanvas Menu (kế thừa goal-header-mobile từ index.html) */}
           <div className="flex items-center gap-2 lg:hidden">
             <button
@@ -191,7 +191,7 @@ export function Header() {
 
           {/* Desktop: Nút Mega-Menu Danh mục (kế thừa megamenu từ index.html) */}
           <div
-            className="relative hidden lg:block"
+            className="relative hidden lg:block shrink-0"
             onMouseEnter={() => setCategoryMenuOpen(true)}
             onMouseLeave={() => setCategoryMenuOpen(false)}
           >
@@ -200,10 +200,10 @@ export function Header() {
               onClick={() => setCategoryMenuOpen((prev) => !prev)}
               aria-expanded={categoryMenuOpen}
               aria-haspopup="true"
-              className="h-11 px-4 rounded-xl bg-[#D6E8EE]/60 hover:bg-[#D6E8EE] text-[#001B48] font-semibold text-sm inline-flex items-center gap-2 transition-colors cursor-pointer"
+              className="h-11 px-3.5 sm:px-4 rounded-xl bg-[#D6E8EE]/60 hover:bg-[#D6E8EE] text-[#001B48] font-semibold text-sm inline-flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
               <svg
-                className="w-4 h-4 text-[#02457A]"
+                className="w-4 h-4 text-[#02457A] shrink-0"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -216,9 +216,9 @@ export function Header() {
                   d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
                 />
               </svg>
-              <span>Danh mục</span>
+              <span className="whitespace-nowrap">Danh mục</span>
               <svg
-                className={`w-4 h-4 text-[#02457A] transition-transform duration-200 ${
+                className={`w-4 h-4 text-[#02457A] shrink-0 transition-transform duration-200 ${
                   categoryMenuOpen ? "rotate-180" : ""
                 }`}
                 fill="none"
@@ -287,22 +287,36 @@ export function Header() {
           </div>
 
           {/* Desktop Search Bar trung tâm kèm chọn nhanh Khu vực Trường / KTX */}
-          <div className="hidden md:flex flex-1 max-w-2xl">
+          <div className="hidden md:flex flex-1 min-w-[280px] lg:min-w-[380px] max-w-3xl">
             <form onSubmit={handleSearchSubmit} className="w-full relative flex items-center bg-[#F4F9FB] rounded-xl border border-[#D6E8EE] focus-within:bg-white focus-within:border-[#018ABE] transition-colors">
               <label htmlFor="campus-select-in-bar" className="sr-only">Chọn khu vực</label>
-              <select
-                id="campus-select-in-bar"
-                value={selectedCampus.id}
-                onChange={(e) => {
-                  const found = CAMPUS_AREAS.find((c) => c.id === e.target.value);
-                  if (found) setSelectedCampus(found);
-                }}
-                className="h-11 pl-3 pr-2 bg-transparent text-xs font-semibold text-[#02457A] border-r border-[#D6E8EE] focus:outline-none cursor-pointer max-w-[145px] truncate"
-              >
-                {CAMPUS_AREAS.map((c) => (
-                  <option key={c.id} value={c.id}>{c.shortName}</option>
-                ))}
-              </select>
+              <div className="relative flex items-center shrink-0">
+                <select
+                  id="campus-select-in-bar"
+                  value={selectedCampus.id}
+                  onChange={(e) => {
+                    const found = CAMPUS_AREAS.find((c) => c.id === e.target.value);
+                    if (found) setSelectedCampus(found);
+                  }}
+                  className="h-11 pl-3 pr-6 bg-transparent text-xs font-semibold text-[#02457A] focus:outline-none cursor-pointer max-w-[125px] sm:max-w-[135px] truncate appearance-none"
+                >
+                  {CAMPUS_AREAS.map((c) => (
+                    <option key={c.id} value={c.id}>{c.shortName}</option>
+                  ))}
+                </select>
+                <svg
+                  className="w-3.5 h-3.5 text-[#02457A] pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.2}
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+                {/* Đường vạch ngăn cách thoáng đãng, cân đối */}
+                <div className="h-5 w-px bg-[#D6E8EE] self-center ml-0.5 mr-1 shrink-0" />
+              </div>
 
               <label htmlFor="desktop-search-input" className="sr-only">
                 Tìm kiếm giáo trình, đồ gia dụng KTX, đồ điện tử
@@ -313,11 +327,11 @@ export function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm giáo trình, quạt điện, bàn học KTX..."
-                className="flex-1 h-11 px-3 bg-transparent text-sm text-[#001B48] placeholder:text-slate-400 focus:outline-none"
+                className="flex-1 min-w-0 h-11 px-3 bg-transparent text-sm text-[#001B48] placeholder:text-slate-400 focus:outline-none"
               />
               <button
                 type="submit"
-                className="mr-1.5 h-8 px-3.5 rounded-lg bg-[#02457A] hover:bg-[#018ABE] text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                className="mr-1.5 h-8 px-3 rounded-lg bg-[#02457A] hover:bg-[#018ABE] text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
               >
                 <svg
                   className="w-3.5 h-3.5"
@@ -339,7 +353,7 @@ export function Header() {
           </div>
 
           {/* Cụm hành động bên phải (Desktop + Mobile) */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-2.5 shrink-0">
             {/* Nút mở thanh tìm kiếm trên Mobile */}
             <button
               type="button"
