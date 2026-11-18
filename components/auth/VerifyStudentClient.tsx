@@ -345,7 +345,17 @@ export function VerifyStudentClient() {
               : "bg-rose-50 border-rose-200 text-rose-900"
           }`}
         >
-          <span className="text-base leading-none">{feedback.type === "success" ? "✓" : "⚠️"}</span>
+          <span className="text-base leading-none shrink-0">
+            {feedback.type === "success" ? (
+              <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            )}
+          </span>
           <span>{feedback.message}</span>
         </div>
       )}
@@ -473,7 +483,9 @@ export function VerifyStudentClient() {
               <form onSubmit={handleSubmitCard} className="space-y-5">
                 <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 text-xs text-[#001B48] space-y-1.5">
                   <p className="font-bold flex items-center gap-1.5">
-                    <span>🛡️</span>
+                    <svg className="w-4 h-4 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
                     <span>Cam kết Bảo vệ Dữ liệu Cá nhân (Nghị định 13/2023/NĐ-CP)</span>
                   </p>
                   <p className="text-[#02457A] leading-relaxed">

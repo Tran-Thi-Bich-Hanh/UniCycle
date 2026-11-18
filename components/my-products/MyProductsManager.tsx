@@ -397,7 +397,11 @@ export function MyProductsManager() {
         <div className="bg-gradient-to-br from-slate-900 to-[#001B48] text-white rounded-2xl p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-[#D6E8EE]">Digital Passport</span>
-            <span className="text-sm">📜</span>
+            <span className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-[#97CADB]">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </span>
           </div>
           <span className="text-2xl sm:text-3xl font-extrabold text-white">
             {passportCount}
@@ -410,7 +414,9 @@ export function MyProductsManager() {
       {actionError && (
         <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-base">⚠️</span>
+            <svg className="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
             <span>{actionError}</span>
           </div>
           <button onClick={() => setActionError(null)} className="font-bold text-rose-500 hover:text-rose-700 cursor-pointer">
@@ -422,7 +428,9 @@ export function MyProductsManager() {
       {actionSuccess && (
         <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs sm:text-sm flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-base">✅</span>
+            <svg className="w-4 h-4 text-emerald-600 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
             <span>{actionSuccess}</span>
           </div>
           <button onClick={() => setActionSuccess(null)} className="font-bold text-emerald-500 hover:text-emerald-700 cursor-pointer">
@@ -566,8 +574,12 @@ export function MyProductsManager() {
                           {listing.condition}
                         </span>
                         <span className="text-slate-300">•</span>
-                        <span className="text-[#02457A] font-medium">
-                          📍 {listing.school?.shortName || "Làng ĐH"}
+                        <span className="text-[#02457A] font-medium flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span>{listing.school?.shortName || "Làng ĐH"}</span>
                         </span>
                       </div>
 
@@ -575,14 +587,19 @@ export function MyProductsManager() {
                       {listing.item?.passportEnabled && (
                         <Link
                           href={`/passport/${listing.item.passportId || listing.item.id}`}
-                          className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-mono transition-colors group cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-mono transition-colors group cursor-pointer"
                           title="Xem Digital Product Passport trên Blockchain"
                         >
+                          <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
                           <span className="text-emerald-400 group-hover:underline">
-                            📜 Đời chủ #{listing.item.owners?.length || 1}
+                            Đời chủ #{listing.item.owners?.length || 1}
                           </span>
                           <span className="text-slate-400 group-hover:text-slate-200 truncate max-w-[150px] sm:max-w-[200px]">
-                            {listing.item.passportId || "0x..."}
+                            {listing.item.passportId
+                              ? `${listing.item.passportId.slice(0, 10)}...${listing.item.passportId.slice(-6)}`
+                              : "0x..."}
                           </span>
                           <span className="text-slate-500 group-hover:text-white text-[10px]">↗</span>
                         </Link>
@@ -591,17 +608,20 @@ export function MyProductsManager() {
                   </div>
 
                   {/* Cột phải: Cụm nút thao tác (Actions) */}
-                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
+                  <div className="flex flex-wrap lg:max-w-[420px] xl:max-w-none xl:justify-end items-center gap-2 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
                     {/* Nút Chốt bán Zalo (BR38) */}
                     {!isReserved && !isSold && !isHidden && (
                       <button
                         type="button"
                         onClick={() => handleCreateInvite(listing.id, listing.title)}
                         disabled={generatingInviteId === listing.id}
-                        className="px-3 py-2 rounded-xl text-xs font-bold bg-[#0068FF]/10 text-[#0068FF] hover:bg-[#0068FF]/20 border border-[#0068FF]/30 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                        className="h-9 px-3 rounded-xl text-xs font-bold bg-[#0068FF]/10 text-[#0068FF] hover:bg-[#0068FF]/20 border border-[#0068FF]/30 transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
                         title="Tạo link chốt bán nhanh cho khách Zalo 24h (BR38)"
                       >
-                        <span>{generatingInviteId === listing.id ? "Đang tạo..." : "📲 Chốt bán Zalo"}</span>
+                        <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+                          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.02l-.95 3.51a.6.6 0 0 0 .78.71l3.9-1.62c.76.22 1.57.38 2.41.38 5.52 0 10-4.03 10-9s-4.48-9-10-9zm5.54 11.23c-.23.63-1.18 1.18-1.65 1.25-.43.06-.99.09-1.6-.11a14.28 14.28 0 0 1-4.45-2.73 13.9 13.9 0 0 1-2.65-4.17c-.22-.61-.22-1.17-.15-1.6.07-.47.62-1.42 1.25-1.65.23-.09.49-.07.69.05.27.16 1.09 1.93 1.19 2.13.06.13.07.28.02.41-.09.23-.39.69-.47.81-.11.16-.2.27-.08.48.24.42.78 1.26 1.48 1.91.7.64 1.55 1.13 1.98 1.34.22.11.33.02.48-.09.12-.08.58-.38.81-.47.13-.05.28-.04.41.02.2.1 1.97.92 2.13 1.19.12.2.14.46.05.69z" />
+                        </svg>
+                        <span>{generatingInviteId === listing.id ? "Đang tạo..." : "Chốt bán Zalo"}</span>
                       </button>
                     )}
 
@@ -610,14 +630,17 @@ export function MyProductsManager() {
                       type="button"
                       onClick={() => openEditModal(listing)}
                       disabled={isReserved}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                      className={`h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border inline-flex items-center gap-1.5 whitespace-nowrap ${
                         isReserved
                           ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                           : "bg-white text-[#001B48] border-[#D6E8EE] hover:bg-[#D6E8EE]/40 hover:border-[#018ABE]"
                       }`}
                       title={isReserved ? "Không thể sửa khi đang giữ chỗ (BR18)" : "Chỉnh sửa thông tin"}
                     >
-                      ✏️ Sửa tin
+                      <svg className="w-3.5 h-3.5 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      <span>Sửa tin</span>
                     </button>
 
                     {/* Nút Tạm ẩn / Mở lại */}
@@ -626,7 +649,7 @@ export function MyProductsManager() {
                         type="button"
                         onClick={() => handleToggleVisibility(listing)}
                         disabled={isReserved}
-                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        className={`h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border inline-flex items-center gap-1.5 whitespace-nowrap ${
                           isReserved
                             ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                             : isHidden
@@ -635,7 +658,22 @@ export function MyProductsManager() {
                         }`}
                         title={isReserved ? "Không thể ẩn khi đang giữ chỗ (BR18)" : ""}
                       >
-                        {isHidden ? "👁️ Mở lại" : "🔒 Tạm ẩn"}
+                        {isHidden ? (
+                          <>
+                            <svg className="w-3.5 h-3.5 text-emerald-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>Mở lại</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3.5 h-3.5 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                            </svg>
+                            <span>Tạm ẩn</span>
+                          </>
+                        )}
                       </button>
                     )}
 
@@ -644,10 +682,13 @@ export function MyProductsManager() {
                       <button
                         type="button"
                         onClick={() => handleMarkSold(listing.id)}
-                        className="px-3 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                        className="h-9 px-3 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
                         title="Đánh dấu đã bán xong (BR10)"
                       >
-                        🤝 Đã bán
+                        <svg className="w-3.5 h-3.5 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Đã bán</span>
                       </button>
                     )}
 
@@ -655,10 +696,13 @@ export function MyProductsManager() {
                     <button
                       type="button"
                       onClick={() => handleRenew(listing.id)}
-                      className="px-3 py-2 rounded-xl text-xs font-bold bg-blue-50 text-[#018ABE] border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                      className="h-9 px-3 rounded-xl text-xs font-bold bg-blue-50 text-[#018ABE] border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
                       title="Gia hạn tin đăng 30 ngày (BR15)"
                     >
-                      🔄 Gia hạn
+                      <svg className="w-3.5 h-3.5 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Gia hạn</span>
                     </button>
 
                     {/* Nút Xóa tin (Khóa tuyệt đối nếu RESERVED theo BR18) */}
@@ -666,7 +710,7 @@ export function MyProductsManager() {
                       type="button"
                       onClick={() => handleDelete(listing)}
                       disabled={isReserved || listing.hasActiveOrder}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                      className={`h-9 w-9 rounded-xl text-xs font-bold transition-all cursor-pointer border inline-flex items-center justify-center shrink-0 ${
                         isReserved || listing.hasActiveOrder
                           ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                           : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
@@ -677,7 +721,9 @@ export function MyProductsManager() {
                           : "Xóa tin đăng vĩnh viễn"
                       }
                     >
-                      🗑️
+                      <svg className="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -789,8 +835,11 @@ export function MyProductsManager() {
                   onChange={(e) => setEditHidePhone(e.target.checked)}
                   className="rounded text-[#018ABE] focus:ring-[#018ABE] cursor-pointer"
                 />
-                <label htmlFor="editHidePhoneCheck" className="text-xs text-[#001B48] font-semibold cursor-pointer">
-                  🛡️ Ẩn SĐT công khai, người mua liên hệ qua nút Zalo bảo mật (BR36)
+                <label htmlFor="editHidePhoneCheck" className="text-xs text-[#001B48] font-semibold cursor-pointer flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <span>Ẩn SĐT công khai, người mua liên hệ qua nút Zalo bảo mật (BR36)</span>
                 </label>
               </div>
 

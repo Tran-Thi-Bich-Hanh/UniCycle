@@ -298,7 +298,11 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center">
         <div className="bg-white rounded-3xl p-8 border border-[#D6E8EE] space-y-4">
-          <div className="text-3xl">⚠️</div>
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
           <h2 className="text-lg font-extrabold text-[#001B48]">Không thể hiển thị đơn hẹn</h2>
           <p className="text-xs sm:text-sm text-slate-600">{error || "Đơn hẹn không tồn tại."}</p>
           <Link
@@ -405,7 +409,12 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
 
         {isDisputed ? (
           <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-800 space-y-1.5">
-            <p className="font-bold">🚨 Đơn hàng đang trong trạng thái Khiếu Nại (DISPUTED - BR13)</p>
+            <p className="font-bold flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>Đơn hàng đang trong trạng thái Khiếu Nại (DISPUTED - BR13)</span>
+            </p>
             <p>
               <strong>Lý do từ người mua:</strong> {order.disputeReason}
             </p>
@@ -474,8 +483,12 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#018ABE] block">
               Thông tin gặp mặt
             </span>
-            <p className="text-[#001B48]">
-              <strong>📍 Địa điểm:</strong> {order.meetPlace}
+            <p className="text-[#001B48] flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span><strong>Địa điểm:</strong> {order.meetPlace}</span>
             </p>
             <p className="text-[#001B48]">
               <strong>⏰ Thời gian hẹn:</strong> {formatDateTime(order.meetTime)}
@@ -586,7 +599,10 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
               <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-[#001B48] text-white space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs sm:text-sm font-bold flex items-center gap-2">
-                    <span>📜 Digital Product Passport</span>
+                    <svg className="w-4 h-4 text-[#97CADB]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Digital Product Passport</span>
                     {latestOwner && (
                       <span className="text-[11px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
                         Đời chủ hiện tại: #{latestOwner.seq}
@@ -618,7 +634,10 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                     href={`/passport/${passportRouteId}`}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition-colors"
                   >
-                    <span>📜 Xem trang Passport chi tiết ↗</span>
+                    <svg className="w-3.5 h-3.5 text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Xem trang Passport chi tiết ↗</span>
                   </Link>
 
                   {latestChainTx?.txHash && (
@@ -628,7 +647,10 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 border border-sky-400/40 text-xs font-bold transition-colors"
                     >
-                      <span>⛓️ Xem giao dịch trên Snowtrace Fuji ↗</span>
+                      <svg className="w-3.5 h-3.5 text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      <span>Xem giao dịch trên Snowtrace Fuji ↗</span>
                     </a>
                   )}
 
@@ -637,7 +659,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                       href="/my-products"
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors"
                     >
-                      <span>Mở Đồ của tôi (/my-products) ↗</span>
+                      <span>Mở Đồ của tôi ↗</span>
                     </Link>
                   )}
                 </div>
@@ -793,9 +815,12 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                     setDisputeError(null);
                     setDisputeOpen(true);
                   }}
-                  className="px-4 py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold shadow-sm cursor-pointer disabled:opacity-50"
+                  className="px-4 py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold shadow-sm cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
-                  🚨 Tôi chưa nhận hàng (Khiếu nại)
+                  <svg className="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Tôi chưa nhận hàng (Khiếu nại)</span>
                 </button>
               )}
 
@@ -842,9 +867,12 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
               {isBuyer && order.listing.item?.passportEnabled && (
                 <Link
                   href="/my-products"
-                  className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm"
+                  className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm inline-flex items-center gap-1.5"
                 >
-                  📜 Mở Đồ của tôi
+                  <svg className="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Mở Đồ của tôi</span>
                 </Link>
               )}
             </>

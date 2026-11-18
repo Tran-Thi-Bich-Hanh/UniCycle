@@ -142,7 +142,9 @@ export function ReviewModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
             <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
-              <span>⚠️</span>
+              <svg className="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
               <span>{error}</span>
             </div>
           )}
@@ -243,7 +245,9 @@ export function ReviewModal({
 
           {/* 4. Banner giải thích cơ chế Blind Review 48h (BR14) */}
           <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-start gap-2.5">
-            <span className="text-base shrink-0">🛡️</span>
+            <svg className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
             <div>
               <strong className="block text-[11px] uppercase tracking-wider text-amber-950 font-extrabold mb-0.5">
                 Cơ chế Đánh Giá Bí Mật 48 Giờ (Blind Review - BR14)

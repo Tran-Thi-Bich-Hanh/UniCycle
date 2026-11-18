@@ -322,8 +322,12 @@ export function ProfileClient() {
                   {(profile.school?.shortName || profile.dorm) && (
                     <>
                       <span>•</span>
-                      <span>
-                        📍 {profile.dorm || profile.school?.shortName}
+                      <span className="inline-flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>{profile.dorm || profile.school?.shortName}</span>
                       </span>
                     </>
                   )}
@@ -405,13 +409,16 @@ export function ProfileClient() {
           <button
             type="button"
             onClick={() => handleTabChange("privacy")}
-            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
               activeTab === "privacy"
                 ? "bg-white text-[#001B48] border-[#018ABE]"
                 : "text-slate-600 border-transparent hover:text-[#02457A]"
             }`}
           >
-            🛡️ Quyền riêng tư &amp; Xóa tài khoản
+            <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Quyền riêng tư &amp; Xóa tài khoản</span>
           </button>
         </div>
 
@@ -425,7 +432,17 @@ export function ProfileClient() {
                   : "bg-rose-50 border-rose-200 text-rose-900"
               }`}
             >
-              <span>{feedback.type === "success" ? "✓" : "⚠️"}</span>
+              <span className="shrink-0 mt-0.5">
+                {feedback.type === "success" ? (
+                  <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                )}
+              </span>
               <span>{feedback.message}</span>
             </div>
           )}
@@ -656,12 +673,17 @@ export function ProfileClient() {
                 </div>
 
                 {stats.blockingOrdersCount > 0 && (
-                  <div className="p-3 rounded-xl bg-amber-100/80 border border-amber-300 text-xs text-amber-950 font-semibold">
-                    ⚠️ Bạn đang có {stats.blockingOrdersCount} đơn hẹn ở trạng thái giữ chỗ, chờ xác nhận 48h hoặc khiếu nại. Vui lòng xử lý xong tại trang{" "}
-                    <Link href="/orders" className="underline font-bold">
-                      Quản lý đơn hẹn
-                    </Link>{" "}
-                    trước khi xóa tài khoản.
+                  <div className="p-3 rounded-xl bg-amber-100/80 border border-amber-300 text-xs text-amber-950 font-semibold flex items-start gap-2">
+                    <svg className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>
+                      Bạn đang có {stats.blockingOrdersCount} đơn hẹn ở trạng thái giữ chỗ, chờ xác nhận 48h hoặc khiếu nại. Vui lòng xử lý xong tại trang{" "}
+                      <Link href="/orders" className="underline font-bold">
+                        Quản lý đơn hẹn
+                      </Link>{" "}
+                      trước khi xóa tài khoản.
+                    </span>
                   </div>
                 )}
 

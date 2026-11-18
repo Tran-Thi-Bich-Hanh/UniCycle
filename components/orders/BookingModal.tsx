@@ -120,8 +120,10 @@ export function BookingModal({
         {/* Header Modal */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
           <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-xl bg-[#018ABE]/10 text-[#018ABE] flex items-center justify-center text-lg">
-              📅
+            <span className="w-8 h-8 rounded-xl bg-[#018ABE]/10 text-[#018ABE] flex items-center justify-center">
+              <svg className="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </span>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-[#001B48]">
