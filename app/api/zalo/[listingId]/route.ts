@@ -68,6 +68,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           seller: {
             select: {
               id: true,
+              email: true,
               displayName: true,
               avatarUrl: true,
               schoolId: true,
@@ -92,6 +93,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           hidePhone: false,
           seller: {
             id: fallback.seller.id,
+            email: null as string | null,
             displayName: fallback.seller.displayName,
             avatarUrl: fallback.seller.avatarUrl,
             schoolId: fallback.school?.id || null,
@@ -115,7 +117,13 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const isOwner = user.id === listing.seller.id;
+    const isOwner =
+      user.id === listing.seller.id ||
+      Boolean(
+        user.email &&
+          listing.seller.email &&
+          user.email.toLowerCase() === listing.seller.email.toLowerCase()
+      );
     const isAdmin = user.role === "ADMIN";
     const hidePhone = Boolean(listing.hidePhone);
 

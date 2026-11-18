@@ -351,6 +351,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
                   fill
                   sizes="128px"
                   className="object-contain p-1"
+                  unoptimized
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[11px] font-bold transition-opacity rounded-xl">
                   Phóng to ↗
@@ -904,6 +905,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
                 fill
                 sizes="256px"
                 className="object-contain p-2"
+                unoptimized
               />
             </div>
 

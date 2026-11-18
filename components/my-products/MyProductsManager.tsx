@@ -857,7 +857,7 @@ export function MyProductsManager() {
             {/* Mã QR */}
             <div className="flex flex-col items-center justify-center p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
               <div className="relative w-40 h-40 rounded-xl overflow-hidden bg-white p-2 border">
-                <Image src={inviteModalData.qrUrl} alt="Invite QR" fill className="object-contain p-1" />
+                <Image src={inviteModalData.qrUrl} alt="Invite QR" fill className="object-contain p-1" unoptimized />
               </div>
               <span className="text-[11px] text-slate-500 mt-2">Quét mã để mở link xác nhận mua ngay</span>
             </div>

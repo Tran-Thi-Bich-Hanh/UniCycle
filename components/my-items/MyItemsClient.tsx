@@ -361,6 +361,7 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
                 fill
                 sizes="256px"
                 className="object-contain p-2"
+                unoptimized
               />
             </div>
 

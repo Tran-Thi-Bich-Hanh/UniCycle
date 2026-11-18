@@ -74,6 +74,7 @@ export function ProductDetailClient({
 
   // User session
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const isOwner = currentUserId === product.seller.id;
 
   // Zalo Contact Dialog State
@@ -100,9 +101,11 @@ export function ProductDetailClient({
 
   // Mở Zalo qua route bảo mật /api/zalo/[listingId]
   const handleOpenZalo = useCallback(async () => {
-    // Nếu chưa đăng nhập: chuyển tới trang đăng nhập với returnTo (BR01)
-    if (!currentUserId) {
-      router.push(`/login?returnTo=/products/${product.id}?action=zalo`);
+    const returnUrl = encodeURIComponent(`/products/${product.id}?action=zalo`);
+
+    // Nếu đã kiểm tra session và chưa đăng nhập: chuyển tới trang đăng nhập với returnTo (BR01)
+    if (authChecked && !currentUserId) {
+      router.push(`/login?returnTo=${returnUrl}`);
       return;
     }
 
@@ -116,7 +119,8 @@ export function ProductDetailClient({
 
       if (!res.ok) {
         if (res.status === 401) {
-          router.push(`/login?returnTo=/products/${product.id}?action=zalo`);
+          setZaloDialogOpen(false);
+          router.push(`/login?returnTo=${returnUrl}`);
           return;
         }
         setZaloError(data.error || "Không thể lấy thông tin liên hệ Zalo.");
@@ -129,7 +133,7 @@ export function ProductDetailClient({
     } finally {
       setZaloLoading(false);
     }
-  }, [currentUserId, product.id, router]);
+  }, [authChecked, currentUserId, product.id, router]);
 
   // Lấy session user
   useEffect(() => {
@@ -145,6 +149,10 @@ export function ProductDetailClient({
         }
       } catch (err) {
         console.warn("Lỗi kiểm tra session:", err);
+      } finally {
+        if (!ignore) {
+          setAuthChecked(true);
+        }
       }
     }
     fetchMe();
@@ -155,20 +163,31 @@ export function ProductDetailClient({
 
   // Xử lý tự động kích hoạt action nếu quay lại từ redirect login (?action=zalo hoặc ?action=book)
   useEffect(() => {
+    if (!authChecked) return;
     const action = searchParams.get("action");
-    if (action === "zalo" && currentUserId) {
+
+    if (action === "zalo") {
+      if (!currentUserId) {
+        router.push(`/login?returnTo=${encodeURIComponent(`/products/${product.id}?action=zalo`)}`);
+        return;
+      }
       const timer = setTimeout(() => {
         handleOpenZalo();
       }, 50);
       return () => clearTimeout(timer);
     }
-    if (action === "book" && currentUserId) {
+
+    if (action === "book") {
+      if (!currentUserId) {
+        router.push(`/login?returnTo=${encodeURIComponent(`/products/${product.id}?action=book`)}`);
+        return;
+      }
       const timer = setTimeout(() => {
         setIsBookingModalOpen(true);
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [searchParams, currentUserId, handleOpenZalo]);
+  }, [searchParams, authChecked, currentUserId, product.id, router, handleOpenZalo]);
 
   const images = product.images && product.images.length > 0
     ? product.images
@@ -201,7 +220,7 @@ export function ProductDetailClient({
   // Xử lý Đặt lịch hẹn
   const handleBookMeeting = () => {
     if (!currentUserId) {
-      router.push(`/login?returnTo=/products/${product.id}?action=book`);
+      router.push(`/login?returnTo=${encodeURIComponent(`/products/${product.id}?action=book`)}`);
       return;
     }
 
@@ -468,12 +487,21 @@ export function ProductDetailClient({
             {/* CỤM DUAL CTA (Section 4.3.A) */}
             <div className="space-y-3 pt-2">
               {isOwner ? (
-                <Link
-                  href="/my-products"
-                  className="w-full py-3.5 px-4 rounded-2xl bg-[#001B48] hover:bg-[#02457A] text-white text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  <span>⚙️ Quản lý tin đăng của bạn (/my-products)</span>
-                </Link>
+                <div className="space-y-2.5">
+                  <Link
+                    href="/my-products"
+                    className="w-full py-3.5 px-4 rounded-2xl bg-[#001B48] hover:bg-[#02457A] text-white text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>⚙️ Quản lý tin đăng của bạn (/my-products)</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleOpenZalo}
+                    className="w-full py-2.5 px-4 rounded-2xl bg-sky-50 hover:bg-sky-100 text-[#0068FF] border border-sky-200 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>💬 Xem thông tin liên hệ Zalo</span>
+                  </button>
+                </div>
               ) : isSold ? (
                 <button
                   disabled
@@ -486,13 +514,20 @@ export function ProductDetailClient({
                   🚨 Món đồ này đang bị gắn cờ nghi vấn tranh chấp / vi phạm (BR32, BR39), tạm khóa giao dịch mới.
                 </div>
               ) : isReserved ? (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <button
                     disabled
                     className="w-full py-3.5 px-4 rounded-2xl bg-amber-100 text-amber-800 border border-amber-300 text-sm font-bold cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                     Đang giữ chỗ cho người mua trước
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenZalo}
+                    className="w-full py-3 px-4 rounded-2xl bg-[#0068FF] hover:bg-[#0052cc] text-white text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>💬 Nhắn Zalo người bán</span>
                   </button>
                   <p className="text-[11px] text-center text-slate-500">
                     Nếu buổi hẹn không diễn ra, món đồ sẽ tự động mở bán lại sau 24h (BR37).
@@ -650,11 +685,23 @@ export function ProductDetailClient({
                       alt="Zalo QR"
                       fill
                       className="object-contain p-2"
+                      unoptimized
                     />
                   </div>
                   <span className="text-xs text-slate-600 font-medium mt-2.5 text-center">
                     Quét mã QR bằng ứng dụng Zalo trên điện thoại
                   </span>
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-bold text-[#001B48]">
+                    <span>📞 SĐT Zalo:</span>
+                    <span className="font-mono text-[#0068FF]">
+                      {zaloData.phoneRaw || zaloData.maskedPhone}
+                    </span>
+                    {zaloData.hidePhone && !zaloData.phoneRaw && (
+                      <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                        Đã che (BR36)
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Tin nhắn mẫu sinh viên */}
@@ -666,7 +713,7 @@ export function ProductDetailClient({
                     <button
                       type="button"
                       onClick={handleCopyMessage}
-                      className="text-[11px] font-bold text-[#0068FF] hover:underline"
+                      className="text-[11px] font-bold text-[#0068FF] hover:underline cursor-pointer"
                     >
                       {copiedMessage ? "✓ Đã sao chép" : "Sao chép lời nhắn"}
                     </button>
@@ -682,16 +729,23 @@ export function ProductDetailClient({
                     href={zaloData.zaloUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => {
+                      if (zaloData.prefilledMessage && navigator.clipboard) {
+                        navigator.clipboard.writeText(zaloData.prefilledMessage).catch(() => {});
+                        setCopiedMessage(true);
+                        setTimeout(() => setCopiedMessage(false), 2000);
+                      }
+                    }}
                     className="w-full py-3 px-4 rounded-xl bg-[#0068FF] hover:bg-[#0052cc] text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
                   >
-                    <span>📱 Mở Ứng Dụng Zalo</span>
+                    <span>📱 Mở Ứng Dụng Zalo (Đã chép lời nhắn)</span>
                   </a>
 
                   {zaloData.phoneRaw && !zaloData.hidePhone && (
                     <button
                       type="button"
                       onClick={handleCopyPhone}
-                      className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#001B48] text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                      className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#001B48] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span>{copiedPhone ? "✓ Đã sao chép" : `Sao chép số: ${zaloData.phoneRaw}`}</span>
                     </button>
