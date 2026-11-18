@@ -70,6 +70,25 @@ export interface PassportPayload {
   }>;
 }
 
+export interface OnChainVerificationReport {
+  passportId: string;
+  itemId: string;
+  status: "VERIFIED_MATCH" | "PENDING_SYNC" | "MISMATCH_DETECTED" | "NOT_ANCHORED_YET" | "SIMULATED_MODE";
+  contractAddress: string;
+  network: string;
+  checks: {
+    exists: { passed: boolean; offChain: boolean; onChain: boolean };
+    commitMatch: { passed: boolean; offChain: string | null; onChain: string | null };
+    ownerMatch: { passed: boolean; offChain: string | null; onChain: string | null };
+    transferCountMatch: { passed: boolean; offChain: number; onChain: number };
+    flagStatusMatch: { passed: boolean; offChain: boolean; onChain: boolean };
+  };
+  explorerUrl: string;
+  latestTxHash: string | null;
+  message: string;
+  verifiedAt: string;
+}
+
 interface PassportClientProps {
   initialData: PassportPayload;
 }
@@ -80,11 +99,70 @@ export function PassportClient({ initialData }: PassportClientProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
 
+  // Trạng thái kiểm chứng On-Chain và Đồng bộ Relayer (Sprint 5 Task 5.1)
+  const [activeChainTxs, setActiveChainTxs] = useState(chainTxs);
+  const [verificationReport, setVerificationReport] = useState<OnChainVerificationReport | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null);
+
   const handleCopyId = () => {
     if (passport.passportId) {
       navigator.clipboard.writeText(passport.passportId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleVerifyOnChain = async () => {
+    setIsVerifying(true);
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/passport/${passport.passportId}/verify`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Không thể kiểm chứng dữ liệu on-chain.");
+      }
+      setVerificationReport(data.report);
+      setFeedback({
+        type: "success",
+        message: data.report?.message || "Kiểm chứng trực tiếp trên Avalanche Fuji RPC hoàn tất!",
+      });
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Đã xảy ra lỗi khi kiểm chứng on-chain.",
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleSyncRelayer = async () => {
+    setIsSyncing(true);
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/passport/${passport.passportId}/verify`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Không thể kích hoạt Relayer đồng bộ.");
+      }
+      if (data.report) {
+        setVerificationReport(data.report);
+      }
+      setFeedback({
+        type: "success",
+        message: data.message || "Đã kích hoạt Relayer và đồng bộ giao dịch lên Avalanche Fuji thành công!",
+      });
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Đã xảy ra lỗi khi kích hoạt Relayer.",
+      });
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -357,69 +435,316 @@ export function PassportClient({ initialData }: PassportClientProps) {
         </div>
 
         {/* 5. Khối Lát Cắt Công Nghệ Blockchain (Avalanche Fuji Testnet) */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#D6E8EE] shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-extrabold text-[#001B48] text-base sm:text-lg flex items-center gap-2">
-              <span>❄️</span>
-              <span>Bảo Chứng Bất Biến (Avalanche Fuji C-Chain)</span>
-            </h3>
-            <span className="text-[11px] font-mono font-bold text-sky-800 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
-              Fuji Testnet
-            </span>
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#D6E8EE] shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">❄️</span>
+                <h3 className="font-extrabold text-[#001B48] text-base sm:text-lg">
+                  Bảo Chứng Bất Biến (Avalanche Fuji C-Chain)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Kiến trúc lai On-Chain ↔ Off-Chain: Bản quyền dữ liệu cá nhân (PII) được bảo vệ an toàn trong PostgreSQL, còn mã băm cam kết món đồ và lịch sử đời chủ được bảo chứng bất biến trên chuỗi Avalanche Fuji (Chain ID 43113).
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-mono font-bold text-sky-800 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200">
+                Fuji Testnet (43113)
+              </span>
+            </div>
           </div>
 
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Mỗi sự kiện chuyển giao sở hữu được hệ thống neo bằng hash bất biến. Người mua có thể đối chiếu các bản ghi on-chain với dữ liệu hiển thị để đảm bảo lịch sử không bị can thiệp.
-          </p>
+          {/* Action Bar: Xác minh Fuji RPC & Kích hoạt Relayer */}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleVerifyOnChain}
+              disabled={isVerifying || isSyncing}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-98"
+            >
+              {isVerifying ? (
+                <>
+                  <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  <span>Đang đọc Fuji RPC...</span>
+                </>
+              ) : (
+                <>
+                  <span>🔍</span>
+                  <span>Xác minh trực tiếp trên Blockchain (Fuji RPC)</span>
+                </>
+              )}
+            </button>
 
-          {chainTxs.length > 0 ? (
-            <div className="space-y-2">
-              {chainTxs.map((tx) => (
-                <div
-                  key={tx.id}
-                  className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                >
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-[#001B48]">
-                      Giao dịch: {tx.kind}
-                    </span>
-                    <div className="font-mono text-[11px] text-slate-500 truncate max-w-sm">
-                      Tx: {tx.txHash || "Đang xếp hàng gửi lên Avalanche Fuji (QUEUED)..."}
-                    </div>
-                  </div>
+            <button
+              type="button"
+              onClick={handleSyncRelayer}
+              disabled={isVerifying || isSyncing}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-98"
+            >
+              {isSyncing ? (
+                <>
+                  <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  <span>Relayer đang phát sóng...</span>
+                </>
+              ) : (
+                <>
+                  <span>⚡</span>
+                  <span>Đồng bộ Relayer lên Fuji ngay</span>
+                </>
+              )}
+            </button>
 
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                        tx.status === "CONFIRMED"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : tx.status === "QUEUED"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {tx.status}
-                    </span>
-                    {tx.txHash && (
-                      <a
-                        href={`https://testnet.snowtrace.io/tx/${tx.txHash}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] font-bold text-[#018ABE] hover:underline"
-                      >
-                        Snowtrace ↗
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-3.5 bg-sky-50/70 border border-sky-100 rounded-xl text-xs text-sky-900 flex items-center justify-between">
-              <span>Bản ghi đã được bảo chứng toàn vẹn trong cơ sở dữ liệu hệ thống (Off-chain DB).</span>
-              <span className="text-[11px] font-bold text-sky-700">Trạng thái: Sẵn sàng</span>
+            <a
+              href="https://testnet.snowtrace.io"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#02457A] hover:bg-slate-100 transition-colors ml-auto border border-slate-200"
+            >
+              <span>Snowtrace Fuji Explorer</span>
+              <span>↗</span>
+            </a>
+          </div>
+
+          {/* Banner thông báo kết quả */}
+          {feedback && (
+            <div
+              className={`p-3.5 rounded-2xl text-xs font-medium border flex items-start gap-2.5 animate-in fade-in ${
+                feedback.type === "success"
+                  ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+                  : feedback.type === "error"
+                  ? "bg-rose-50 text-rose-900 border-rose-200"
+                  : "bg-sky-50 text-sky-900 border-sky-200"
+              }`}
+            >
+              <span className="text-base leading-none">
+                {feedback.type === "success" ? "✓" : feedback.type === "error" ? "⚠️" : "ℹ️"}
+              </span>
+              <div className="flex-1">{feedback.message}</div>
             </div>
           )}
+
+          {/* Bảng đối chiếu 2 cột: Off-Chain (PostgreSQL) ↔ On-Chain (Avalanche Fuji) */}
+          {verificationReport && (
+            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50/50 space-y-4 p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-sm text-[#001B48]">
+                    Bảng Đối Chiếu Tính Toàn Vẹn Độc Lập
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      verificationReport.status === "VERIFIED_MATCH"
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                        : verificationReport.status === "PENDING_SYNC"
+                        ? "bg-amber-100 text-amber-800 border border-amber-300"
+                        : verificationReport.status === "SIMULATED_MODE"
+                        ? "bg-sky-100 text-sky-800 border border-sky-300"
+                        : "bg-rose-100 text-rose-800 border border-rose-300"
+                    }`}
+                  >
+                    {verificationReport.status === "VERIFIED_MATCH" && "Khớp toàn vẹn 100% ✓"}
+                    {verificationReport.status === "PENDING_SYNC" && "Chờ Relayer đồng bộ ⏳"}
+                    {verificationReport.status === "SIMULATED_MODE" && "Chế độ mô phỏng xác định 🧪"}
+                    {verificationReport.status === "NOT_ANCHORED_YET" && "Chưa neo on-chain"}
+                    {verificationReport.status === "MISMATCH_DETECTED" && "Cảnh báo sai lệch ⚠️"}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono">
+                  Kiểm chứng: {new Date(verificationReport.verifiedAt).toLocaleTimeString("vi-VN")}
+                </div>
+              </div>
+
+              {/* Grid 2 Cột */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {/* Cột 1: Off-Chain PostgreSQL */}
+                <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="font-bold text-[#001B48] flex items-center gap-1.5">
+                      <span>🗄️</span> CSDL Off-Chain (PostgreSQL)
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded">
+                      Local DB
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-[11px] text-slate-500">Mã băm cam kết món đồ (itemCommit):</div>
+                      <div className="font-mono text-[11px] text-slate-800 break-all font-semibold bg-slate-50 p-1.5 rounded border border-slate-100">
+                        {verificationReport.checks.commitMatch.offChain || "Chưa khởi tạo"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-500">Mã đời chủ hiện tại (ownerHash):</div>
+                      <div className="font-mono text-[11px] text-slate-800 break-all font-semibold bg-slate-50 p-1.5 rounded border border-slate-100">
+                        {verificationReport.checks.ownerMatch.offChain || "Chưa có"}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] text-slate-500">Số lần chuyển giao:</span>
+                      <span className="font-bold text-[#001B48]">
+                        {verificationReport.checks.transferCountMatch.offChain} lần
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-slate-500">Tình trạng gắn cờ vi phạm:</span>
+                      <span
+                        className={`font-bold ${
+                          verificationReport.checks.flagStatusMatch.offChain ? "text-rose-600" : "text-emerald-600"
+                        }`}
+                      >
+                        {verificationReport.checks.flagStatusMatch.offChain ? "Đang bị gắn cờ ⚠️" : "An toàn ✓"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cột 2: On-Chain Avalanche Fuji RPC */}
+                <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="font-bold text-[#02457A] flex items-center gap-1.5">
+                      <span>⛓️</span> Smart Contract (Avalanche Fuji)
+                    </span>
+                    <span className="text-[10px] font-mono text-sky-800 font-semibold bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                      Chain ID: 43113
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                        <span>itemCommit ghi nhận on-chain:</span>
+                        {verificationReport.checks.commitMatch.passed && (
+                          <span className="text-emerald-600 font-bold text-[10px]">Khớp ✓</span>
+                        )}
+                      </div>
+                      <div className="font-mono text-[11px] text-slate-800 break-all font-semibold bg-slate-50 p-1.5 rounded border border-slate-100">
+                        {verificationReport.checks.commitMatch.onChain || "Chưa đồng bộ"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                        <span>ownerHash ghi nhận on-chain:</span>
+                        {verificationReport.checks.ownerMatch.passed && (
+                          <span className="text-emerald-600 font-bold text-[10px]">Khớp ✓</span>
+                        )}
+                      </div>
+                      <div className="font-mono text-[11px] text-slate-800 break-all font-semibold bg-slate-50 p-1.5 rounded border border-slate-100">
+                        {verificationReport.checks.ownerMatch.onChain || "Chưa đồng bộ"}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] text-slate-500">Số lần chuyển giao on-chain:</span>
+                      <span className="font-bold text-[#02457A] flex items-center gap-1">
+                        <span>{verificationReport.checks.transferCountMatch.onChain} lần</span>
+                        {verificationReport.checks.transferCountMatch.passed && (
+                          <span className="text-emerald-600 text-[11px]">✓</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-slate-500">Tình trạng gắn cờ on-chain:</span>
+                      <span
+                        className={`font-bold ${
+                          verificationReport.checks.flagStatusMatch.onChain ? "text-rose-600" : "text-emerald-600"
+                        }`}
+                      >
+                        {verificationReport.checks.flagStatusMatch.onChain ? "Bị cờ vi phạm ⚠️" : "An toàn ✓"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Thông tin Contract & Tra cứu Explorer */}
+              <div className="pt-2 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
+                <div className="truncate max-w-md">
+                  <span className="font-semibold">Hợp đồng UniCyclePassport:</span>{" "}
+                  <code className="font-mono text-slate-700 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                    {verificationReport.contractAddress}
+                  </code>
+                </div>
+                {verificationReport.explorerUrl && (
+                  <a
+                    href={verificationReport.explorerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-bold text-[#018ABE] hover:underline shrink-0"
+                  >
+                    Xem trên Snowtrace Testnet ↗
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Danh sách giao dịch Relayer (Chain Transactions Queue) */}
+          <div className="space-y-2 pt-2">
+            <div className="text-xs font-bold text-[#001B48] flex items-center justify-between">
+              <span>Lịch Sử Giao Dịch Relayer On-Chain ({activeChainTxs.length})</span>
+              <span className="text-[11px] font-normal text-slate-500">
+                Tự động serialize nonce và trả phí gas hộ sinh viên
+              </span>
+            </div>
+
+            {activeChainTxs.length > 0 ? (
+              <div className="space-y-2">
+                {activeChainTxs.map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-[#001B48]">
+                          Thao tác: {tx.kind}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                            tx.status === "CONFIRMED"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : tx.status === "QUEUED"
+                              ? "bg-amber-100 text-amber-800"
+                              : tx.status === "SUBMITTED"
+                              ? "bg-sky-100 text-sky-800"
+                              : "bg-rose-100 text-rose-700"
+                          }`}
+                        >
+                          {tx.status}
+                        </span>
+                      </div>
+                      <div className="font-mono text-[11px] text-slate-500 truncate max-w-sm sm:max-w-md">
+                        Tx: {tx.txHash || "Đang xếp hàng gửi lên Avalanche Fuji (QUEUED)..."}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {tx.txHash && (
+                        <a
+                          href={`https://testnet.snowtrace.io/tx/${tx.txHash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-[#018ABE] hover:bg-sky-50 transition-colors shadow-2xs"
+                        >
+                          Snowtrace ↗
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-3.5 bg-sky-50/70 border border-sky-100 rounded-xl text-xs text-sky-900 flex items-center justify-between">
+                <span>Bản ghi đã được bảo chứng toàn vẹn trong cơ sở dữ liệu hệ thống (Off-chain DB).</span>
+                <span className="text-[11px] font-bold text-sky-700">Trạng thái: Sẵn sàng</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
