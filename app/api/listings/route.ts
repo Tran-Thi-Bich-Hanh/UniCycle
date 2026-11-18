@@ -350,6 +350,18 @@ export async function POST(req: NextRequest) {
             throw new Error("Chỉ chủ sở hữu hiện tại mới có quyền đăng bán lại món đồ này (BR25).");
           }
 
+          if (existingItem.passportStatus === "FLAGGED") {
+            throw new Error(
+              "Hộ chiếu món đồ này hiện đang bị gắn cờ cảnh báo vi phạm, không thể đăng bán lại (BR39)."
+            );
+          }
+
+          if (existingItem.passportStatus === "ARCHIVED_OWNER_DELETED") {
+            throw new Error(
+              "Hộ chiếu món đồ này đang ở trạng thái lưu trữ đóng băng do tài khoản chủ cũ đã xóa (BR34)."
+            );
+          }
+
           if (existingItem.listings.length > 0) {
             throw new Error("Món đồ này hiện đang có tin đăng mở bán hoặc đang giữ chỗ trên sàn (BR18).");
           }
