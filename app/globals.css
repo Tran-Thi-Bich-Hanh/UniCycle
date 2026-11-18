@@ -35,18 +35,21 @@ input {
   transition-duration: 180ms;
 }
 
-/* Hero Gradient Bleed - kéo dài mượt hơn xuống dưới */
+/* Hero Gradient Bleed - chuyển sắc sâu, sang trọng và đảm bảo tương phản WCAG AA >= 4.5:1 */
 .hero-gradient-bleed {
   background:
-    radial-gradient(circle at 80% 25%, rgba(151, 202, 219, 0.45) 0%, transparent 55%),
-    radial-gradient(circle at 20% 70%, rgba(1, 138, 190, 0.3) 0%, transparent 50%),
-    linear-gradient(180deg, #001B48 0%, #013264 35%, #02457A 50%, #018ABE 72%, #75B9CF 82%, #D6E8EE 97%);
+    radial-gradient(circle at 80% 25%, rgba(151, 202, 219, 0.28) 0%, transparent 55%),
+    radial-gradient(circle at 15% 75%, rgba(1, 138, 190, 0.25) 0%, transparent 50%),
+    linear-gradient(180deg, #001B48 0%, #012A5E 30%, #02457A 60%, #016A9C 85%, #018ABE 100%);
 }
 
-/* Hero Gradient Bleed - kéo dài mượt hơn xuống dưới */
-.hero-gradient-bleed {
-  background:
-    radial-gradient(circle at 80% 25%, rgba(151, 202, 219, 0.45) 0%, transparent 55%),
-    radial-gradient(circle at 20% 70%, rgba(1, 138, 190, 0.3) 0%, transparent 50%),
-    linear-gradient(180deg, #001B48 0%, #013264 35%, #02457A 60%, #018ABE 72%, #75B9CF 92%);
+/* Tiện ích ẩn thanh cuộn thô đa trình duyệt (Windows/Chrome/Edge/Firefox) */
+.scrollbar-none,
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE và Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
