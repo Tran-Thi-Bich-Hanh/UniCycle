@@ -849,7 +849,7 @@ export function SellForm() {
                 Khám phá chợ đồ
               </Link>
               <Link
-                href={`/products`}
+                href={`/products/${createdListingResult.id}`}
                 className="flex-1 py-3 px-4 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs sm:text-sm font-bold shadow-md transition-all"
               >
                 Xem tin vừa đăng

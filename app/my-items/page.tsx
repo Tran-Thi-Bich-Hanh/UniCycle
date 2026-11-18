@@ -19,9 +19,15 @@ async function MyItemsContent() {
     redirect("/login?returnTo=/my-items");
   }
 
+  const dbUser = await prisma.user.findFirst({
+    where: { OR: [{ id: user.id }, { email: user.email }] },
+    select: { id: true },
+  });
+  const resolvedUserId = dbUser?.id || user.id;
+
   const items = await prisma.item.findMany({
     where: {
-      currentOwnerId: user.id,
+      currentOwnerId: resolvedUserId,
     },
     include: {
       category: {
@@ -74,7 +80,7 @@ async function MyItemsContent() {
   });
 
   const formattedItems: MyItemData[] = items.map((item) => {
-    const currentOwnerRecord = item.owners.find((o) => o.userId === user.id);
+    const currentOwnerRecord = item.owners.find((o) => o.userId === resolvedUserId);
     const latestListing = item.listings[0] || null;
     const isCurrentlyListed = latestListing
       ? ["AVAILABLE", "RESERVED"].includes(latestListing.status)

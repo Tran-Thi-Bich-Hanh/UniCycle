@@ -8,6 +8,15 @@ import { checkProhibitedContent } from "@/lib/utils/prohibited-words";
 import { reconcileExpiredOrders } from "@/lib/utils/order-timeouts";
 import { FALLBACK_PRODUCTS } from "@/lib/data/mock-fallback";
 
+const SCHOOL_CODE_TO_SHORTNAME: Record<string, string> = {
+  "ktx-b": "KTX Khu B",
+  "ktx-a": "KTX Khu A",
+  hcmut: "ĐH Bách Khoa",
+  hcmus: "ĐH KHTN",
+  ueh: "UEH",
+  uit: "ĐH CNTT",
+};
+
 export async function GET(req: NextRequest) {
   // Dọn dẹp các đơn timeout nhả hàng về AVAILABLE (BR37)
   reconcileExpiredOrders().catch((err) => console.warn("Lỗi reconcile listings:", err));
@@ -25,6 +34,7 @@ export async function GET(req: NextRequest) {
   const sort = searchParams.get("sort") || "verified_priority"; // verified_priority, newest, price_asc, price_desc
 
   try {
+    const andConditions: Prisma.ListingWhereInput[] = [];
     const where: Prisma.ListingWhereInput = {
       status: "AVAILABLE",
       expiresAt: {
@@ -37,20 +47,30 @@ export async function GET(req: NextRequest) {
     }
 
     if (campus && campus !== "all") {
-      where.OR = [
-        { schoolId: campus },
-        { school: { shortName: { contains: campus, mode: "insensitive" } } },
-      ];
+      const mappedShortName = SCHOOL_CODE_TO_SHORTNAME[campus];
+      andConditions.push({
+        OR: [
+          { schoolId: campus },
+          ...(mappedShortName ? [{ school: { shortName: mappedShortName } }] : []),
+          { school: { shortName: { contains: campus, mode: "insensitive" } } },
+        ],
+      });
     }
 
     if (isFree) {
-      where.OR = [{ isFree: true }, { price: 0 }];
+      andConditions.push({
+        OR: [{ isFree: true }, { price: 0 }],
+      });
     } else {
       if (minPrice !== undefined || maxPrice !== undefined) {
         where.price = {};
         if (minPrice !== undefined) where.price.gte = minPrice;
         if (maxPrice !== undefined) where.price.lte = maxPrice;
       }
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     if (condition && condition !== "all") {
@@ -296,15 +316,75 @@ export async function POST(req: NextRequest) {
 
     const shouldEnablePassport = passportEnabled !== false;
 
-    // 7. Kiểm tra giới hạn 10 tin/ngày (BR16) và ghi DB qua Transaction
+    // 7. Phân giải khóa ngoại thực tế trong PostgreSQL (User, Category, School), kiểm tra BR16 và ghi DB qua Transaction
     let createdListing = null;
     let finalPassportId: string | null = null;
 
     try {
+      // 7a. Tìm hoặc đồng bộ người bán trong DB theo id hoặc email
+      let dbSeller = await prisma.user.findFirst({
+        where: {
+          OR: [{ id: user.id }, { email: user.email }],
+        },
+        select: { id: true },
+      });
+
+      if (!dbSeller) {
+        dbSeller = await prisma.user.create({
+          data: {
+            email: user.email,
+            displayName: user.displayName || "Sinh viên UniCycle",
+            avatarUrl: user.avatarUrl || null,
+            authProvider: "email",
+            role: user.role === "ADMIN" ? "ADMIN" : "USER",
+            isStudentVerified: Boolean(user.isStudentVerified),
+            studentVerifiedAt: user.isStudentVerified ? new Date() : null,
+            dorm: user.dorm || null,
+            reputationScore: user.reputationScore || 5.0,
+          },
+          select: { id: true },
+        });
+      }
+
+      const sellerDbId = dbSeller.id;
+
+      // 7b. Phân giải Category theo UUID id hoặc slug (VD: "giao-trinh-sach")
+      const dbCategory = await prisma.category.findFirst({
+        where: {
+          OR: [{ id: categoryId }, { slug: categoryId }],
+        },
+        select: { id: true },
+      });
+
+      if (!dbCategory) {
+        return NextResponse.json(
+          { error: "Danh mục sản phẩm không tồn tại trong hệ thống." },
+          { status: 400 }
+        );
+      }
+
+      // 7c. Phân giải School theo UUID id hoặc mã ngắn (VD: "ktx-b" -> "KTX Khu B")
+      const mappedShortName = SCHOOL_CODE_TO_SHORTNAME[schoolId];
+      const dbSchool = await prisma.school.findFirst({
+        where: {
+          OR: [
+            { id: schoolId },
+            ...(mappedShortName ? [{ shortName: mappedShortName }] : []),
+            { shortName: { contains: schoolId, mode: "insensitive" } },
+            { name: { contains: schoolId, mode: "insensitive" } },
+          ],
+        },
+        select: { id: true },
+      });
+
+      const resolvedCategoryId = dbCategory.id;
+      const resolvedSchoolId = dbSchool?.id || null;
+
+      // 7d. Kiểm tra giới hạn 10 tin/ngày (BR16)
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const todayListingsCount = await prisma.listing.count({
         where: {
-          sellerId: user.id,
+          sellerId: sellerDbId,
           createdAt: {
             gte: yesterday,
           },
@@ -335,7 +415,7 @@ export async function POST(req: NextRequest) {
                 },
               },
               owners: {
-                where: { userId: user.id },
+                where: { userId: sellerDbId },
                 orderBy: { seq: "desc" },
                 take: 1,
               },
@@ -346,7 +426,7 @@ export async function POST(req: NextRequest) {
             throw new Error("Không tìm thấy món đồ gốc để đăng bán lại.");
           }
 
-          if (existingItem.currentOwnerId !== user.id) {
+          if (existingItem.currentOwnerId !== sellerDbId) {
             throw new Error("Chỉ chủ sở hữu hiện tại mới có quyền đăng bán lại món đồ này (BR25).");
           }
 
@@ -381,13 +461,13 @@ export async function POST(req: NextRequest) {
           const itemSalt = crypto.randomBytes(16).toString("hex");
           const itemCommit = crypto
             .createHash("sha256")
-            .update(`${generatedPassportId}:${title}:${categoryId}:${itemSalt}`)
+            .update(`${generatedPassportId}:${title}:${resolvedCategoryId}:${itemSalt}`)
             .digest("hex");
 
           createdItem = await tx.item.create({
             data: {
-              categoryId,
-              currentOwnerId: user.id,
+              categoryId: resolvedCategoryId,
+              currentOwnerId: sellerDbId,
               passportEnabled: true,
               passportId: generatedPassportId,
               identityLevel: "LIGHT",
@@ -403,7 +483,7 @@ export async function POST(req: NextRequest) {
             data: {
               itemId: createdItem.id,
               seq: 1,
-              userId: user.id,
+              userId: sellerDbId,
               ownerHash,
               showName: Boolean(showNameOnPassport),
               since: new Date(),
@@ -421,14 +501,31 @@ export async function POST(req: NextRequest) {
               confirmationLevel: "BOTH",
             },
           });
+
+          // Xếp hàng giao dịch REGISTER cho Avalanche Fuji Relayer (BR28)
+          const payloadHash =
+            "0x" +
+            crypto
+              .createHash("sha256")
+              .update(`REGISTER:${createdItem.id}:${generatedPassportId}`)
+              .digest("hex");
+
+          await tx.chainTx.create({
+            data: {
+              itemId: createdItem.id,
+              kind: "REGISTER",
+              payloadHash,
+              status: "QUEUED",
+            },
+          });
         }
 
         const listing = await tx.listing.create({
           data: {
             itemId: createdItem?.id || null,
-            sellerId: user.id,
-            schoolId,
-            categoryId,
+            sellerId: sellerDbId,
+            schoolId: resolvedSchoolId,
+            categoryId: resolvedCategoryId,
             title: title.trim(),
             description: description.trim(),
             price: numericPrice,
@@ -471,29 +568,14 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      console.warn("⚠️ Lỗi Prisma khi tạo tin đăng (chuyển sang demo response):", dbError);
-
-      // Demo/Fallback response nếu Database đang offline
-      finalPassportId = shouldEnablePassport
-        ? "0x" + crypto.randomBytes(32).toString("hex")
-        : null;
-
-      createdListing = {
-        id: "demo-listing-" + Date.now(),
-        title: title.trim(),
-        price: numericPrice,
-        isFree: finalIsFree,
-        condition,
-        description: description.trim(),
-        schoolId,
-        categoryId,
-        zaloPhone: zaloPhone.trim(),
-        hidePhone: Boolean(hidePhone),
-        status: "AVAILABLE",
-        expiresAt: expiresAt.toISOString(),
-        createdAt: new Date().toISOString(),
-        passportId: finalPassportId,
-      };
+      console.error("❌ Lỗi Prisma khi tạo tin đăng:", dbError);
+      return NextResponse.json(
+        {
+          error:
+            "Không thể lưu tin đăng vào cơ sở dữ liệu. Vui lòng kiểm tra kết nối và thử lại.",
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(

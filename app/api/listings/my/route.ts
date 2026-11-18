@@ -14,9 +14,15 @@ export async function GET() {
     }
 
     try {
+      const dbUser = await prisma.user.findFirst({
+        where: { OR: [{ id: user.id }, { email: user.email }] },
+        select: { id: true },
+      });
+      const resolvedUserId = dbUser?.id || user.id;
+
       const dbListings = await prisma.listing.findMany({
         where: {
-          sellerId: user.id,
+          sellerId: resolvedUserId,
         },
         include: {
           category: true,
