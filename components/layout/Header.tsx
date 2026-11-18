@@ -86,26 +86,51 @@ export function Header() {
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const [accountPopupOpen, setAccountPopupOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<HeaderUser | null>(null);
+  const [userCounts, setUserCounts] = useState<{
+    itemsCount: number;
+    ordersCount: number;
+    activeOrdersCount: number;
+  }>({ itemsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
 
   useEffect(() => {
     let active = true;
 
-    const loadUser = () => {
-      fetch("/api/auth/me", { cache: "no-store" })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (active && data) {
-            setCurrentUser(data.user || null);
-          }
-        })
-        .catch(() => {});
+    const loadUserData = async () => {
+      try {
+        const [userRes, countsRes] = await Promise.all([
+          fetch("/api/auth/me", { cache: "no-store" }),
+          fetch("/api/user/counts", { cache: "no-store" }),
+        ]);
+
+        if (!active) return;
+
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setCurrentUser(userData.user || null);
+        } else {
+          setCurrentUser(null);
+        }
+
+        if (countsRes.ok) {
+          const countsData = await countsRes.json();
+          setUserCounts({
+            itemsCount: countsData.itemsCount || 0,
+            ordersCount: countsData.ordersCount || 0,
+            activeOrdersCount: countsData.activeOrdersCount || 0,
+          });
+        } else {
+          setUserCounts({ itemsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
+        }
+      } catch {
+        // Ignore
+      }
     };
 
-    loadUser();
-    window.addEventListener("unicycle-auth-change", loadUser);
+    loadUserData();
+    window.addEventListener("unicycle-auth-change", loadUserData);
     return () => {
       active = false;
-      window.removeEventListener("unicycle-auth-change", loadUser);
+      window.removeEventListener("unicycle-auth-change", loadUserData);
     };
   }, [pathname]);
 
@@ -113,6 +138,7 @@ export function Header() {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setCurrentUser(null);
+      setUserCounts({ itemsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
       setAccountPopupOpen(false);
       setMobileMenuOpen(false);
       window.dispatchEvent(new Event("unicycle-auth-change"));
@@ -381,7 +407,7 @@ export function Header() {
             {/* Nút Đồ của tôi (Passport) trên Desktop */}
             <Link
               href="/my-items"
-              className={`hidden xl:inline-flex items-center gap-2 h-11 px-3.5 rounded-xl text-sm font-semibold transition-colors ${
+              className={`hidden xl:inline-flex items-center gap-2 h-11 px-3 rounded-xl text-sm font-semibold transition-colors ${
                 pathname?.startsWith("/my-items")
                   ? "bg-[#D6E8EE] text-[#001B48]"
                   : "text-[#001B48] hover:bg-[#F4F9FB]"
@@ -407,6 +433,11 @@ export function Header() {
                 />
               </svg>
               <span>Đồ của tôi</span>
+              {currentUser && (
+                <span className="px-1.5 py-0.5 text-[11px] font-bold rounded-full bg-[#D6E8EE] text-[#02457A] leading-none">
+                  {userCounts.itemsCount}
+                </span>
+              )}
             </Link>
 
             {/* Nút Đơn hẹn (/orders) */}
@@ -434,9 +465,13 @@ export function Header() {
                 />
               </svg>
               <span className="hidden lg:inline">Đơn hẹn</span>
-              <span className="px-1.5 py-0.5 text-[11px] font-bold rounded-full bg-[#018ABE] text-white leading-none">
-                2
-              </span>
+              {currentUser && (
+                <span className={`px-1.5 py-0.5 text-[11px] font-bold rounded-full text-white leading-none ${
+                  userCounts.activeOrdersCount > 0 ? "bg-[#018ABE]" : "bg-[#02457A]"
+                }`}>
+                  {userCounts.ordersCount}
+                </span>
+              )}
             </Link>
 
             {/* Nút Đăng bán CTA chính (#018ABE) */}
@@ -565,7 +600,9 @@ export function Header() {
                             className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
                           >
                             <span>Đồ của tôi (Passport &amp; Bán lại)</span>
-                            <span className="text-[#018ABE] font-semibold">QR</span>
+                            <span className="text-[#018ABE] font-bold text-xs">
+                              {userCounts.itemsCount > 0 ? `${userCounts.itemsCount} món` : "QR"}
+                            </span>
                           </Link>
                           <Link
                             href="/orders"
@@ -573,7 +610,9 @@ export function Header() {
                             className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-[#F4F9FB] text-[#001B48] font-medium"
                           >
                             <span>Đơn hẹn xem hàng</span>
-                            <span className="text-[#02457A] font-semibold">Lịch hẹn</span>
+                            <span className="text-[#02457A] font-bold text-xs">
+                              {userCounts.ordersCount > 0 ? `${userCounts.ordersCount} đơn` : "Lịch hẹn"}
+                            </span>
                           </Link>
                           <Link
                             href="/verify-student"
@@ -794,9 +833,26 @@ export function Header() {
                     <Link
                       href="/my-items"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                      className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
                     >
-                      Đồ của tôi (Mã QR &amp; Bán lại)
+                      <span>Đồ của tôi (Mã QR &amp; Bán lại)</span>
+                      {currentUser && userCounts.itemsCount > 0 && (
+                        <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-[#D6E8EE] text-[#02457A]">
+                          {userCounts.itemsCount} món
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      href="/orders"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
+                    >
+                      <span>Đơn hẹn xem hàng</span>
+                      {currentUser && userCounts.ordersCount > 0 && (
+                        <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-[#018ABE] text-white">
+                          {userCounts.ordersCount} đơn
+                        </span>
+                      )}
                     </Link>
                     <Link
                       href="/my-products"
