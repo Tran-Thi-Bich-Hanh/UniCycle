@@ -136,8 +136,32 @@ Mỗi Sprint kéo dài từ **1 đến 1.5 tuần** với mục tiêu bàn giao 
 
 ---
 
-### 🏃 Sprint 5: Xác Minh Sinh Viên, Kiểm Duyệt, Lát Cắt Fuji & Triển Khai (Polishing & Demo)
-- **Mục tiêu**: Kiểm tra toàn diện, hoàn thiện lát cắt Blockchain trên Fuji Testnet, sẵn sàng cho người dùng thật và bảo vệ đồ án.
+### 🏃 Sprint 5: Xác Minh Sinh Viên, Kiểm Duyệt, Lát Cắt Fuji On-Chain/Off-Chain & Triển Khai (Polishing & Demo)
+- **Mục tiêu**: Hoàn thiện lát cắt Blockchain trên Avalanche Fuji Testnet với kiến trúc lai **On-chain ↔ Off-chain** minh bạch, triển khai xác minh sinh viên & xóa tài khoản Crypto-shredding, xây dựng trang Quản trị Admin phân xử tranh chấp/Flag Passport, và sẵn sàng cho kịch bản bảo vệ đồ án **A ➔ B ➔ C**.
+- **Kiến trúc Lai On-Chain ↔ Off-Chain (Trọng tâm Sprint 5)**:
+  - **Off-chain (PostgreSQL / Supabase)**: Nguồn dữ liệu vận hành chính tốc độ cao (< 3s trên 4G); lưu trữ toàn bộ thông tin cá nhân (PII), ảnh thật (`sha256`), giá bán, đánh giá bí mật, `itemSalt` bí mật và bảng ánh xạ `PassportOwner.userId ↔ ownerHash` hỗ trợ **Crypto-shredding (BR34)**.
+  - **On-chain (Avalanche Fuji Testnet - Chain ID `43113`)**: Lớp bảo chứng bất biến & kiểm chứng công khai qua Smart Contract `UniCyclePassport.sol`; chỉ lưu mã băm ẩn danh (`passportId`, `itemCommit`, `ownerHash`, `orderHash`) và phát sự kiện (`PassportRegistered`, `OwnershipTransferred`, `PassportFlagged`, `PassportUnflagged`). Relayer (`viem`) trả phí gas hộ sinh viên và chạy bất đồng bộ qua bảng `chain_txs` để không làm nghẽn giao dịch web (**BR27, BR28**).
+- **Phân rã Atomic Tasks**:
+  1. **Task 5.1 (Lát Cắt Blockchain Avalanche Fuji `UniCyclePassport.sol`, Relayer `viem` & Bộ Kiểm Chứng Đối Chiếu On-Chain ↔ Off-Chain `BR27, BR28, BR30, BR31, BR32`)**:
+     - Viết và hướng dẫn triển khai Smart Contract `contracts/UniCyclePassport.sol` (`AccessControl`, `RECORDER_ROLE`, `register`, `transfer`, `flag`, `unflag`) lên **Avalanche Fuji Testnet**.
+     - Xây dựng bộ **Relayer bất đồng bộ** (`lib/blockchain/relayer.ts`): Tự động serialize hàng đợi `chain_txs` (`QUEUED` ➔ `SUBMITTED` ➔ `CONFIRMED`), gọi `register` + `transfer` + `flag`/`unflag`, lưu `txHash` thật và hỗ trợ retry (≤ 3 lần) không nghẽn luồng web (**BR28**).
+     - Xây dựng **Bộ Kiểm Chứng Độc Lập** (`lib/blockchain/verifier.ts` & `GET/POST /api/passport/[id]/verify`): Đọc trực tiếp trạng thái & event logs từ Fuji RPC, so khớp 1-1 với dữ liệu PostgreSQL (`itemCommit`, `currentOwnerHash`, `transferCount`, `flagged`).
+     - Nâng cấp trang `/passport/[id]` (`PassportClient.tsx`): Bảng đối chiếu trực quan 2 cột **Off-chain (PostgreSQL) ↔ On-chain (Avalanche Fuji)**, nút **"🔍 Xác minh trực tiếp trên Blockchain (Fuji RPC)"**, nút **"⚡ Đồng bộ Relayer lên Fuji ngay"** và link tra cứu **Snowtrace Fuji Explorer**.
+  2. **Task 5.2 (Xác Minh Danh Tính Sinh Viên `/verify-student`, Hồ Sơ Cá Nhân `/profile`, `/users/[id]` & Xóa Tài Khoản Crypto-Shredding `BR19, BR34, NĐ 13/2023/NĐ-CP`)**:
+     - Trang `/verify-student` & API `/api/auth/verify-student`: Xác minh tức thì qua email `.edu.vn` khớp tên miền trường (`School.emailDomain`) hoặc tải lên ảnh chụp thẻ sinh viên (kèm cam kết tự động xóa vĩnh viễn ảnh thẻ ngay sau khi Admin phê duyệt theo **Nghị định 13/2023/NĐ-CP**).
+     - Trang Hồ sơ cá nhân (`/profile`) & Hồ sơ công khai (`/users/[id]`): Quản lý thông tin trường/KTX, điểm uy tín, danh sách tin đang bán và đánh giá công khai (tuyệt đối không lộ email/SĐT/MSSV).
+     - Cơ chế **Xóa tài khoản Crypto-shredding (`DELETE /api/auth/account` - BR34)**: Đặt `PassportOwner.userId = NULL`, `showName = false` (giữ nguyên `ownerHash`, `seq`, `since` để chuỗi lịch sử trên DB & Fuji không gãy), chuyển `Item` đang sở hữu sang `ARCHIVED_OWNER_DELETED` và ẩn danh hóa tài khoản.
+  3. **Task 5.3 (Báo Cáo Vi Phạm `/api/reports`, Trang Quản Trị Admin `/admin`, Phân Xử `DISPUTED` SLA 72h, Flag Passport `BR17, BR32, BR39`, Cron Job & Trang Pháp Lý)**:
+     - API `POST /api/reports` & `ReportModal`: Cho phép sinh viên báo cáo tin đăng, người dùng hoặc Passport nghi vấn ngay trên `/products/[id]` và `/passport/[id]`.
+     - Trang Quản trị Admin (`/admin` & `API /api/admin`):
+       - Phân xử đơn `DISPUTED` (SLA 72h) theo đúng 3 kết luận (`BUYER_RECEIVED`, `NOT_DELIVERED`, `INSUFFICIENT_EVIDENCE`).
+       - Gắn cờ (`FLAG`) / Gỡ cờ (`UNFLAG`) Passport thực thi trọn vẹn hiệu lực **BR39** (ẩn tin `AVAILABLE` ➔ `HIDDEN`, từ chối `PENDING`, chuyển `ACCEPTED`/`WAITING_CONFIRMATION` ➔ `DISPUTED`, ghi `PassportEvent` & xếp hàng ghi `ChainTx` lên Fuji).
+       - Duyệt báo cáo vi phạm (**BR17**), duyệt thẻ sinh viên (tự động xóa ảnh thẻ khỏi DB/Storage sau duyệt) và giám sát/kích hoạt lại hàng đợi `ChainTx`.
+     - Cron Job định kỳ (`GET /api/cron/reconcile`) xử lý timeout SLA 72h đơn `DISPUTED`, hết hạn tin 30 ngày (**BR15**) & retry hàng đợi blockchain; bổ sung trang Điều khoản (`/terms`) và Chính sách bảo mật (`/privacy`).
+- **Kết quả nghiệm thu (Deliverables)**:
+  - Demo trọn vẹn kịch bản bảo vệ **A ➔ B ➔ C** có giao dịch ghi sự kiện thật trên Avalanche Fuji Testnet, bấm nút **"Xác minh trên Blockchain"** trả về *"Khớp toàn vẹn 100% ✓"* và mở được `txHash` trên Snowtrace Fuji Explorer;
+  - Sinh viên xác minh được tài khoản (`.edu.vn` hoặc thẻ SV tự xóa ảnh sau duyệt) và xóa tài khoản đúng chuẩn Crypto-shredding (**BR34**);
+  - Admin phân xử được đơn `DISPUTED`, gắn/gỡ cờ Passport đúng hiệu lực **BR39** và toàn bộ cron timeout/trang pháp lý hoạt động ổn định.
 
 ---
 
