@@ -450,7 +450,7 @@ export function ProfileClient() {
 
           {/* TAB 1: Thông tin cá nhân */}
           {activeTab === "info" && (
-            <form onSubmit={handleSaveProfile} className="space-y-5 max-w-2xl">
+            <form onSubmit={handleSaveProfile} className="space-y-5 w-full">
                 <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-100 text-xs text-[#02457A] leading-relaxed space-y-1">
                   <div className="font-bold text-[#001B48]">Thông tin hiển thị công khai</div>
                   <p>
@@ -639,7 +639,7 @@ export function ProfileClient() {
 
           {/* TAB 3: Bảo mật & tài khoản */}
           {activeTab === "privacy" && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-6 w-full">
               <div className="p-5 rounded-2xl bg-[#F4F9FB] border border-[#D6E8EE] space-y-3">
                 <h2 className="text-sm sm:text-base font-extrabold text-[#001B48] flex items-center gap-2">
                   <span>🔐</span>
