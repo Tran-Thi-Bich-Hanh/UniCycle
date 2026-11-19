@@ -1,130 +1,280 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import type {
+  AdminDashboardPayload,
+  AdminOverviewStats,
+  AdminSection,
+} from "@/lib/admin/types";
+import { AdminOverviewSection } from "./AdminOverviewSection";
+import { AdminListingsSection } from "./AdminListingsSection";
 
-interface AdminStats {
-  totalUsers: number;
-  activeListings: number;
-  disputedOrdersCount: number;
-  pendingReportsCount: number;
-  pendingStudentCardsCount: number;
-  flaggedPassportsCount: number;
-  pendingChainTxsCount: number;
+export interface AdminDashboardClientProps {
+  currentAdminId: string;
+  currentAdminEmail: string;
 }
 
-interface DisputedOrderItem {
-  id: string;
-  proposedPrice: number;
-  meetPlace: string;
-  disputeReason: string | null;
-  disputedAt: string | null;
-  listing: {
-    id: string;
-    title: string;
-    price: number;
-    status: string;
-    item?: { id: string; passportId: string | null; passportStatus: string } | null;
-  };
-  buyer: { id: string; displayName: string; email: string; reputationScore: number };
-  seller: { id: string; displayName: string; email: string; reputationScore: number };
+const DEFAULT_STATS: AdminOverviewStats = {
+  totalUsers: 0,
+  verifiedUsersCount: 0,
+  suspendedUsersCount: 0,
+  activeListings: 0,
+  totalListings: 0,
+  passportListingsCount: 0,
+  multiOwnerItemsCount: 0,
+  completedOrdersCount: 0,
+  activeOrdersCount: 0,
+  disputedOrdersCount: 0,
+  pendingReportsCount: 0,
+  pendingStudentCardsCount: 0,
+  flaggedPassportsCount: 0,
+  pendingChainTxsCount: 0,
+};
+
+function SectionIcon({ section, active }: { section: AdminSection; active: boolean }) {
+  const colorClass = active ? "text-[#018ABE]" : "text-slate-400";
+
+  if (section === "overview") {
+    return (
+      <svg
+        className={`w-4 h-4 shrink-0 ${colorClass}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
+        />
+      </svg>
+    );
+  }
+
+  if (section === "listings") {
+    return (
+      <svg
+        className={`w-4 h-4 shrink-0 ${colorClass}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"
+        />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
+      </svg>
+    );
+  }
+
+  if (section === "users") {
+    return (
+      <svg
+        className={`w-4 h-4 shrink-0 ${colorClass}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      className={`w-4 h-4 shrink-0 ${colorClass}`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"
+      />
+    </svg>
+  );
 }
 
-interface AdminPassportItem {
-  id: string;
-  passportId: string | null;
-  passportStatus: string;
-  flagReason: string | null;
-  flaggedAt: string | null;
-  category: { name: string } | null;
-  currentOwner: { id: string; displayName: string; email: string } | null;
-  listings: Array<{ id: string; title: string; status: string }>;
-  _count: { owners: number };
-  chainTxs: Array<{ id: string; status: string; kind: string; txHash: string | null }>;
+function AdminSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 animate-pulse">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="h-7 w-48 rounded-lg bg-slate-200/80" />
+          <div className="h-4 w-72 rounded-md bg-slate-200/60" />
+        </div>
+        <div className="h-9 w-40 rounded-xl bg-slate-200/70" />
+      </div>
+
+      <div className="flex gap-2 lg:hidden">
+        <div className="h-9 w-28 rounded-xl bg-slate-200/70" />
+        <div className="h-9 w-32 rounded-xl bg-slate-200/60" />
+        <div className="h-9 w-32 rounded-xl bg-slate-200/60" />
+      </div>
+
+      <div className="lg:grid lg:grid-cols-[232px_minmax(0,1fr)] lg:gap-8">
+        <div className="hidden lg:block">
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-3 space-y-2">
+            <div className="h-9 rounded-xl bg-slate-200/70" />
+            <div className="h-9 rounded-xl bg-slate-100" />
+            <div className="h-9 rounded-xl bg-slate-100" />
+            <div className="h-9 rounded-xl bg-slate-100" />
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="h-12 rounded-2xl bg-slate-200/60" />
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="h-28 rounded-2xl bg-white border border-slate-200/80" />
+            <div className="h-28 rounded-2xl bg-white border border-slate-200/80" />
+            <div className="h-28 rounded-2xl bg-white border border-slate-200/80" />
+            <div className="h-28 rounded-2xl bg-white border border-slate-200/80" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="h-60 rounded-2xl bg-white border border-slate-200/80" />
+            <div className="h-60 rounded-2xl bg-white border border-slate-200/80" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-interface AdminReportItem {
-  id: string;
-  targetType: "LISTING" | "USER" | "PASSPORT";
-  targetId: string;
-  reason: string;
-  status: "PENDING" | "RESOLVED" | "DISMISSED";
-  createdAt: string;
-  reporter: { id: string; displayName: string; email: string };
+function SectionPreviewCard({
+  section,
+  stats,
+  onBackToOverview,
+}: {
+  section: Exclude<AdminSection, "overview" | "listings">;
+  stats: AdminOverviewStats;
+  onBackToOverview: () => void;
+}) {
+  const config =
+    section === "users"
+      ? {
+          title: "Người dùng & Duyệt sinh viên",
+          description:
+            "Bảng quản lý tài khoản, khóa hoặc mở khóa và hàng đợi đối chiếu ảnh thẻ sinh viên sẽ được kích hoạt ở bước tiếp theo.",
+          metrics: [
+            { label: "Tổng thành viên", value: stats.totalUsers },
+            { label: "Thẻ sinh viên chờ duyệt", value: stats.pendingStudentCardsCount },
+            { label: "Tài khoản đang tạm khóa", value: stats.suspendedUsersCount },
+          ],
+        }
+      : {
+          title: "Kiểm duyệt & Khiếu nại",
+          description:
+            "Khu vực xử lý báo cáo vi phạm, phân xử đơn hàng tranh chấp và theo dõi đồng bộ hệ thống sẽ được kích hoạt ở bước tiếp theo.",
+          metrics: [
+            { label: "Đơn tranh chấp cần xử lý", value: stats.disputedOrdersCount },
+            { label: "Báo cáo vi phạm mới", value: stats.pendingReportsCount },
+            { label: "Bản ghi chờ đồng bộ", value: stats.pendingChainTxsCount },
+          ],
+        };
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-[0_1px_2px_rgba(0,27,72,0.04)] space-y-6">
+      <div className="space-y-1.5">
+        <h2 className="text-lg font-bold text-[#001B48]">{config.title}</h2>
+        <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">{config.description}</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {config.metrics.map((metric) => (
+          <div
+            key={metric.label}
+            className="rounded-xl border border-slate-200/80 bg-slate-50/70 px-4 py-3.5"
+          >
+            <div className="text-2xl font-bold text-[#001B48] tabular-nums">
+              {metric.value.toLocaleString("vi-VN")}
+            </div>
+            <div className="text-xs font-medium text-slate-500 mt-1">{metric.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={onBackToOverview}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+        >
+          <svg
+            className="w-3.5 h-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          </svg>
+          <span>Quay lại Tổng quan</span>
+        </button>
+      </div>
+    </div>
+  );
 }
 
-interface PendingStudentItem {
-  id: string;
-  displayName: string;
-  email: string;
-  studentCardUrl: string | null;
-  dorm: string | null;
-  createdAt: string;
-  school: { id: string; name: string; shortName: string } | null;
-}
-
-interface AdminChainTxItem {
-  id: string;
-  itemId: string;
-  kind: string;
-  status: string;
-  txHash: string | null;
-  attempts: number;
-  lastError: string | null;
-  createdAt: string;
-  item: { id: string; passportId: string | null; passportStatus: string };
-}
-
-export function AdminDashboardClient() {
+export function AdminDashboardClient({
+  currentAdminId,
+  currentAdminEmail,
+}: AdminDashboardClientProps) {
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    "disputes" | "passports" | "reports" | "students" | "chain"
-  >("disputes");
-
-  const [stats, setStats] = useState<AdminStats>({
-    totalUsers: 0,
-    activeListings: 0,
-    disputedOrdersCount: 0,
-    pendingReportsCount: 0,
-    pendingStudentCardsCount: 0,
-    flaggedPassportsCount: 0,
-    pendingChainTxsCount: 0,
-  });
-  const [disputedOrders, setDisputedOrders] = useState<DisputedOrderItem[]>([]);
-  const [passports, setPassports] = useState<AdminPassportItem[]>([]);
-  const [reports, setReports] = useState<AdminReportItem[]>([]);
-  const [pendingStudents, setPendingStudents] = useState<PendingStudentItem[]>([]);
-  const [chainTxs, setChainTxs] = useState<AdminChainTxItem[]>([]);
-
-  const [disputeNotes, setDisputeNotes] = useState<Record<string, string>>({});
-  const [flagReasons, setFlagReasons] = useState<Record<string, string>>({});
-  const [snapshotTime, setSnapshotTime] = useState<number>(0);
+  const [activeSection, setActiveSection] = useState<AdminSection>("overview");
+  const [payload, setPayload] = useState<AdminDashboardPayload | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
-  const applyAdminPayload = (data: Record<string, unknown>) => {
-    if (data.stats) setStats(data.stats as AdminStats);
-    setDisputedOrders(Array.isArray(data.disputedOrders) ? data.disputedOrders : []);
-    setPassports(Array.isArray(data.passports) ? data.passports : []);
-    setReports(Array.isArray(data.reports) ? data.reports : []);
-    setPendingStudents(Array.isArray(data.pendingStudents) ? data.pendingStudents : []);
-    setChainTxs(Array.isArray(data.chainTxs) ? data.chainTxs : []);
-    if (typeof data.serverNow === "string") {
-      setSnapshotTime(new Date(data.serverNow).getTime());
-    }
-  };
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refreshData = async () => {
+  const showToast = useCallback((type: "success" | "error", message: string) => {
+    setFeedback({ type, message });
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = setTimeout(() => {
+      setFeedback(null);
+      toastTimerRef.current = null;
+    }, 4500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const refreshData = useCallback(async () => {
     const res = await fetch("/api/admin", { cache: "no-store" });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.error || "Không thể tải dữ liệu Admin.");
+      throw new Error(data.error || "Không thể tải dữ liệu bảng quản trị.");
     }
-    applyAdminPayload(data);
-  };
+    setPayload(data as AdminDashboardPayload);
+    setLoadError(null);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -132,21 +282,18 @@ export function AdminDashboardClient() {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.error || "Không thể tải dữ liệu Admin.");
+          throw new Error(data.error || "Không thể tải dữ liệu bảng quản trị.");
         }
-        return data;
+        return data as AdminDashboardPayload;
       })
       .then((data) => {
         if (!active) return;
-        applyAdminPayload(data);
+        setPayload(data);
+        setLoadError(null);
       })
       .catch((err) => {
-        if (active) {
-          setFeedback({
-            type: "error",
-            message: err instanceof Error ? err.message : "Lỗi tải dữ liệu quản trị.",
-          });
-        }
+        if (!active) return;
+        setLoadError(err instanceof Error ? err.message : "Đã xảy ra lỗi tải dữ liệu.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -157,768 +304,363 @@ export function AdminDashboardClient() {
     };
   }, []);
 
-  const runAdminAction = async (key: string, payload: Record<string, unknown>) => {
-    setBusyKey(key);
-    setFeedback(null);
-    try {
-      const res = await fetch("/api/admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Thao tác quản trị thất bại.");
+  const runAdminAction = useCallback(
+    async (
+      actionPayload: Record<string, unknown>
+    ): Promise<{ ok: boolean; error?: string }> => {
+      try {
+        const res = await fetch("/api/admin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(actionPayload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const errorMessage = data.error || "Thao tác quản trị thất bại.";
+          showToast("error", errorMessage);
+          return { ok: false, error: errorMessage };
+        }
+        await refreshData();
+        showToast("success", data.message || "Đã thực thi thao tác thành công.");
+        return { ok: true };
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Không thể kết nối đến máy chủ.";
+        showToast("error", errorMessage);
+        return { ok: false, error: errorMessage };
       }
-      setFeedback({
-        type: "success",
-        message: data.message || "Thực thi thành công!",
-      });
-      await refreshData();
-    } catch (err) {
-      setFeedback({
-        type: "error",
-        message: err instanceof Error ? err.message : "Lỗi kết nối máy chủ.",
-      });
-    } finally {
-      setBusyKey(null);
-    }
-  };
+    },
+    [refreshData, showToast]
+  );
 
   const handleRunCronNow = async () => {
     setBusyKey("cron-run");
-    setFeedback(null);
     try {
       const res = await fetch("/api/cron/reconcile", { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Không thể chạy đối soát Cron.");
+        throw new Error(data.error || "Không thể đối soát hệ thống lúc này.");
       }
-      setFeedback({
-        type: "success",
-        message: data.message || "Đã chạy đối soát timeout & đồng bộ Fuji thành công!",
-      });
+
+      const confirmedCount = Number(data?.blockchainSync?.confirmedTxsCount || 0);
       await refreshData();
+      showToast(
+        "success",
+        confirmedCount > 0
+          ? `Đã đối soát đơn quá hạn và đồng bộ ${confirmedCount} bản ghi hệ thống.`
+          : "Đã hoàn tất đối soát và cập nhật số liệu mới nhất."
+      );
     } catch (err) {
-      setFeedback({
-        type: "error",
-        message: err instanceof Error ? err.message : "Lỗi chạy Cron Job.",
-      });
+      showToast(
+        "error",
+        err instanceof Error ? err.message : "Lỗi khi chạy đối soát hệ thống."
+      );
     } finally {
       setBusyKey(null);
     }
   };
 
-  const getSlaRemainingLabel = (disputedAt: string | null) => {
-    if (!disputedAt || !snapshotTime) return "SLA 72h";
-    const deadlineMs = new Date(disputedAt).getTime() + 72 * 60 * 60 * 1000;
-    const hoursLeft = Math.max(0, Math.round((deadlineMs - snapshotTime) / (60 * 60 * 1000)));
-    return `Còn ${hoursLeft}h / 72h SLA`;
-  };
-
   if (loading) {
+    return <AdminSkeleton />;
+  }
+
+  if (!payload) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-3 border-[#018ABE] border-t-transparent rounded-full animate-spin mb-3" />
-        <span className="text-xs font-semibold text-[#02457A]">
-          Đang tải Bảng Điều Khiển Quản Trị UniCycle...
-        </span>
+      <div className="max-w-lg mx-auto px-4 py-16">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 text-center space-y-4 shadow-[0_1px_2px_rgba(0,27,72,0.04)]">
+          <p className="text-sm font-medium text-rose-700">
+            {loadError || "Không thể kết nối đến dữ liệu quản trị."}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true);
+              refreshData()
+                .catch((err) =>
+                  setLoadError(err instanceof Error ? err.message : "Lỗi tải lại dữ liệu.")
+                )
+                .finally(() => setLoading(false));
+            }}
+            className="px-4 py-2 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs font-semibold transition-colors cursor-pointer"
+          >
+            Thử tải lại
+          </button>
+        </div>
       </div>
     );
   }
 
+  const stats = payload.stats ?? DEFAULT_STATS;
+  const moderationCount = stats.disputedOrdersCount + stats.pendingReportsCount;
+  const totalPendingWork = moderationCount + stats.pendingStudentCardsCount;
+
+  const navItems: Array<{
+    id: AdminSection;
+    label: string;
+    badgeCount?: number;
+    badgeTone?: "slate" | "amber" | "rose";
+  }> = [
+    { id: "overview", label: "Tổng quan" },
+    {
+      id: "listings",
+      label: "Quản lý tin đăng",
+      badgeCount: stats.activeListings,
+      badgeTone: "slate",
+    },
+    {
+      id: "users",
+      label: "Người dùng & Duyệt SV",
+      badgeCount: stats.pendingStudentCardsCount > 0 ? stats.pendingStudentCardsCount : undefined,
+      badgeTone: "amber",
+    },
+    {
+      id: "moderation",
+      label: "Kiểm duyệt & Khiếu nại",
+      badgeCount: moderationCount > 0 ? moderationCount : undefined,
+      badgeTone: "rose",
+    },
+  ];
+
+  const badgeToneClassMap = {
+    slate: "bg-slate-100 text-slate-600",
+    amber: "bg-amber-100 text-amber-800",
+    rose: "bg-rose-100 text-rose-700",
+  };
+
+  const formattedUpdateTime = new Date(payload.serverNow).toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      {/* Header Bar */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#001B48] text-white text-[11px] font-bold mb-1.5">
-            <span>🛡️</span>
-            <span>ADMIN CONTROL CENTER</span>
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#001B48] tracking-tight">
-            Quản Trị Kiểm Duyệt &amp; Phân Xử Tranh Chấp
+          <h1 className="text-xl sm:text-2xl font-bold text-[#001B48] tracking-tight">
+            Quản trị UniCycle
           </h1>
-          <p className="text-xs sm:text-sm text-[#02457A] mt-1">
-            Phân xử đơn DISPUTED (SLA 72h), gắn/gỡ cờ Passport (BR39), duyệt thẻ SV (NĐ 13/2023) &amp; giám sát Avalanche Fuji.
+          <p className="text-sm text-slate-500 mt-0.5">
+            Theo dõi vận hành, tin đăng và cộng đồng sinh viên
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleRunCronNow}
-          disabled={busyKey === "cron-run"}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-50 cursor-pointer self-start sm:self-auto"
-        >
-          <span>⚡</span>
-          <span>
-            {busyKey === "cron-run"
-              ? "Đang chạy đối soát..."
-              : "Chạy đối soát Timeout & Cron ngay"}
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <span className="text-xs text-slate-400 tabular-nums">
+            Cập nhật {formattedUpdateTime}
           </span>
-        </button>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-white rounded-2xl p-4 border border-[#D6E8EE] shadow-2xs">
-          <div className="text-xl font-black text-rose-600">{stats.disputedOrdersCount}</div>
-          <div className="text-[11px] font-semibold text-slate-600 mt-0.5">
-            Đơn DISPUTED (72h)
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-[#D6E8EE] shadow-2xs">
-          <div className="text-xl font-black text-amber-600">{stats.pendingReportsCount}</div>
-          <div className="text-[11px] font-semibold text-slate-600 mt-0.5">
-            Báo cáo chờ duyệt
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-[#D6E8EE] shadow-2xs">
-          <div className="text-xl font-black text-[#018ABE]">{stats.pendingStudentCardsCount}</div>
-          <div className="text-[11px] font-semibold text-slate-600 mt-0.5">
-            Thẻ SV chờ duyệt
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-[#D6E8EE] shadow-2xs">
-          <div className="text-xl font-black text-rose-700">{stats.flaggedPassportsCount}</div>
-          <div className="text-[11px] font-semibold text-slate-600 mt-0.5">
-            Passport đang Flag
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-[#D6E8EE] shadow-2xs">
-          <div className="text-xl font-black text-[#02457A]">{stats.pendingChainTxsCount}</div>
-          <div className="text-[11px] font-semibold text-slate-600 mt-0.5">
-            ChainTx chờ / lỗi
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-[#D6E8EE] shadow-2xs">
-          <div className="text-xl font-black text-[#001B48]">{stats.activeListings}</div>
-          <div className="text-[11px] font-semibold text-slate-600 mt-0.5">
-            Tin mở bán · {stats.totalUsers} SV
-          </div>
-        </div>
-      </div>
-
-      {/* Feedback Banner */}
-      {feedback && (
-        <div
-          role="alert"
-          className={`p-4 rounded-2xl border text-xs sm:text-sm font-medium flex items-start gap-2.5 ${
-            feedback.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-              : "bg-rose-50 border-rose-200 text-rose-900"
-          }`}
-        >
-          <span>{feedback.type === "success" ? "✓" : "⚠️"}</span>
-          <span>{feedback.message}</span>
-        </div>
-      )}
-
-      {/* Main Tabs Card */}
-      <div className="bg-white rounded-3xl border border-[#D6E8EE] shadow-xs overflow-hidden">
-        <div className="flex overflow-x-auto border-b border-[#D6E8EE] bg-[#F4F9FB]">
           <button
             type="button"
-            onClick={() => setActiveTab("disputes")}
-            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
-              activeTab === "disputes"
-                ? "bg-white text-[#001B48] border-[#018ABE]"
-                : "text-slate-600 border-transparent hover:text-[#02457A]"
-            }`}
+            onClick={handleRunCronNow}
+            disabled={busyKey === "cron-run"}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
           >
-            ⚖️ Khiếu nại DISPUTED ({disputedOrders.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("passports")}
-            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
-              activeTab === "passports"
-                ? "bg-white text-[#001B48] border-[#018ABE]"
-                : "text-slate-600 border-transparent hover:text-[#02457A]"
-            }`}
-          >
-            📜 Flag / Unflag Passport ({passports.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("reports")}
-            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
-              activeTab === "reports"
-                ? "bg-white text-[#001B48] border-[#018ABE]"
-                : "text-slate-600 border-transparent hover:text-[#02457A]"
-            }`}
-          >
-            🚩 Báo cáo vi phạm ({reports.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("students")}
-            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
-              activeTab === "students"
-                ? "bg-white text-[#001B48] border-[#018ABE]"
-                : "text-slate-600 border-transparent hover:text-[#02457A]"
-            }`}
-          >
-            🪪 Duyệt thẻ SV ({pendingStudents.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("chain")}
-            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
-              activeTab === "chain"
-                ? "bg-white text-[#001B48] border-[#018ABE]"
-                : "text-slate-600 border-transparent hover:text-[#02457A]"
-            }`}
-          >
-            ⛓️ Hàng đợi Fuji ({chainTxs.length})
+            <svg
+              className={`w-3.5 h-3.5 text-[#018ABE] ${
+                busyKey === "cron-run" ? "animate-spin" : ""
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+              />
+            </svg>
+            <span>{busyKey === "cron-run" ? "Đang đối soát..." : "Đối soát hệ thống"}</span>
           </button>
         </div>
+      </header>
 
-        <div className="p-6 sm:p-8">
-          {/* TAB 1: PHÂN XỬ ĐƠN DISPUTED (SLA 72H) */}
-          {activeTab === "disputes" && (
-            <div className="space-y-4">
-              {disputedOrders.length === 0 ? (
-                <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl space-y-2">
-                  <div className="text-3xl">⚖️</div>
-                  <p className="text-sm font-bold text-[#001B48]">
-                    Không có đơn hàng nào đang tranh chấp (DISPUTED)
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Khi người mua bấm &ldquo;Tôi chưa nhận hàng&rdquo; trong cửa sổ 48h hoặc Passport bị gắn cờ khi đang giữ chỗ, đơn sẽ xuất hiện tại đây.
-                  </p>
-                </div>
-              ) : (
-                disputedOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="p-5 rounded-2xl border border-rose-200 bg-rose-50/40 space-y-4"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-extrabold">
-                            DISPUTED
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
-                            {getSlaRemainingLabel(order.disputedAt)}
-                          </span>
-                        </div>
-                        <h3 className="text-sm sm:text-base font-extrabold text-[#001B48]">
-                          {order.listing.title}
-                        </h3>
-                        <p className="text-xs text-slate-600">
-                          Giá thỏa thuận: <strong>{order.proposedPrice.toLocaleString("vi-VN")} ₫</strong> · Địa điểm: {order.meetPlace}
-                        </p>
-                      </div>
-
-                      <Link
-                        href={`/orders/${order.id}`}
-                        className="text-xs font-bold text-[#018ABE] hover:underline"
-                      >
-                        Xem chi tiết đơn &rarr;
-                      </Link>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-white p-3.5 rounded-xl border border-slate-200">
-                      <div>
-                        <span className="text-slate-500">Người mua khiếu nại:</span>{" "}
-                        <strong className="text-[#001B48]">{order.buyer.displayName}</strong> ({order.buyer.email})
-                      </div>
-                      <div>
-                        <span className="text-slate-500">Người bán:</span>{" "}
-                        <strong className="text-[#001B48]">{order.seller.displayName}</strong> ({order.seller.email})
-                      </div>
-                      <div className="sm:col-span-2 pt-1 border-t border-slate-100">
-                        <span className="font-bold text-rose-700">Lý do khiếu nại:</span>{" "}
-                        <span className="text-slate-800">{order.disputeReason || "Không ghi chú"}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      <label
-                        htmlFor={`dispute-note-${order.id}`}
-                        className="block text-xs font-bold text-[#001B48]"
-                      >
-                        Ghi chú kết luận phân xử của Admin:
-                      </label>
-                      <input
-                        id={`dispute-note-${order.id}`}
-                        type="text"
-                        value={disputeNotes[order.id] || ""}
-                        onChange={(e) =>
-                          setDisputeNotes((prev) => ({ ...prev, [order.id]: e.target.value }))
-                        }
-                        placeholder="Nhập lý do/bằng chứng đối soát giữa 2 bên..."
-                        className="w-full h-10 px-3.5 rounded-xl border border-slate-300 bg-white text-xs text-[#001B48] focus:border-[#018ABE] focus:outline-none"
-                      />
-
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <button
-                          type="button"
-                          disabled={busyKey === `dispute-${order.id}`}
-                          onClick={() =>
-                            runAdminAction(`dispute-${order.id}`, {
-                              action: "resolve_dispute",
-                              orderId: order.id,
-                              conclusion: "BUYER_RECEIVED",
-                              resolutionNote: disputeNotes[order.id] || "",
-                            })
-                          }
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
-                        >
-                          ✓ Người mua đã nhận hàng (COMPLETED + Chuyển Passport)
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busyKey === `dispute-${order.id}`}
-                          onClick={() =>
-                            runAdminAction(`dispute-${order.id}`, {
-                              action: "resolve_dispute",
-                              orderId: order.id,
-                              conclusion: "NOT_DELIVERED",
-                              resolutionNote: disputeNotes[order.id] || "",
-                            })
-                          }
-                          className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
-                        >
-                          ✕ Chưa giao hàng (CANCELLED + Nhả AVAILABLE)
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busyKey === `dispute-${order.id}`}
-                          onClick={() =>
-                            runAdminAction(`dispute-${order.id}`, {
-                              action: "resolve_dispute",
-                              orderId: order.id,
-                              conclusion: "INSUFFICIENT_EVIDENCE",
-                              resolutionNote: disputeNotes[order.id] || "",
-                            })
-                          }
-                          className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
-                        >
-                          ⚖️ Không đủ căn cứ (CANCELLED + Nhả AVAILABLE)
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* TAB 2: QUẢN LÝ & FLAG / UNFLAG PASSPORT (BR32, BR39) */}
-          {activeTab === "passports" && (
-            <div className="space-y-4">
-              <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 text-xs text-[#001B48]">
-                <strong>Hiệu lực gắn cờ Passport (BR39):</strong> Khi gắn cờ <code className="font-mono font-bold">FLAGGED</code>, hệ thống tự động ẩn tin đăng liên quan sang <code className="font-mono">HIDDEN</code>, từ chối đơn <code className="font-mono">PENDING</code>, chuyển đơn đang giữ chỗ sang <code className="font-mono">DISPUTED</code>, ghi nhận <code className="font-mono">PassportEvent</code> và xếp hàng phát sóng <code className="font-mono">flag()</code> lên Avalanche Fuji.
-              </div>
-
-              {passports.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-8">Chưa có Passport nào trong hệ thống.</p>
-              ) : (
-                <div className="space-y-3">
-                  {passports.map((item) => {
-                    const isFlagged = item.passportStatus === "FLAGGED";
-                    const latestListing = item.listings[0];
-                    return (
-                      <div
-                        key={item.id}
-                        className={`p-4 sm:p-5 rounded-2xl border space-y-3 ${
-                          isFlagged
-                            ? "border-rose-300 bg-rose-50/40"
-                            : "border-slate-200 bg-slate-50/50"
-                        }`}
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span
-                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                                  isFlagged
-                                    ? "bg-rose-600 text-white"
-                                    : item.passportStatus === "ARCHIVED_OWNER_DELETED"
-                                    ? "bg-slate-600 text-white"
-                                    : "bg-emerald-100 text-emerald-800"
-                                }`}
-                              >
-                                {item.passportStatus}
-                              </span>
-                              <span className="text-[11px] font-semibold text-[#02457A]">
-                                {item.category?.name || "Đồ sinh viên"} · {item._count.owners} đời chủ
-                              </span>
-                            </div>
-                            <h3 className="text-sm font-extrabold text-[#001B48]">
-                              {latestListing?.title || "Món đồ có Digital Product Passport"}
-                            </h3>
-                            <p className="text-[11px] font-mono text-slate-500 break-all">
-                              Passport ID: {item.passportId}
-                            </p>
-                            {item.currentOwner && (
-                              <p className="text-xs text-slate-600">
-                                Chủ hiện tại: <strong>{item.currentOwner.displayName}</strong> ({item.currentOwner.email})
-                              </p>
-                            )}
-                            {isFlagged && item.flagReason && (
-                              <p className="text-xs font-bold text-rose-700">
-                                Lý do đang Flag: {item.flagReason}
-                              </p>
-                            )}
-                          </div>
-
-                          {item.passportId && (
-                            <Link
-                              href={`/passport/${item.passportId}`}
-                              className="text-xs font-bold text-[#018ABE] hover:underline shrink-0"
-                            >
-                              Mở trang Passport ↗
-                            </Link>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <input
-                            type="text"
-                            aria-label={`Lý do gắn hoặc gỡ cờ cho ${item.passportId}`}
-                            value={flagReasons[item.id] || ""}
-                            onChange={(e) =>
-                              setFlagReasons((prev) => ({ ...prev, [item.id]: e.target.value }))
-                            }
-                            placeholder={
-                              isFlagged
-                                ? "Nhập ghi chú xác minh hợp lệ để gỡ cờ (Unflag)..."
-                                : "Nhập lý do gắn cờ vi phạm / đồ báo mất (tối thiểu 5 ký tự)..."
-                            }
-                            className="flex-1 h-10 px-3.5 rounded-xl border border-slate-300 bg-white text-xs text-[#001B48] focus:border-[#018ABE] focus:outline-none"
-                          />
-                          {isFlagged ? (
-                            <button
-                              type="button"
-                              disabled={busyKey === `flag-${item.id}`}
-                              onClick={() =>
-                                runAdminAction(`flag-${item.id}`, {
-                                  action: "unflag_passport",
-                                  itemId: item.id,
-                                  reason: flagReasons[item.id] || "",
-                                })
-                              }
-                              className="px-4 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50 cursor-pointer shrink-0"
-                            >
-                              ✓ Gỡ cờ &amp; Khôi phục (Unflag BR39)
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              disabled={busyKey === `flag-${item.id}`}
-                              onClick={() =>
-                                runAdminAction(`flag-${item.id}`, {
-                                  action: "flag_passport",
-                                  itemId: item.id,
-                                  reason: flagReasons[item.id] || "",
-                                })
-                              }
-                              className="px-4 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold disabled:opacity-50 cursor-pointer shrink-0"
-                            >
-                              🚩 Gắn cờ vi phạm (Flag BR39)
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: DUYỆT BÁO CÁO VI PHẠM (BR17) */}
-          {activeTab === "reports" && (
-            <div className="space-y-3">
-              {reports.length === 0 ? (
-                <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl space-y-2">
-                  <div className="text-3xl">🚩</div>
-                  <p className="text-sm font-bold text-[#001B48]">Chưa có báo cáo vi phạm nào</p>
-                </div>
-              ) : (
-                reports.map((rep) => (
-                  <div
-                    key={rep.id}
-                    className={`p-4 rounded-2xl border space-y-2.5 ${
-                      rep.status === "PENDING"
-                        ? "border-amber-200 bg-amber-50/40"
-                        : "border-slate-200 bg-slate-50/50"
+      {/* Mobile & Tablet Horizontal Nav */}
+      <nav aria-label="Điều hướng quản trị" className="lg:hidden">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                aria-current={isActive ? "page" : undefined}
+                onClick={() => setActiveSection(item.id)}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap border transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+                  isActive
+                    ? "bg-[#EEF7FB] border-[#97CADB] text-[#001B48] font-semibold"
+                    : "bg-white border-slate-200/80 text-slate-600 hover:bg-slate-50 hover:text-[#001B48]"
+                }`}
+              >
+                <SectionIcon section={item.id} active={isActive} />
+                <span>{item.label}</span>
+                {item.badgeCount !== undefined && (
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-[11px] font-semibold leading-none tabular-nums ${
+                      badgeToneClassMap[item.badgeTone ?? "slate"]
                     }`}
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                            rep.status === "PENDING"
-                              ? "bg-amber-500 text-white"
-                              : rep.status === "RESOLVED"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-slate-200 text-slate-700"
-                          }`}
-                        >
-                          {rep.status}
-                        </span>
-                        <span className="text-xs font-extrabold text-[#001B48]">
-                          Đối tượng: {rep.targetType} ({rep.targetId.slice(0, 12)}...)
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-3 text-xs">
-                        {rep.targetType === "LISTING" && (
-                          <Link
-                            href={`/products/${rep.targetId}`}
-                            className="font-bold text-[#018ABE] hover:underline"
-                          >
-                            Xem tin đăng ↗
-                          </Link>
-                        )}
-                        {rep.targetType === "PASSPORT" && (
-                          <Link
-                            href={`/passport/${rep.targetId}`}
-                            className="font-bold text-[#018ABE] hover:underline"
-                          >
-                            Xem Passport ↗
-                          </Link>
-                        )}
-                        {rep.targetType === "USER" && (
-                          <Link
-                            href={`/users/${rep.targetId}`}
-                            className="font-bold text-[#018ABE] hover:underline"
-                          >
-                            Xem hồ sơ ↗
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-800 bg-white p-3 rounded-xl border border-slate-200">
-                      <strong>Nội dung báo cáo:</strong> {rep.reason}
-                    </p>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-                      <span>
-                        Người gửi: {rep.reporter.displayName} ({rep.reporter.email}) ·{" "}
-                        {new Date(rep.createdAt).toLocaleString("vi-VN")}
-                      </span>
-
-                      {rep.status === "PENDING" && (
-                        <div className="flex flex-wrap gap-2">
-                          {rep.targetType === "LISTING" && (
-                            <button
-                              type="button"
-                              disabled={busyKey === `rep-${rep.id}`}
-                              onClick={() =>
-                                runAdminAction(`rep-${rep.id}`, {
-                                  action: "handle_report",
-                                  reportId: rep.id,
-                                  decision: "RESOLVED",
-                                  removeListing: true,
-                                })
-                              }
-                              className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
-                            >
-                              🗑️ Gỡ tin vi phạm (BR17) &amp; Đóng
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            disabled={busyKey === `rep-${rep.id}`}
-                            onClick={() =>
-                              runAdminAction(`rep-${rep.id}`, {
-                                action: "handle_report",
-                                reportId: rep.id,
-                                decision: "RESOLVED",
-                                removeListing: false,
-                              })
-                            }
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
-                          >
-                            ✓ Đã xử lý
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busyKey === `rep-${rep.id}`}
-                            onClick={() =>
-                              runAdminAction(`rep-${rep.id}`, {
-                                action: "handle_report",
-                                reportId: rep.id,
-                                decision: "DISMISSED",
-                                removeListing: false,
-                              })
-                            }
-                            className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer disabled:opacity-50"
-                          >
-                            Bác bỏ
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* TAB 4: DUYỆT THẺ SINH VIÊN (NĐ 13/2023/NĐ-CP) */}
-          {activeTab === "students" && (
-            <div className="space-y-4">
-              <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 text-xs text-[#001B48]">
-                <strong>Tuân thủ Nghị định 13/2023/NĐ-CP:</strong> Ngay khi bạn bấm <em>Phê duyệt</em> hoặc <em>Từ chối</em>, hệ thống tự động đặt <code className="font-mono font-bold">studentCardUrl = NULL</code> để xóa vĩnh viễn ảnh chụp thẻ sinh viên khỏi cơ sở dữ liệu.
-              </div>
-
-              {pendingStudents.length === 0 ? (
-                <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl space-y-2">
-                  <div className="text-3xl">🪪</div>
-                  <p className="text-sm font-bold text-[#001B48]">
-                    Không có ảnh thẻ sinh viên nào đang chờ xét duyệt
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {pendingStudents.map((st) => (
-                    <div
-                      key={st.id}
-                      className="p-5 rounded-2xl border border-[#D6E8EE] bg-[#F8FAFC] space-y-3"
-                    >
-                      <div>
-                        <h3 className="text-sm font-extrabold text-[#001B48]">{st.displayName}</h3>
-                        <p className="text-xs text-slate-600">{st.email}</p>
-                        <p className="text-xs text-[#02457A] mt-0.5">
-                          {st.school?.name || "Chưa chọn trường"} {st.dorm ? `· ${st.dorm}` : ""}
-                        </p>
-                      </div>
-
-                      {st.studentCardUrl && (
-                        <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-2">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={st.studentCardUrl}
-                            alt={`Thẻ sinh viên ${st.displayName}`}
-                            className="w-full max-h-52 object-contain"
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          type="button"
-                          disabled={busyKey === `st-${st.id}`}
-                          onClick={() =>
-                            runAdminAction(`st-${st.id}`, {
-                              action: "verify_student_card",
-                              targetUserId: st.id,
-                              approve: true,
-                            })
-                          }
-                          className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
-                        >
-                          ✓ Phê duyệt &amp; Xóa ảnh thẻ
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busyKey === `st-${st.id}`}
-                          onClick={() =>
-                            runAdminAction(`st-${st.id}`, {
-                              action: "verify_student_card",
-                              targetUserId: st.id,
-                              approve: false,
-                            })
-                          }
-                          className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
-                        >
-                          ✕ Từ chối &amp; Xóa ảnh thẻ
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 5: GIÁM SÁT HÀNG ĐỢI CHAIN_TX & CRON */}
-          {activeTab === "chain" && (
-            <div className="space-y-4">
-              {chainTxs.length === 0 ? (
-                <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl space-y-2">
-                  <div className="text-3xl">⛓️</div>
-                  <p className="text-sm font-bold text-[#001B48]">Chưa có giao dịch ChainTx nào</p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {chainTxs.map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-extrabold text-[#001B48]">{tx.kind}</span>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                              tx.status === "CONFIRMED"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : tx.status === "QUEUED"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-rose-100 text-rose-800"
-                            }`}
-                          >
-                            {tx.status}
-                          </span>
-                          <span className="text-slate-500">Thử lại: {tx.attempts}/3</span>
-                        </div>
-                        <div className="font-mono text-[11px] text-slate-600 truncate">
-                          Passport: {tx.item.passportId || tx.itemId}
-                        </div>
-                        <div className="font-mono text-[11px] text-slate-500 truncate">
-                          TxHash: {tx.txHash || "Chưa phát sóng"}
-                        </div>
-                        {tx.lastError && (
-                          <div className="text-[11px] text-rose-600 truncate">
-                            Lỗi: {tx.lastError}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {tx.txHash && (
-                          <a
-                            href={`https://testnet.snowtrace.io/tx/${tx.txHash}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-[#018ABE] font-bold hover:bg-sky-50"
-                          >
-                            Snowtrace ↗
-                          </a>
-                        )}
-                        {tx.status !== "CONFIRMED" && (
-                          <button
-                            type="button"
-                            disabled={busyKey === `chain-${tx.itemId}`}
-                            onClick={() =>
-                              runAdminAction(`chain-${tx.itemId}`, {
-                                action: "retry_chain_tx",
-                                itemId: tx.itemId,
-                              })
-                            }
-                            className="px-3 py-1.5 rounded-lg bg-[#018ABE] hover:bg-[#02457A] text-white font-bold cursor-pointer disabled:opacity-50"
-                          >
-                            ⚡ Đồng bộ lại
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    {item.badgeCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
+      </nav>
+
+      {/* Main Responsive Two-Column Shell */}
+      <div className="lg:grid lg:grid-cols-[232px_minmax(0,1fr)] lg:gap-8">
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:block sticky top-24 self-start">
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-[0_1px_2px_rgba(0,27,72,0.04)]">
+            <nav aria-label="Danh mục quản trị" className="space-y-1">
+              {navItems.map((item) => {
+                const isActive = activeSection === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-current={isActive ? "page" : undefined}
+                    onClick={() => setActiveSection(item.id)}
+                    className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+                      isActive
+                        ? "bg-[#EEF7FB] text-[#001B48] font-semibold"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-[#001B48] font-medium"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5 min-w-0">
+                      <SectionIcon section={item.id} active={isActive} />
+                      <span className="truncate">{item.label}</span>
+                    </span>
+                    {item.badgeCount !== undefined && (
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-semibold leading-none tabular-nums shrink-0 ${
+                          badgeToneClassMap[item.badgeTone ?? "slate"]
+                        }`}
+                      >
+                        {item.badgeCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            <div
+              data-admin-id={currentAdminId}
+              className="border-t border-slate-100 pt-3 mt-3 px-2.5 space-y-1.5"
+            >
+              <p className="text-xs font-medium text-slate-500 truncate" title={currentAdminEmail}>
+                {currentAdminEmail}
+              </p>
+              <div className="flex items-center gap-2 text-xs">
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    totalPendingWork === 0 ? "bg-emerald-500" : "bg-amber-500"
+                  }`}
+                  aria-hidden="true"
+                />
+                <span className="text-slate-600 tabular-nums">
+                  {totalPendingWork === 0 ? "Ổn định" : `${totalPendingWork} việc chờ xử lý`}
+                </span>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Workspace */}
+        <section className="min-w-0">
+          {activeSection === "overview" ? (
+            <AdminOverviewSection
+              stats={stats}
+              distribution={payload.distribution}
+              recentActivities={payload.recentActivities}
+              serverNow={payload.serverNow}
+              onNavigate={setActiveSection}
+            />
+          ) : activeSection === "listings" ? (
+            <AdminListingsSection
+              listings={payload.listings}
+              passports={payload.passports}
+              onRunAction={runAdminAction}
+            />
+          ) : (
+            <SectionPreviewCard
+              section={activeSection}
+              stats={stats}
+              onBackToOverview={() => setActiveSection("overview")}
+            />
+          )}
+        </section>
       </div>
+
+      {/* Floating Toast Notification */}
+      {feedback && (
+        <div
+          role={feedback.type === "error" ? "alert" : "status"}
+          className={`fixed bottom-5 right-5 z-40 max-w-sm rounded-2xl border px-4 py-3 shadow-lg flex items-start gap-3 ${
+            feedback.type === "success"
+              ? "bg-white border-emerald-200 text-emerald-900"
+              : "bg-white border-rose-200 text-rose-900"
+          }`}
+        >
+          <span
+            className={`w-6 h-6 rounded-lg shrink-0 flex items-center justify-center mt-0.5 ${
+              feedback.type === "success"
+                ? "bg-emerald-50 text-emerald-600"
+                : "bg-rose-50 text-rose-600"
+            }`}
+          >
+            {feedback.type === "success" ? (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+              </svg>
+            ) : (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+                />
+              </svg>
+            )}
+          </span>
+          <p className="text-xs sm:text-sm font-medium leading-snug flex-1">{feedback.message}</p>
+          <button
+            type="button"
+            onClick={() => setFeedback(null)}
+            aria-label="Đóng thông báo"
+            className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
