@@ -4,6 +4,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  ConfirmActionTarget,
+  ConfirmListingActionModal,
+  EditListingModal,
+  EditListingPayload,
+  ZaloInviteData,
+  ZaloInviteModal,
+} from "./ListingActionModals";
 
 export interface MyListingItem {
   id: string;
@@ -99,6 +107,13 @@ export function MyListingsTab({ onNotify, onCountChange }: MyListingsTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [busyListingId, setBusyListingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editingListing, setEditingListing] = useState<MyListingItem | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<ConfirmActionTarget>(null);
+  const [confirmingAction, setConfirmingAction] = useState(false);
+  const [inviteModalData, setInviteModalData] = useState<ZaloInviteData | null>(null);
+  const [generatingInviteId, setGeneratingInviteId] = useState<string | null>(null);
   const menuContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -303,6 +318,159 @@ export function MyListingsTab({ onNotify, onCountChange }: MyListingsTabProps) {
       onNotify("error", "Lỗi kết nối khi gia hạn tin đăng.");
     } finally {
       setBusyListingId(null);
+    }
+  };
+
+  const handleOpenEdit = (listing: MyListingItem) => {
+    setOpenMenuId(null);
+    if (listing.status === "RESERVED") {
+      onNotify("error", "Không thể chỉnh sửa thông tin khi tin đang được giữ chỗ cho người mua.");
+      return;
+    }
+    setEditError(null);
+    setEditingListing(listing);
+  };
+
+  const handleSaveEdit = async (payload: EditListingPayload) => {
+    if (!editingListing) return;
+
+    setSavingEdit(true);
+    setEditError(null);
+
+    try {
+      const res = await fetch(`/api/listings/${editingListing.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_info",
+          ...payload,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setEditError(data.error || "Không thể lưu thay đổi.");
+        return;
+      }
+
+      const targetId = editingListing.id;
+      setListings((prev) =>
+        prev.map((item) =>
+          item.id === targetId
+            ? {
+                ...item,
+                title: payload.title,
+                price: payload.price,
+                isFree: payload.isFree,
+                condition: payload.condition,
+                description: payload.description,
+                zaloPhone: payload.zaloPhone,
+                hidePhone: payload.hidePhone,
+              }
+            : item
+        )
+      );
+
+      setEditingListing(null);
+      onNotify("success", data.message || "Đã cập nhật thông tin tin đăng.");
+    } catch {
+      setEditError("Lỗi kết nối khi cập nhật thông tin tin đăng.");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleOpenConfirm = (mode: "delete" | "mark_sold", listing: MyListingItem) => {
+    setOpenMenuId(null);
+    if (mode === "delete" && (listing.status === "RESERVED" || listing.hasActiveOrder)) {
+      onNotify("error", "Không thể xóa sản phẩm đang có lịch hẹn hoạt động.");
+      return;
+    }
+    setConfirmTarget({ mode, listing });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmTarget) return;
+
+    const { mode, listing } = confirmTarget;
+    setConfirmingAction(true);
+
+    try {
+      if (mode === "mark_sold") {
+        const res = await fetch(`/api/listings/${listing.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "mark_sold" }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          onNotify("error", data.error || "Không thể đánh dấu tin đã bán.");
+          setConfirmTarget(null);
+          return;
+        }
+
+        setListings((prev) =>
+          prev.map((item) => (item.id === listing.id ? { ...item, status: "SOLD" } : item))
+        );
+        setConfirmTarget(null);
+        onNotify("success", data.message || "Đã đánh dấu món đồ là Đã bán.");
+        return;
+      }
+
+      const res = await fetch(`/api/listings/${listing.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        onNotify("error", data.error || "Không thể xóa tin đăng.");
+        setConfirmTarget(null);
+        return;
+      }
+
+      const nextListings = listings.filter((item) => item.id !== listing.id);
+      setListings(nextListings);
+      onCountChange?.(nextListings.length);
+      window.dispatchEvent(new Event("unicycle-auth-change"));
+      setConfirmTarget(null);
+      onNotify("success", data.message || "Đã xóa tin đăng thành công.");
+    } catch {
+      onNotify("error", "Lỗi kết nối khi xử lý yêu cầu.");
+      setConfirmTarget(null);
+    } finally {
+      setConfirmingAction(false);
+    }
+  };
+
+  const handleCreateInvite = async (listing: MyListingItem) => {
+    setOpenMenuId(null);
+    setGeneratingInviteId(listing.id);
+
+    try {
+      const res = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: listing.id }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        onNotify("error", data.error || "Không thể tạo link chốt bán cho khách Zalo.");
+        return;
+      }
+
+      setInviteModalData({
+        listingTitle: data.listingTitle || listing.title,
+        inviteUrl: data.inviteUrl,
+        fullInviteUrl: data.fullInviteUrl,
+        qrUrl: data.qrUrl,
+      });
+    } catch {
+      onNotify("error", "Lỗi kết nối khi tạo link chốt bán Zalo.");
+    } finally {
+      setGeneratingInviteId(null);
     }
   };
 
@@ -703,38 +871,59 @@ export function MyListingsTab({ onNotify, onCountChange }: MyListingsTabProps) {
                     {isAvailable && (
                       <button
                         type="button"
-                        disabled={isBusy}
-                        onClick={() => handleToggleVisibility(listing)}
-                        className="h-9 px-3 rounded-xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border border-[#D6E8EE] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                        disabled={generatingInviteId === listing.id || isBusy}
+                        onClick={() => handleCreateInvite(listing)}
+                        className="h-9 px-3 rounded-xl bg-[#0068FF]/10 hover:bg-[#0068FF]/20 text-[#0068FF] border border-[#0068FF]/25 text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
                       >
                         <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.861-.861 5.972 5.972 0 011.057-3.035C4.604 15.69 4 13.93 4 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+                          />
                         </svg>
-                        <span>{isBusy ? "Đang ẩn..." : "Tạm ẩn"}</span>
+                        <span>
+                          {generatingInviteId === listing.id ? "Đang tạo..." : "Chốt bán Zalo"}
+                        </span>
                       </button>
                     )}
 
-                    {!isSold && !isExpired && (
-                      <div className="relative">
-                        <button
-                          type="button"
-                          aria-haspopup="menu"
-                          aria-expanded={isMenuOpen}
-                          aria-label={`Thao tác thêm cho ${listing.title}`}
-                          onClick={() => setOpenMenuId(isMenuOpen ? null : listing.id)}
-                          className="w-9 h-9 rounded-xl border border-[#D6E8EE] bg-white hover:bg-slate-50 text-[#001B48] inline-flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-                        >
-                          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                          </svg>
-                        </button>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        aria-haspopup="menu"
+                        aria-expanded={isMenuOpen}
+                        aria-label={`Thao tác thêm cho ${listing.title}`}
+                        onClick={() => setOpenMenuId(isMenuOpen ? null : listing.id)}
+                        className="w-9 h-9 rounded-xl border border-[#D6E8EE] bg-white hover:bg-slate-50 text-[#001B48] inline-flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                      >
+                        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                        </svg>
+                      </button>
 
-                        {isMenuOpen && (
-                          <div
-                            role="menu"
-                            aria-label={`Tùy chọn cho ${listing.title}`}
-                            className="absolute right-0 top-full mt-1.5 z-20 min-w-[205px] rounded-2xl bg-white border border-[#D6E8EE] shadow-xl p-1.5 space-y-0.5"
+                      {isMenuOpen && (
+                        <div
+                          role="menu"
+                          aria-label={`Tùy chọn cho ${listing.title}`}
+                          className="absolute right-0 top-full mt-1.5 z-20 min-w-[215px] rounded-2xl bg-white border border-[#D6E8EE] shadow-xl p-1.5 space-y-0.5"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            disabled={isReserved || isBusy}
+                            onClick={() => handleOpenEdit(listing)}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#001B48] hover:bg-[#F4F9FB] disabled:opacity-50 disabled:cursor-not-allowed flex flex-col gap-0.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
                           >
+                            <span>Chỉnh sửa tin đăng</span>
+                            {isReserved && (
+                              <span className="text-[11px] font-normal text-slate-500">
+                                Đang giữ chỗ cho người mua
+                              </span>
+                            )}
+                          </button>
+
+                          {!isSold && !isExpired && (
                             <button
                               type="button"
                               role="menuitem"
@@ -749,25 +938,54 @@ export function MyListingsTab({ onNotify, onCountChange }: MyListingsTabProps) {
                                 </span>
                               )}
                             </button>
+                          )}
 
+                          {!isSold && (
                             <button
                               type="button"
                               role="menuitem"
-                              disabled={isReserved || isBusy}
-                              onClick={() => handleRenew(listing)}
-                              className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#001B48] hover:bg-[#F4F9FB] disabled:opacity-50 disabled:cursor-not-allowed flex flex-col gap-0.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                              disabled={isBusy}
+                              onClick={() => handleOpenConfirm("mark_sold", listing)}
+                              className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#001B48] hover:bg-[#F4F9FB] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
                             >
-                              <span>Gia hạn thêm 30 ngày</span>
-                              {isReserved && (
-                                <span className="text-[11px] font-normal text-slate-500">
-                                  Đang giữ chỗ cho người mua
-                                </span>
-                              )}
+                              Đánh dấu đã bán
                             </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          )}
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            disabled={isReserved || isBusy}
+                            onClick={() => handleRenew(listing)}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#001B48] hover:bg-[#F4F9FB] disabled:opacity-50 disabled:cursor-not-allowed flex flex-col gap-0.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                          >
+                            <span>Gia hạn thêm 30 ngày</span>
+                            {isReserved && (
+                              <span className="text-[11px] font-normal text-slate-500">
+                                Đang giữ chỗ cho người mua
+                              </span>
+                            )}
+                          </button>
+
+                          <div className="my-1 border-t border-slate-100" role="separator" />
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            disabled={isReserved || Boolean(listing.hasActiveOrder) || isBusy}
+                            onClick={() => handleOpenConfirm("delete", listing)}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col gap-0.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                          >
+                            <span>Xóa tin đăng</span>
+                            {(isReserved || listing.hasActiveOrder) && (
+                              <span className="text-[11px] font-normal text-slate-500">
+                                Đang có lịch hẹn hoạt động
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </article>
@@ -775,6 +993,31 @@ export function MyListingsTab({ onNotify, onCountChange }: MyListingsTabProps) {
           })}
         </div>
       )}
+
+      <EditListingModal
+        listing={editingListing}
+        saving={savingEdit}
+        error={editError}
+        onClose={() => {
+          if (!savingEdit) setEditingListing(null);
+        }}
+        onSubmit={handleSaveEdit}
+      />
+
+      <ConfirmListingActionModal
+        target={confirmTarget}
+        submitting={confirmingAction}
+        onClose={() => {
+          if (!confirmingAction) setConfirmTarget(null);
+        }}
+        onConfirm={handleConfirmAction}
+      />
+
+      <ZaloInviteModal
+        invite={inviteModalData}
+        onClose={() => setInviteModalData(null)}
+        onCopyError={(msg) => onNotify("error", msg)}
+      />
     </div>
   );
 }

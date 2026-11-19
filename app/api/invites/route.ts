@@ -24,13 +24,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Tìm tin đăng & kiểm tra quyền sở hữu (BR03)
+    // 2. Tìm tin đăng & kiểm tra quyền sở hữu
     let listing = null;
+    let resolvedUserId = user.id;
     try {
-      listing = await prisma.listing.findUnique({
-        where: { id: listingId },
-        include: { item: true },
-      });
+      const [dbUser, foundListing] = await Promise.all([
+        prisma.user.findFirst({
+          where: { OR: [{ id: user.id }, { email: user.email }] },
+          select: { id: true },
+        }),
+        prisma.listing.findUnique({
+          where: { id: listingId },
+          include: { item: true },
+        }),
+      ]);
+      resolvedUserId = dbUser?.id || user.id;
+      listing = foundListing;
     } catch (err) {
       console.warn("⚠️ Lỗi truy vấn DB khi tạo lời mời chốt bán:", err);
     }
@@ -42,9 +51,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (listing.sellerId !== user.id && user.role !== "ADMIN") {
+    if (listing.sellerId !== resolvedUserId && user.role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Bạn chỉ có thể tạo lời mời chốt bán cho món đồ của chính mình (BR03)." },
+        { error: "Bạn chỉ có thể tạo lời mời chốt bán cho món đồ của chính mình." },
         { status: 403 }
       );
     }
@@ -54,7 +63,7 @@ export async function POST(req: NextRequest) {
         {
           error:
             listing.status === "RESERVED"
-              ? "Món đồ đang ở trạng thái Giữ chỗ (RESERVED) cho một người mua khác."
+              ? "Món đồ đang được giữ chỗ cho một người mua khác."
               : "Món đồ hiện không ở trạng thái mở bán.",
         },
         { status: 400 }
@@ -63,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     if (listing.item?.passportStatus === "FLAGGED") {
       return NextResponse.json(
-        { error: "Món đồ đang bị khóa do có nghi vấn vi phạm (BR39)." },
+        { error: "Món đồ đang bị tạm khóa do có nghi vấn vi phạm." },
         { status: 400 }
       );
     }
@@ -95,7 +104,7 @@ export async function POST(req: NextRequest) {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(fullInviteUrl)}`;
 
     return NextResponse.json({
-      message: "Đã tạo link chốt bán Zalo thành công! Link có hiệu lực 24 giờ (BR38).",
+      message: "Đã tạo link chốt bán Zalo thành công! Link có hiệu lực trong 24 giờ.",
       code,
       inviteUrl: `/invites/${code}`,
       fullInviteUrl,
