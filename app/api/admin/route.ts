@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/auth";
 import { reconcileExpiredOrders } from "@/lib/utils/order-timeouts";
 import { executeOrderCompletionAndPassportTransfer } from "@/lib/utils/passport-transfer";
 import { processItemChainQueue } from "@/lib/blockchain/relayer";
+import { HEADER_CATEGORIES } from "@/lib/constants/categories";
 
 async function requireAdmin() {
   const sessionUser = await getSessionUser();
@@ -48,12 +49,15 @@ async function requireAdmin() {
 
 /**
  * GET /api/admin
- * Tải toàn bộ dữ liệu bảng điều khiển Quản trị viên:
- * - Đơn DISPUTED (SLA 72h)
- * - Danh sách Passport để Flag/Unflag (BR32, BR39)
- * - Báo cáo vi phạm cộng đồng (BR17)
- * - Hồ sơ Thẻ Sinh Viên chờ duyệt (NĐ 13/2023/NĐ-CP)
- * - Giám sát hàng đợi ChainTx Avalanche Fuji (BR28)
+ * Tải toàn bộ dữ liệu trung tâm điều hành Quản trị viên:
+ * - Số liệu tổng quan (người dùng, tin đăng, đơn hẹn, hộ chiếu, khiếu nại, báo cáo)
+ * - Biểu đồ phân bố tin đăng theo cơ sở/trường và theo danh mục
+ * - Dòng hoạt động nghiệp vụ gần nhất
+ * - Danh sách tin đăng quản trị (tìm kiếm, lọc trạng thái, ẩn/khôi phục/gỡ tin)
+ * - Danh sách tài khoản người dùng & hàng đợi duyệt thẻ sinh viên
+ * - Đơn tranh chấp cần phân xử (SLA 72h)
+ * - Báo cáo vi phạm cộng đồng
+ * - Giám sát đồng bộ sổ cái blockchain
  */
 export async function GET() {
   try {
@@ -64,7 +68,14 @@ export async function GET() {
 
     const [
       totalUsers,
+      verifiedUsersCount,
+      suspendedUsersCount,
       activeListings,
+      totalListings,
+      passportListingsCount,
+      multiOwnerItemsGroup,
+      completedOrdersCount,
+      activeOrdersCount,
       disputedOrders,
       passports,
       reports,
@@ -72,9 +83,26 @@ export async function GET() {
       chainTxs,
       flaggedPassportsCount,
       pendingChainTxsCount,
+      schoolsWithCount,
+      categoriesWithCount,
+      recentListings,
+      recentOrders,
+      rawListings,
+      rawUsers,
     ] = await Promise.all([
       prisma.user.count({ where: { status: { not: "DELETED" } } }),
+      prisma.user.count({ where: { isStudentVerified: true, status: { not: "DELETED" } } }),
+      prisma.user.count({ where: { status: "SUSPENDED" } }),
       prisma.listing.count({ where: { status: "AVAILABLE" } }),
+      prisma.listing.count(),
+      prisma.listing.count({ where: { status: "AVAILABLE", item: { passportEnabled: true } } }),
+      prisma.passportOwner.groupBy({
+        by: ["itemId"],
+        _count: { itemId: true },
+        having: { itemId: { _count: { gt: 1 } } },
+      }),
+      prisma.order.count({ where: { status: "COMPLETED" } }),
+      prisma.order.count({ where: { status: { in: ["ACCEPTED", "WAITING_CONFIRMATION"] } } }),
       prisma.order.findMany({
         where: { status: "DISPUTED" },
         include: {
@@ -123,7 +151,7 @@ export async function GET() {
           reporter: { select: { id: true, displayName: true, email: true } },
         },
         orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-        take: 30,
+        take: 40,
       }),
       prisma.user.findMany({
         where: {
@@ -147,27 +175,291 @@ export async function GET() {
           item: { select: { id: true, passportId: true, passportStatus: true } },
         },
         orderBy: { createdAt: "desc" },
-        take: 25,
+        take: 30,
       }),
       prisma.item.count({ where: { passportStatus: "FLAGGED" } }),
       prisma.chainTx.count({
         where: { status: { in: ["QUEUED", "FAILED", "NEEDS_ATTENTION"] } },
       }),
+      prisma.school.findMany({
+        select: {
+          name: true,
+          shortName: true,
+          _count: {
+            select: {
+              listings: { where: { status: "AVAILABLE" } },
+            },
+          },
+        },
+        orderBy: { name: "asc" },
+      }),
+      prisma.category.findMany({
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          _count: {
+            select: {
+              listings: { where: { status: "AVAILABLE" } },
+            },
+          },
+        },
+      }),
+      prisma.listing.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 6,
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          status: true,
+          createdAt: true,
+          seller: { select: { displayName: true } },
+        },
+      }),
+      prisma.order.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 6,
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+          listing: { select: { title: true } },
+          buyer: { select: { displayName: true } },
+          seller: { select: { displayName: true } },
+        },
+      }),
+      prisma.listing.findMany({
+        take: 80,
+        orderBy: { createdAt: "desc" },
+        include: {
+          category: { select: { id: true, name: true, slug: true } },
+          school: { select: { id: true, name: true, shortName: true } },
+          seller: {
+            select: {
+              id: true,
+              displayName: true,
+              email: true,
+              isStudentVerified: true,
+              dorm: true,
+              school: { select: { name: true, shortName: true } },
+            },
+          },
+          item: {
+            select: {
+              id: true,
+              passportId: true,
+              passportStatus: true,
+              passportEnabled: true,
+              owners: { select: { seq: true }, orderBy: { seq: "desc" }, take: 1 },
+            },
+          },
+          images: {
+            select: { url: true, position: true },
+            orderBy: { position: "asc" },
+            take: 1,
+          },
+          _count: { select: { orders: true } },
+        },
+      }),
+      prisma.user.findMany({
+        where: { status: { not: "DELETED" } },
+        take: 80,
+        select: {
+          id: true,
+          displayName: true,
+          email: true,
+          role: true,
+          status: true,
+          isStudentVerified: true,
+          studentVerifiedAt: true,
+          studentCardUrl: true,
+          reputationScore: true,
+          dorm: true,
+          createdAt: true,
+          school: { select: { id: true, name: true, shortName: true } },
+          _count: {
+            select: {
+              listings: true,
+              buyingOrders: true,
+              sellingOrders: true,
+            },
+          },
+        },
+        orderBy: [{ isStudentVerified: "asc" }, { createdAt: "desc" }],
+      }),
     ]);
 
     const pendingReportsCount = reports.filter((r) => r.status === "PENDING").length;
+    const multiOwnerItemsCount = multiOwnerItemsGroup.length;
+
+    // Phân bố theo trường
+    const totalActive = activeListings > 0 ? activeListings : 1;
+    const distributionBySchool = schoolsWithCount
+      .map((s) => ({
+        label: s.shortName || s.name,
+        count: s._count.listings,
+        percentage: Math.round((s._count.listings / totalActive) * 100),
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // Phân bố theo danh mục (chuẩn hóa theo HEADER_CATEGORIES)
+    const categoryCountMap = new Map<string, number>();
+    for (const c of categoriesWithCount) {
+      categoryCountMap.set(c.slug, (categoryCountMap.get(c.slug) || 0) + c._count.listings);
+      categoryCountMap.set(c.name.toLowerCase(), (categoryCountMap.get(c.name.toLowerCase()) || 0) + c._count.listings);
+    }
+    const distributionByCategory = HEADER_CATEGORIES.map((hc) => {
+      const matched = categoryCountMap.get(hc.slug) || categoryCountMap.get(hc.name.toLowerCase()) || 0;
+      return {
+        label: hc.name,
+        count: matched,
+        percentage: Math.round((matched / totalActive) * 100),
+      };
+    });
+
+    // Dòng hoạt động nghiệp vụ gần nhất
+    interface ActivityItem {
+      id: string;
+      type: "listing" | "order" | "report";
+      title: string;
+      subtitle: string;
+      time: string;
+      status: string;
+      statusBadgeColor?: "green" | "blue" | "amber" | "rose" | "slate";
+      sortTime: number;
+    }
+
+    const activities: ActivityItem[] = [];
+
+    for (const l of recentListings) {
+      activities.push({
+        id: `listing-${l.id}`,
+        type: "listing",
+        title: `Tin đăng: ${l.title}`,
+        subtitle: `Người bán: ${l.seller.displayName} • ${l.price > 0 ? l.price.toLocaleString("vi-VN") + " đ" : "Tặng 0đ"}`,
+        time: l.createdAt.toISOString(),
+        status: l.status,
+        statusBadgeColor: l.status === "AVAILABLE" ? "green" : l.status === "RESERVED" ? "amber" : "slate",
+        sortTime: new Date(l.createdAt).getTime(),
+      });
+    }
+
+    for (const o of recentOrders) {
+      activities.push({
+        id: `order-${o.id}`,
+        type: "order",
+        title: `Đơn hẹn: ${o.listing?.title || "Món đồ"}`,
+        subtitle: `${o.buyer.displayName} hẹn gặp ${o.seller.displayName}`,
+        time: o.createdAt.toISOString(),
+        status: o.status,
+        statusBadgeColor: o.status === "COMPLETED" ? "green" : o.status === "DISPUTED" ? "rose" : "blue",
+        sortTime: new Date(o.createdAt).getTime(),
+      });
+    }
+
+    activities.sort((a, b) => b.sortTime - a.sortTime);
+    const recentActivities = activities.slice(0, 8).map(({ id, type, title, subtitle, time, status, statusBadgeColor }) => ({
+      id,
+      type,
+      title,
+      subtitle,
+      time,
+      status,
+      statusBadgeColor,
+    }));
+
+    // Đếm số báo cáo cho từng tin đăng
+    const listingIds = rawListings.map((l) => l.id);
+    const listingReports = await prisma.report.findMany({
+      where: {
+        targetType: "LISTING",
+        targetId: { in: listingIds },
+      },
+      select: { targetId: true },
+    });
+
+    const reportCountByListing = new Map<string, number>();
+    for (const r of listingReports) {
+      reportCountByListing.set(r.targetId, (reportCountByListing.get(r.targetId) || 0) + 1);
+    }
+
+    const listings = rawListings.map((l) => ({
+      id: l.id,
+      title: l.title,
+      price: l.price,
+      isFree: l.isFree,
+      status: l.status,
+      condition: l.condition,
+      createdAt: l.createdAt.toISOString(),
+      expiresAt: l.expiresAt.toISOString(),
+      category: l.category,
+      school: l.school,
+      seller: l.seller,
+      item: l.item
+        ? {
+            id: l.item.id,
+            passportId: l.item.passportId,
+            passportStatus: l.item.passportStatus,
+            passportEnabled: l.item.passportEnabled,
+            currentOwnerSeq: l.item.owners[0]?.seq,
+          }
+        : null,
+      images: l.images,
+      ordersCount: l._count.orders,
+      reportsCount: reportCountByListing.get(l.id) || 0,
+    }));
+
+    // Sắp xếp người dùng: Ưu tiên hồ sơ tải thẻ SV chờ duyệt lên trước
+    const sortedUsers = [...rawUsers].sort((a, b) => {
+      const aPending = Boolean(a.studentCardUrl && !a.isStudentVerified);
+      const bPending = Boolean(b.studentCardUrl && !b.isStudentVerified);
+      if (aPending && !bPending) return -1;
+      if (!aPending && bPending) return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    const users = sortedUsers.map((u) => ({
+      id: u.id,
+      displayName: u.displayName,
+      email: u.email,
+      role: u.role,
+      status: u.status,
+      isStudentVerified: u.isStudentVerified,
+      studentVerifiedAt: u.studentVerifiedAt ? u.studentVerifiedAt.toISOString() : null,
+      studentCardUrl: u.studentCardUrl,
+      reputationScore: u.reputationScore,
+      dorm: u.dorm,
+      createdAt: u.createdAt.toISOString(),
+      school: u.school,
+      _count: u._count,
+    }));
 
     return NextResponse.json({
       serverNow: new Date().toISOString(),
       stats: {
         totalUsers,
+        verifiedUsersCount,
+        suspendedUsersCount,
         activeListings,
+        totalListings,
+        passportListingsCount,
+        multiOwnerItemsCount,
+        completedOrdersCount,
+        activeOrdersCount,
         disputedOrdersCount: disputedOrders.length,
         pendingReportsCount,
         pendingStudentCardsCount: pendingStudents.length,
         flaggedPassportsCount,
         pendingChainTxsCount,
       },
+      distribution: {
+        bySchool: distributionBySchool,
+        byCategory: distributionByCategory,
+      },
+      recentActivities,
+      listings,
+      users,
       disputedOrders,
       passports,
       reports,
@@ -185,7 +477,7 @@ export async function GET() {
 
 /**
  * POST /api/admin
- * Thực thi các nghiệp vụ kiểm duyệt & phân xử của Admin
+ * Thực thi các thao tác vận hành, kiểm duyệt & phân xử của Admin
  */
 export async function POST(req: NextRequest) {
   try {
@@ -197,7 +489,257 @@ export async function POST(req: NextRequest) {
     const now = new Date();
 
     // ------------------------------------------------------------------
-    // 1. PHÂN XỬ ĐƠN DISPUTED (SLA 72H - Mục 7.2 system-design.md)
+    // 1. QUẢN LÝ TIN ĐĂNG (ẨN / KHÔI PHỤC / GỠ BỎ TIN)
+    // ------------------------------------------------------------------
+    if (action === "moderate_listing") {
+      const listingId = typeof body.listingId === "string" ? body.listingId.trim() : "";
+      const mode = typeof body.mode === "string" ? body.mode.trim() : "";
+      const reason =
+        typeof body.reason === "string" && body.reason.trim()
+          ? body.reason.trim()
+          : "Vi phạm quy chế cộng đồng hoặc không phù hợp tiêu chuẩn đăng tin.";
+
+      if (!listingId || !["hide", "restore", "remove"].includes(mode)) {
+        return NextResponse.json(
+          { error: "Thiếu mã tin đăng hoặc thao tác không hợp lệ." },
+          { status: 400 }
+        );
+      }
+
+      const listing = await prisma.listing.findUnique({
+        where: { id: listingId },
+        include: {
+          orders: {
+            where: { status: { in: ["ACCEPTED", "WAITING_CONFIRMATION", "PENDING"] } },
+            select: { id: true, status: true, buyerId: true },
+          },
+        },
+      });
+
+      if (!listing) {
+        return NextResponse.json({ error: "Không tìm thấy tin đăng." }, { status: 404 });
+      }
+
+      // Kiểm tra an toàn: Nếu tin đang có đơn hẹn gặp đã chấp nhận hoặc chờ xác nhận
+      const hasActiveOrders = listing.orders.some((o) =>
+        ["ACCEPTED", "WAITING_CONFIRMATION"].includes(o.status)
+      );
+      if ((mode === "hide" || mode === "remove") && (listing.status === "RESERVED" || hasActiveOrders)) {
+        return NextResponse.json(
+          {
+            error:
+              "Tin đăng đang có cuộc hẹn xem hàng đã chốt. Vui lòng phân xử hoặc đóng đơn hẹn trước khi ẩn/gỡ tin.",
+          },
+          { status: 400 }
+        );
+      }
+
+      await prisma.$transaction(async (tx) => {
+        if (mode === "remove") {
+          await tx.listing.update({
+            where: { id: listing.id },
+            data: { status: "REMOVED" },
+          });
+
+          // Tự động từ chối các yêu cầu hẹn PENDING còn lại
+          const pendingOrders = listing.orders.filter((o) => o.status === "PENDING");
+          if (pendingOrders.length > 0) {
+            await tx.order.updateMany({
+              where: { id: { in: pendingOrders.map((o) => o.id) } },
+              data: { status: "REJECTED" },
+            });
+          }
+
+          await tx.notification.create({
+            data: {
+              userId: listing.sellerId,
+              type: "LISTING_REMOVED",
+              title: "Tin đăng đã bị gỡ bỏ",
+              message: `Tin đăng "${listing.title}" đã bị Quản trị viên gỡ bỏ do: ${reason}`,
+              payload: JSON.stringify({ listingId: listing.id, reason }),
+            },
+          });
+        } else if (mode === "hide") {
+          await tx.listing.update({
+            where: { id: listing.id },
+            data: { status: "HIDDEN" },
+          });
+
+          await tx.notification.create({
+            data: {
+              userId: listing.sellerId,
+              type: "LISTING_HIDDEN",
+              title: "Tin đăng đã tạm ẩn",
+              message: `Tin đăng "${listing.title}" đã được tạm ẩn bởi Quản trị viên: ${reason}`,
+              payload: JSON.stringify({ listingId: listing.id, reason }),
+            },
+          });
+        } else if (mode === "restore") {
+          // Gia hạn 30 ngày nếu tin đã quá hạn
+          const newExpiresAt =
+            listing.expiresAt < now ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) : listing.expiresAt;
+
+          await tx.listing.update({
+            where: { id: listing.id },
+            data: { status: "AVAILABLE", expiresAt: newExpiresAt },
+          });
+
+          await tx.notification.create({
+            data: {
+              userId: listing.sellerId,
+              type: "LISTING_RESTORED",
+              title: "Tin đăng đã được mở lại",
+              message: `Tin đăng "${listing.title}" đã được Quản trị viên duyệt và hiển thị lại trên sàn.`,
+              payload: JSON.stringify({ listingId: listing.id }),
+            },
+          });
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message:
+          mode === "remove"
+            ? "Đã gỡ bỏ tin đăng và gửi thông báo đến người bán."
+            : mode === "hide"
+            ? "Đã tạm ẩn tin đăng."
+            : "Đã mở lại tin đăng thành công.",
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // 2. KHÓA / KÍCH HOẠT TÀI KHOẢN NGƯỜI DÙNG
+    // ------------------------------------------------------------------
+    if (action === "toggle_user_status") {
+      const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId.trim() : "";
+      const nextStatus = typeof body.nextStatus === "string" ? body.nextStatus.trim() : "";
+      const reason =
+        typeof body.reason === "string" && body.reason.trim()
+          ? body.reason.trim()
+          : "Vi phạm quy định sử dụng hoặc gian lận giao dịch.";
+
+      if (!targetUserId || !["ACTIVE", "SUSPENDED"].includes(nextStatus)) {
+        return NextResponse.json(
+          { error: "Thiếu mã tài khoản hoặc trạng thái cập nhật không hợp lệ." },
+          { status: 400 }
+        );
+      }
+
+      if (targetUserId === actorAdminId) {
+        return NextResponse.json(
+          { error: "Bạn không thể tự khóa tài khoản Quản trị viên của chính mình." },
+          { status: 400 }
+        );
+      }
+
+      const targetUser = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: { id: true, displayName: true, email: true, role: true, status: true },
+      });
+
+      if (!targetUser) {
+        return NextResponse.json({ error: "Không tìm thấy người dùng." }, { status: 404 });
+      }
+
+      if (targetUser.role === "ADMIN") {
+        return NextResponse.json(
+          { error: "Không thể thay đổi trạng thái của tài khoản Quản trị viên khác." },
+          { status: 403 }
+        );
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: targetUser.id },
+          data: { status: nextStatus as "ACTIVE" | "SUSPENDED" },
+        });
+
+        if (nextStatus === "SUSPENDED") {
+          // Tự động tạm ẩn tất cả tin đang mở bán của người dùng bị khóa
+          await tx.listing.updateMany({
+            where: { sellerId: targetUser.id, status: "AVAILABLE" },
+            data: { status: "HIDDEN" },
+          });
+
+          await tx.notification.create({
+            data: {
+              userId: targetUser.id,
+              type: "ACCOUNT_SUSPENDED",
+              title: "Tài khoản của bạn đã bị tạm khóa",
+              message: `Tài khoản đã bị tạm dừng hoạt động do: ${reason}. Các tin đăng đang mở bán đã được tạm ẩn.`,
+              payload: JSON.stringify({ reason }),
+            },
+          });
+        } else {
+          await tx.notification.create({
+            data: {
+              userId: targetUser.id,
+              type: "ACCOUNT_ACTIVATED",
+              title: "Tài khoản đã được kích hoạt lại",
+              message: "Tài khoản của bạn đã được Quản trị viên kích hoạt lại và có thể tiếp tục giao dịch.",
+            },
+          });
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message:
+          nextStatus === "SUSPENDED"
+            ? `Đã tạm khóa tài khoản ${targetUser.displayName} và tự động ẩn các tin đang đăng.`
+            : `Đã kích hoạt lại tài khoản ${targetUser.displayName}.`,
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // 3. DUYỆT / HỦY DUYỆT THẺ SINH VIÊN THỦ CÔNG
+    // ------------------------------------------------------------------
+    if (action === "toggle_student_verified") {
+      const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId.trim() : "";
+      const verified = body.verified === true;
+
+      if (!targetUserId) {
+        return NextResponse.json({ error: "Thiếu mã tài khoản sinh viên." }, { status: 400 });
+      }
+
+      const targetUser = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: { id: true, displayName: true },
+      });
+
+      if (!targetUser) {
+        return NextResponse.json({ error: "Không tìm thấy người dùng." }, { status: 404 });
+      }
+
+      await prisma.user.update({
+        where: { id: targetUser.id },
+        data: {
+          isStudentVerified: verified,
+          studentVerifiedAt: verified ? now : null,
+        },
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: targetUser.id,
+          type: verified ? "STUDENT_VERIFIED" : "STUDENT_VERIFICATION_REVOKED",
+          title: verified ? "Xác minh sinh viên thành công" : "Hủy huy hiệu sinh viên xác minh",
+          message: verified
+            ? "Tài khoản của bạn đã được gắn huy hiệu Sinh viên đã xác minh."
+            : "Huy hiệu Sinh viên đã xác minh của bạn đã bị thu hồi bởi Quản trị viên.",
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: verified
+          ? `Đã xác nhận huy hiệu sinh viên cho ${targetUser.displayName}.`
+          : `Đã thu hồi huy hiệu sinh viên của ${targetUser.displayName}.`,
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // 4. PHÂN XỬ ĐƠN TRANH CHẤP (SLA 72H)
     // ------------------------------------------------------------------
     if (action === "resolve_dispute") {
       const orderId = typeof body.orderId === "string" ? body.orderId : "";
@@ -230,7 +772,7 @@ export async function POST(req: NextRequest) {
 
       if (order.status !== "DISPUTED") {
         return NextResponse.json(
-          { error: `Đơn hàng không ở trạng thái tranh chấp DISPUTED (Hiện tại: ${order.status}).` },
+          { error: `Đơn hàng không ở trạng thái tranh chấp (Hiện tại: ${order.status}).` },
           { status: 400 }
         );
       }
@@ -238,7 +780,7 @@ export async function POST(req: NextRequest) {
       if (conclusion === "BUYER_RECEIVED") {
         const finalNote =
           resolutionNote ||
-          "Admin kết luận: Người mua đã nhận hàng (hoàn tất đơn & chuyển giao Passport).";
+          "Quản trị viên kết luận: Người mua đã nhận hàng (hoàn tất đơn và chuyển giao Hộ chiếu món đồ).";
 
         const result = await prisma.$transaction(async (tx) => {
           return executeOrderCompletionAndPassportTransfer(tx, order.id, "COMPLETED", {
@@ -256,39 +798,39 @@ export async function POST(req: NextRequest) {
             {
               userId: order.buyerId,
               type: "DISPUTE_RESOLVED",
-              title: "Admin đã phân xử khiếu nại đơn hàng",
+              title: "Quản trị viên đã phân xử khiếu nại đơn hàng",
               message: `Kết luận cho đơn "${order.listing.title}": ${finalNote}`,
               payload: JSON.stringify({ orderId: order.id, conclusion }),
             },
             {
               userId: order.sellerId,
               type: "DISPUTE_RESOLVED",
-              title: "Admin đã phân xử khiếu nại đơn hàng",
+              title: "Quản trị viên đã phân xử khiếu nại đơn hàng",
               message: `Kết luận cho đơn "${order.listing.title}": ${finalNote}`,
               payload: JSON.stringify({ orderId: order.id, conclusion }),
             },
           ],
         });
 
-        // Đồng bộ Relayer lên Fuji nếu có Passport
+        // Đồng bộ Relayer lên blockchain nếu có Passport
         if (order.listing.itemId && result.passportId) {
           await processItemChainQueue(order.listing.itemId).catch((err) =>
-            console.warn("⚠️ Relayer bất đồng bộ gặp sự cố sau resolve_dispute:", err)
+            console.warn("⚠️ Relayer gặp sự cố sau khi phân xử:", err)
           );
         }
 
         return NextResponse.json({
           success: true,
           message:
-            "Đã phân xử: Người mua đã nhận hàng -> Đơn COMPLETED, Tin SOLD và đã chuyển giao Passport!",
+            "Đã phân xử thành công: Đơn hàng hoàn tất và Hộ chiếu đã được chuyển giao cho người mua.",
         });
       }
 
       // Kết luận NOT_DELIVERED hoặc INSUFFICIENT_EVIDENCE -> CANCELLED & nhả Listing về AVAILABLE
       const defaultNote =
         conclusion === "NOT_DELIVERED"
-          ? "Admin kết luận: Chưa giao hàng hoặc giao không đúng mô tả."
-          : "Admin kết luận: Không đủ căn cứ xác minh bàn giao, hủy đơn và mở lại tin đăng.";
+          ? "Quản trị viên kết luận: Chưa giao nhận hàng hoặc đồ vật không đúng mô tả."
+          : "Quản trị viên kết luận: Không đủ căn cứ xác minh bàn giao, hủy đơn và mở lại tin đăng.";
       const finalNote = resolutionNote || defaultNote;
 
       await prisma.$transaction(async (tx) => {
@@ -317,14 +859,14 @@ export async function POST(req: NextRequest) {
             {
               userId: order.buyerId,
               type: "DISPUTE_RESOLVED",
-              title: "Admin đã phân xử khiếu nại đơn hàng",
+              title: "Quản trị viên đã phân xử khiếu nại đơn hàng",
               message: `Kết luận cho đơn "${order.listing.title}": ${finalNote}`,
               payload: JSON.stringify({ orderId: order.id, conclusion }),
             },
             {
               userId: order.sellerId,
               type: "DISPUTE_RESOLVED",
-              title: "Admin đã phân xử khiếu nại đơn hàng",
+              title: "Quản trị viên đã phân xử khiếu nại đơn hàng",
               message: `Kết luận cho đơn "${order.listing.title}": ${finalNote}`,
               payload: JSON.stringify({ orderId: order.id, conclusion }),
             },
@@ -334,12 +876,12 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: "Đã phân xử đơn DISPUTED: Đơn chuyển CANCELLED và nhả trạng thái mở bán.",
+        message: "Đã đóng tranh chấp: Đơn đã hủy và tin đăng được mở lại trên sàn.",
       });
     }
 
     // ------------------------------------------------------------------
-    // 2. GẮN CỜ PASSPORT (FLAG - Thực thi trọn vẹn BR32 & BR39)
+    // 5. GẮN CỜ HỘ CHIẾU MÓN ĐỒ (FLAG)
     // ------------------------------------------------------------------
     if (action === "flag_passport") {
       const itemId = typeof body.itemId === "string" ? body.itemId : "";
@@ -347,7 +889,7 @@ export async function POST(req: NextRequest) {
 
       if (!itemId || reason.length < 5) {
         return NextResponse.json(
-          { error: "Vui lòng chọn Passport và nhập lý do gắn cờ (ít nhất 5 ký tự)." },
+          { error: "Vui lòng chọn Hộ chiếu món đồ và nhập lý do gắn cờ (ít nhất 5 ký tự)." },
           { status: 400 }
         );
       }
@@ -362,12 +904,12 @@ export async function POST(req: NextRequest) {
       });
 
       if (!item) {
-        return NextResponse.json({ error: "Không tìm thấy Passport món đồ." }, { status: 404 });
+        return NextResponse.json({ error: "Không tìm thấy Hộ chiếu món đồ." }, { status: 404 });
       }
 
       if (item.passportStatus === "FLAGGED") {
         return NextResponse.json(
-          { error: "Passport này hiện đang ở trạng thái FLAGGED rồi." },
+          { error: "Hộ chiếu này hiện đang bị gắn cờ cảnh báo rồi." },
           { status: 400 }
         );
       }
@@ -411,8 +953,8 @@ export async function POST(req: NextRequest) {
               data: pendingOrders.map((o) => ({
                 userId: o.buyerId,
                 type: "PASSPORT_FLAGGED",
-                title: "Yêu cầu hẹn đã bị từ chối tự động (BR39)",
-                message: `Món đồ bạn đặt hẹn tạm bị khóa do Passport đang được kiểm tra tranh chấp/vi phạm (${reason}).`,
+                title: "Yêu cầu hẹn đã bị hủy tự động",
+                message: `Món đồ bạn đặt hẹn tạm dừng do Hộ chiếu đang được kiểm tra nghi vấn vi phạm (${reason}).`,
                 payload: JSON.stringify({ itemId: item.id, orderId: o.id }),
               })),
             });
@@ -432,7 +974,7 @@ export async function POST(req: NextRequest) {
               where: { id: { in: activeOrders.map((o) => o.id) } },
               data: {
                 status: "DISPUTED",
-                disputeReason: `Tạm dừng do Passport bị gắn cờ vi phạm (BR39): ${reason}`,
+                disputeReason: `Tạm dừng do Hộ chiếu món đồ bị gắn cờ cảnh báo: ${reason}`,
                 disputedAt: now,
               },
             });
@@ -443,15 +985,15 @@ export async function POST(req: NextRequest) {
                   {
                     userId: o.buyerId,
                     type: "PASSPORT_FLAGGED",
-                    title: "Đơn hẹn tạm dừng để kiểm tra (BR39)",
-                    message: `Đơn hẹn của bạn đã chuyển sang trạng thái tranh chấp để Admin xem xét do Passport món đồ bị gắn cờ (${reason}).`,
+                    title: "Cuộc hẹn tạm dừng để kiểm tra",
+                    message: `Cuộc hẹn của bạn đã chuyển sang trạng thái chờ xem xét do Hộ chiếu món đồ bị gắn cờ (${reason}).`,
                     payload: JSON.stringify({ itemId: item.id, orderId: o.id }),
                   },
                   {
                     userId: o.sellerId,
                     type: "PASSPORT_FLAGGED",
-                    title: "Đơn hẹn tạm dừng để kiểm tra (BR39)",
-                    message: `Đơn hẹn đã chuyển sang trạng thái tranh chấp do Passport món đồ bị gắn cờ (${reason}).`,
+                    title: "Cuộc hẹn tạm dừng để kiểm tra",
+                    message: `Cuộc hẹn đã chuyển sang trạng thái chờ xem xét do Hộ chiếu món đồ bị gắn cờ (${reason}).`,
                     payload: JSON.stringify({ itemId: item.id, orderId: o.id }),
                   },
                 ],
@@ -460,20 +1002,20 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // (d) Thông báo chủ sở hữu hiện tại (không lộ danh tính người báo cáo)
+        // (d) Thông báo chủ sở hữu hiện tại
         if (item.currentOwnerId) {
           await tx.notification.create({
             data: {
               userId: item.currentOwnerId,
               type: "PASSPORT_FLAGGED",
-              title: "Cảnh báo: Passport món đồ bị gắn cờ (BR39)",
-              message: `Hộ chiếu món đồ của bạn đang bị tạm khóa do: ${reason}. Tin đăng liên quan đã được tạm ẩn để xác minh.`,
+              title: "Cảnh báo: Hộ chiếu món đồ bị gắn cờ",
+              message: `Hộ chiếu món đồ của bạn tạm thời bị khóa do: ${reason}. Các tin đăng liên quan đã được tạm ẩn để xác minh.`,
               payload: JSON.stringify({ itemId: item.id, passportId: item.passportId }),
             },
           });
         }
 
-        // (e) Ghi PassportEvent & xếp hàng ChainTx FLAG lên Fuji
+        // (e) Ghi PassportEvent & xếp hàng ChainTx
         const nextSeq = (item.events[0]?.seq || 0) + 1;
         await tx.passportEvent.create({
           data: {
@@ -504,20 +1046,19 @@ export async function POST(req: NextRequest) {
         });
       });
 
-      // Kích hoạt Relayer ghi sự kiện FLAG lên Fuji (bất đồng bộ chịu lỗi BR28)
+      // Kích hoạt Relayer ghi nhận lên sổ cái blockchain
       await processItemChainQueue(item.id).catch((err) =>
-        console.warn("⚠️ Relayer gặp lỗi khi ghi FLAG lên Fuji:", err)
+        console.warn("⚠️ Relayer gặp lỗi khi ghi sự kiện FLAG:", err)
       );
 
       return NextResponse.json({
         success: true,
-        message:
-          "Đã gắn cờ Passport (FLAGGED) theo đúng hiệu lực BR39, ẩn tin liên quan và xếp hàng ghi nhận lên Avalanche Fuji!",
+        message: "Đã gắn cờ cảnh báo Hộ chiếu, tạm ẩn tin liên quan và ghi nhận nhật ký.",
       });
     }
 
     // ------------------------------------------------------------------
-    // 3. GỠ CỜ PASSPORT (UNFLAG - BR39)
+    // 6. GỠ CỜ HỘ CHIẾU MÓN ĐỒ (UNFLAG)
     // ------------------------------------------------------------------
     if (action === "unflag_passport") {
       const itemId = typeof body.itemId === "string" ? body.itemId : "";
@@ -527,7 +1068,7 @@ export async function POST(req: NextRequest) {
           : "Đã hoàn tất xác minh hợp lệ, gỡ cờ cảnh báo.";
 
       if (!itemId) {
-        return NextResponse.json({ error: "Thiếu mã Item Passport." }, { status: 400 });
+        return NextResponse.json({ error: "Thiếu mã Hộ chiếu món đồ." }, { status: 400 });
       }
 
       const item = await prisma.item.findUnique({
@@ -539,12 +1080,12 @@ export async function POST(req: NextRequest) {
       });
 
       if (!item) {
-        return NextResponse.json({ error: "Không tìm thấy Passport món đồ." }, { status: 404 });
+        return NextResponse.json({ error: "Không tìm thấy Hộ chiếu món đồ." }, { status: 404 });
       }
 
       if (item.passportStatus !== "FLAGGED") {
         return NextResponse.json(
-          { error: "Passport này hiện không bị gắn cờ." },
+          { error: "Hộ chiếu này hiện không ở trạng thái bị gắn cờ." },
           { status: 400 }
         );
       }
@@ -559,7 +1100,7 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Khôi phục các tin đăng HIDDEN nếu còn hạn 30 ngày (BR39)
+        // Khôi phục các tin đăng HIDDEN nếu còn hạn
         await tx.listing.updateMany({
           where: {
             itemId: item.id,
@@ -603,8 +1144,8 @@ export async function POST(req: NextRequest) {
             data: {
               userId: item.currentOwnerId,
               type: "PASSPORT_UNFLAGGED",
-              title: "Passport món đồ đã được gỡ cờ (BR39)",
-              message: `Hộ chiếu món đồ của bạn đã được gỡ cờ khôi phục trạng thái ACTIVE (${reason}).`,
+              title: "Hộ chiếu món đồ đã được gỡ cờ",
+              message: `Hộ chiếu món đồ của bạn đã được gỡ cờ cảnh báo và kích hoạt lại bình thường (${reason}).`,
               payload: JSON.stringify({ itemId: item.id, passportId: item.passportId }),
             },
           });
@@ -612,17 +1153,17 @@ export async function POST(req: NextRequest) {
       });
 
       await processItemChainQueue(item.id).catch((err) =>
-        console.warn("⚠️ Relayer gặp lỗi khi ghi UNFLAG lên Fuji:", err)
+        console.warn("⚠️ Relayer gặp lỗi khi ghi sự kiện UNFLAG:", err)
       );
 
       return NextResponse.json({
         success: true,
-        message: "Đã gỡ cờ Passport, khôi phục tin đăng còn hạn và đồng bộ lên Fuji!",
+        message: "Đã gỡ cờ Hộ chiếu, khôi phục tin đăng hợp lệ thành công.",
       });
     }
 
     // ------------------------------------------------------------------
-    // 4. DUYỆT BÁO CÁO VI PHẠM (BR17)
+    // 7. DUYỆT BÁO CÁO VI PHẠM
     // ------------------------------------------------------------------
     if (action === "handle_report") {
       const reportId = typeof body.reportId === "string" ? body.reportId : "";
@@ -658,8 +1199,8 @@ export async function POST(req: NextRequest) {
             data: {
               userId: updatedListing.sellerId,
               type: "LISTING_REMOVED",
-              title: "Tin đăng bị gỡ do vi phạm quy tắc (BR17)",
-              message: `Tin đăng "${updatedListing.title}" đã bị Ban Quản Trị gỡ bỏ do vi phạm quy định cộng đồng UniCycle.`,
+              title: "Tin đăng bị gỡ do vi phạm",
+              message: `Tin đăng "${updatedListing.title}" đã bị Ban Quản Trị gỡ bỏ sau khi xem xét báo cáo vi phạm tiêu chuẩn cộng đồng.`,
               payload: JSON.stringify({ listingId: report.targetId }),
             },
           });
@@ -671,21 +1212,21 @@ export async function POST(req: NextRequest) {
         message:
           decision === "RESOLVED"
             ? removeListing
-              ? "Đã gỡ tin đăng vi phạm (BR17) và đóng báo cáo!"
-              : "Đã đánh dấu báo cáo đã xử lý!"
+              ? "Đã gỡ bỏ tin đăng vi phạm và đóng báo cáo."
+              : "Đã đánh dấu báo cáo đã xử lý."
             : "Đã bác bỏ báo cáo vi phạm.",
       });
     }
 
     // ------------------------------------------------------------------
-    // 5. DUYỆT THẺ SINH VIÊN & TỰ ĐỘNG XÓA ẢNH THẺ (NĐ 13/2023/NĐ-CP)
+    // 8. DUYỆT THẺ SINH VIÊN (BẢO VỆ DỮ LIỆU CÁ NHÂN: TỰ ĐỘNG XÓA ẢNH THẺ)
     // ------------------------------------------------------------------
     if (action === "verify_student_card") {
       const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId : "";
       const approve = body.approve === true;
 
       if (!targetUserId) {
-        return NextResponse.json({ error: "Thiếu mã người dùng cần xét duyệt." }, { status: 400 });
+        return NextResponse.json({ error: "Thiếu mã tài khoản cần xét duyệt." }, { status: 400 });
       }
 
       const targetUser = await prisma.user.findUnique({
@@ -703,7 +1244,7 @@ export async function POST(req: NextRequest) {
           data: {
             isStudentVerified: approve,
             studentVerifiedAt: approve ? now : null,
-            // BẮT BUỘC NĐ 13/2023/NĐ-CP: Tự động xóa vĩnh viễn ảnh thẻ ngay sau duyệt/từ chối
+            // Bảo vệ quyền riêng tư cá nhân: Tự động xóa ảnh thẻ ngay sau khi duyệt/từ chối
             studentCardUrl: null,
           },
         });
@@ -713,11 +1254,11 @@ export async function POST(req: NextRequest) {
             userId: targetUser.id,
             type: approve ? "STUDENT_VERIFIED" : "STUDENT_CARD_REJECTED",
             title: approve
-              ? "Thẻ sinh viên đã được phê duyệt!"
-              : "Yêu cầu xác minh thẻ sinh viên chưa đạt",
+              ? "Thẻ sinh viên đã được phê duyệt"
+              : "Hồ sơ xác minh thẻ sinh viên chưa được duyệt",
             message: approve
-              ? "Ban Quản Trị đã phê duyệt thẻ sinh viên và cấp Huy hiệu 'Sinh viên đã xác minh' (BR19). Ảnh thẻ đã được tự động xóa vĩnh viễn theo Nghị định 13/2023/NĐ-CP."
-              : "Ảnh thẻ sinh viên chưa rõ thông tin hoặc chưa hợp lệ. Ảnh cũ đã được tự động xóa theo Nghị định 13/2023/NĐ-CP, bạn có thể gửi lại ảnh rõ nét hơn tại /verify-student.",
+              ? "Ban Quản Trị đã phê duyệt thẻ sinh viên và cấp huy hiệu 'Sinh viên đã xác minh'. Ảnh thẻ của bạn đã được xóa tự động để bảo mật thông tin."
+              : "Ảnh thẻ sinh viên gửi lên chưa rõ nét hoặc thông tin chưa trùng khớp. Ảnh cũ đã được xóa vì lý do bảo mật, bạn có thể chụp lại ảnh mới tại trang Cá nhân.",
             payload: JSON.stringify({ approve }),
           },
         });
@@ -726,18 +1267,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         message: approve
-          ? `Đã phê duyệt sinh viên ${targetUser.displayName} và tự động xóa vĩnh viễn ảnh thẻ (NĐ 13/2023/NĐ-CP)!`
-          : `Đã từ chối hồ sơ của ${targetUser.displayName} và tự động xóa vĩnh viễn ảnh thẻ.`,
+          ? `Đã phê duyệt sinh viên ${targetUser.displayName} và tự động xóa ảnh thẻ an toàn.`
+          : `Đã từ chối hồ sơ thẻ của ${targetUser.displayName} và xóa ảnh thẻ an toàn.`,
       });
     }
 
     // ------------------------------------------------------------------
-    // 6. KÍCH HOẠT LẠI HÀNG ĐỢI CHAIN_TX (BR28)
+    // 9. THỬ LẠI ĐỒNG BỘ RELAYER
     // ------------------------------------------------------------------
     if (action === "retry_chain_tx") {
       const itemId = typeof body.itemId === "string" ? body.itemId : "";
       if (!itemId) {
-        return NextResponse.json({ error: "Thiếu mã Item cần đồng bộ." }, { status: 400 });
+        return NextResponse.json({ error: "Thiếu mã món đồ cần đồng bộ." }, { status: 400 });
       }
 
       await prisma.chainTx.updateMany({
@@ -756,7 +1297,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         syncResult,
-        message: `Đã xử lý hàng đợi Relayer cho món đồ (${syncResult.confirmedCount} giao dịch đã xác nhận).`,
+        message: `Đã xử lý hàng đợi đồng bộ (${syncResult.confirmedCount} giao dịch đã xác nhận).`,
       });
     }
 
