@@ -157,7 +157,7 @@ export function PublicUserProfileClient({ userId }: PublicUserProfileClientProps
                 {!user.isDeleted && (
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
                     <span className="font-bold text-[#02457A]">
-                      ⭐ {user.reputationScore.toFixed(1)} uy tín
+                      {reviews.length === 0 ? "Chưa có đánh giá" : `⭐ ${user.reputationScore.toFixed(1)} uy tín`}
                     </span>
                     <span>•</span>
                     <span>{user.completedOrdersCount} giao dịch hoàn tất</span>
@@ -200,24 +200,22 @@ export function PublicUserProfileClient({ userId }: PublicUserProfileClientProps
             <button
               type="button"
               onClick={() => setActiveTab("listings")}
-              className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer ${
-                activeTab === "listings"
+              className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer ${activeTab === "listings"
                   ? "bg-white text-[#001B48] border-[#018ABE]"
                   : "text-slate-600 border-transparent hover:text-[#02457A]"
-              }`}
+                }`}
             >
               🛍️ Tin đang bán ({listings.length})
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("reviews")}
-              className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer ${
-                activeTab === "reviews"
+              className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer ${activeTab === "reviews"
                   ? "bg-white text-[#001B48] border-[#018ABE]"
                   : "text-slate-600 border-transparent hover:text-[#02457A]"
-              }`}
+                }`}
             >
-              ⭐ Đánh giá uy tín ({reviews.length})
+              ⭐ Đánh giá ({reviews.length})
             </button>
           </div>
 

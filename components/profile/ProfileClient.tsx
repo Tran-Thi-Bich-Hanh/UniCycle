@@ -1117,91 +1117,116 @@ export function ProfileClient() {
             </div>
           </section>
 
-          {/* Vùng Nguy Hiểm (Tạm thời giữ logic để hoàn thiện Task 2) */}
-          <section className="bg-white border border-[#F3C5C0] rounded-[20px] p-6 space-y-4 shadow-xs">
-              <div>
-                <h3 className="text-sm font-extrabold text-rose-900">
-                  Xóa tài khoản vĩnh viễn
-                </h3>
-                <p className="text-xs text-rose-800/90 mt-1 leading-relaxed">
-                  Sau khi xác nhận, bạn sẽ bị đăng xuất và không thể khôi phục tài khoản này.
+          {/* Vùng Nguy Hiểm: Xóa tài khoản */}
+          <section className="bg-white border border-[#F3C5C0] rounded-[20px] p-5 sm:p-6 flex flex-col gap-4 shadow-xs">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex-1 min-w-[280px] sm:min-w-[320px] flex flex-col gap-1">
+                <h2 className="text-[17px] leading-snug font-bold text-[#B42318]">
+                  Xóa tài khoản
+                </h2>
+                <p className="text-sm leading-relaxed text-[#475569]">
+                  Hành động này không thể hoàn tác. Bạn sẽ cần xác nhận trước khi tài khoản bị xóa.
                 </p>
-                <ul className="list-disc pl-5 space-y-0.5 text-xs text-rose-800/90 mt-1">
-                  <li>Thông tin cá nhân sẽ được xử lý theo chính sách xóa dữ liệu.</li>
-                  <li>Các tin đăng của bạn sẽ ngừng hoạt động.</li>
-                  <li>Lịch sử giao dịch cần được bảo toàn theo quy định của hệ thống.</li>
-                </ul>
               </div>
 
-              {stats.blockingOrdersCount > 0 && (
-                <div className="p-3 rounded-xl bg-amber-100/80 border border-amber-300 text-xs text-amber-950 font-semibold flex items-start gap-2">
-                  <svg className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <span>
-                    Bạn đang có {stats.blockingOrdersCount} đơn hẹn ở trạng thái giữ chỗ, chờ xác nhận hoặc khiếu nại. Vui lòng xử lý xong tại trang{" "}
-                    <Link href="/orders" className="underline font-bold">
-                      Quản lý đơn hẹn
-                    </Link>{" "}
-                    trước khi xóa tài khoản.
-                  </span>
-                </div>
-              )}
-
-              {!deleteDialogOpen ? (
+              {!deleteDialogOpen && (
                 <button
                   type="button"
                   onClick={() => {
                     setDeleteDialogOpen(true);
                     setDeleteError(null);
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl border border-[#B42318] bg-white hover:bg-rose-50 text-[#B42318] text-[15px] font-semibold transition-colors cursor-pointer shrink-0"
                 >
-                  Xóa tài khoản
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                  <span>Xóa tài khoản</span>
                 </button>
-              ) : (
-                <form onSubmit={handleDeleteAccount} className="space-y-3 pt-2 border-t border-rose-200">
-                  <div>
-                    <label htmlFor="confirm-delete-input" className="block text-xs font-bold text-rose-950 mb-1.5">
-                      Nhập chính xác <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-rose-300">XOA TAI KHOAN</code> để xác nhận:
-                    </label>
-                    <input
-                      id="confirm-delete-input"
-                      type="text"
-                      required
-                      value={confirmText}
-                      onChange={(e) => setConfirmText(e.target.value)}
-                      placeholder="XOA TAI KHOAN"
-                      className="w-full h-11 px-4 rounded-xl border border-rose-300 bg-white focus:border-rose-600 focus:outline-none text-sm font-mono text-rose-950"
-                    />
-                  </div>
-
-                  {deleteError && (
-                    <p className="text-xs font-bold text-rose-700">{deleteError}</p>
-                  )}
-
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="submit"
-                      disabled={deleting || confirmText.trim().toUpperCase() !== "XOA TAI KHOAN"}
-                      className="px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
-                    >
-                      {deleting ? "Đang xử lý..." : "Xác nhận xóa tài khoản"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteDialogOpen(false);
-                        setConfirmText("");
-                        setDeleteError(null);
-                      }}
-                      className="px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer"
-                    >
-                      Hủy bỏ
-                    </button>
-                  </div>
-                </form>
               )}
+            </div>
+
+            {stats.blockingOrdersCount > 0 && (
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs sm:text-sm text-amber-950 font-medium flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>
+                  Bạn đang có <strong>{stats.blockingOrdersCount} đơn hẹn</strong> ở trạng thái giữ chỗ, chờ xác nhận hoặc khiếu nại. Vui lòng xử lý xong tại trang{" "}
+                  <Link href="/orders" className="underline font-bold text-[#0B1F4B] hover:text-[#0088C2]">
+                    Quản lý đơn hẹn
+                  </Link>{" "}
+                  trước khi xóa tài khoản.
+                </span>
+              </div>
+            )}
+
+            {deleteDialogOpen && (
+              <form onSubmit={handleDeleteAccount} className="pt-4 border-t border-[#F3D0CC] flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="confirm-delete-input" className="text-sm font-semibold text-[#B42318]">
+                    Nhập chính xác <code className="font-mono bg-rose-50 px-2 py-0.5 rounded border border-rose-200 text-[#B42318] font-bold">XOA TAI KHOAN</code> để xác nhận:
+                  </label>
+                  <input
+                    id="confirm-delete-input"
+                    type="text"
+                    required
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="XOA TAI KHOAN"
+                    className="w-full h-11 px-4 rounded-xl border border-rose-300 bg-white focus:border-[#B42318] focus:ring-2 focus:ring-rose-200 focus:outline-none text-sm font-mono text-rose-950 transition-all placeholder:text-rose-300"
+                  />
+                </div>
+
+                {deleteError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs sm:text-sm font-semibold text-[#B42318] flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>{deleteError}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={deleting || confirmText.trim().toUpperCase() !== "XOA TAI KHOAN" || stats.blockingOrdersCount > 0}
+                    className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl bg-[#B42318] hover:bg-rose-800 text-white text-[15px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
+                  >
+                    {deleting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Đang xóa tài khoản...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        <span>Xác nhận xóa tài khoản</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteDialogOpen(false);
+                      setConfirmText("");
+                      setDeleteError(null);
+                    }}
+                    className="min-h-[44px] px-5 rounded-xl bg-white border border-[#DCE6EE] text-[#475569] hover:bg-slate-50 text-[15px] font-semibold transition-colors cursor-pointer"
+                  >
+                    Hủy bỏ
+                  </button>
+                </div>
+              </form>
+            )}
           </section>
         </div>
       )}
