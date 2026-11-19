@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { MyListingsTab } from "./MyListingsTab";
 
 export interface MyItemData {
   id: string;
@@ -75,10 +77,20 @@ const formatListingPrice = (price?: number | null, isFree?: boolean): string | n
 
 interface MyItemsClientProps {
   initialItems: MyItemData[];
+  initialListingsCount?: number;
 }
 
-export function MyItemsClient({ initialItems }: MyItemsClientProps) {
+export function MyItemsClient({
+  initialItems,
+  initialListingsCount = 0,
+}: MyItemsClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activePrimaryTab: "items" | "listings" =
+    searchParams.get("tab") === "listings" ? "listings" : "items";
+
   const [items, setItems] = useState<MyItemData[]>(initialItems);
+  const [listingsCount, setListingsCount] = useState(initialListingsCount);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [activeQrItem, setActiveQrItem] = useState<MyItemData | null>(null);
   const [qrLoadState, setQrLoadState] = useState<"loading" | "loaded" | "error">("loading");
@@ -156,7 +168,7 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
     };
   }, [activeQrItem, closeQrModal]);
 
-  const showToast = (type: "success" | "error", text: string) => {
+  const showToast = useCallback((type: "success" | "error", text: string) => {
     if (toastTimerRef.current) {
       clearTimeout(toastTimerRef.current);
     }
@@ -165,6 +177,12 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
       setMessage(null);
       toastTimerRef.current = null;
     }, 3500);
+  }, []);
+
+  const handlePrimaryTabChange = (tab: "items" | "listings") => {
+    router.replace(tab === "items" ? "/my-items" : "/my-items?tab=listings", {
+      scroll: false,
+    });
   };
 
   const handleCopyPassportLink = async () => {
@@ -287,16 +305,11 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
         {/* 1. Header tinh gọn */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
-                Đồ của tôi
-              </h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E3F1F9] text-[#02457A] border border-[#BAE6FD] whitespace-nowrap">
-                {items.length} món
-              </span>
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
+              Đồ của tôi
+            </h1>
             <p className="text-xs sm:text-sm text-[#475569] mt-1">
-              Quản lý đồ dùng đang sở hữu, mã QR đối chiếu khi gặp mặt và đăng bán lại nhanh chóng.
+              Quản lý đồ dùng đang sở hữu, hành trình đồ vật và các tin đăng bán của bạn.
             </p>
           </div>
 
@@ -318,8 +331,100 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
           </Link>
         </div>
 
-        {/* 2. Thanh công cụ lọc trạng thái & tìm kiếm nhanh */}
-        {items.length > 0 && (
+        {/* 2. Thanh 2 Tab chính: Đồ đang sở hữu <-> Tin đăng bán */}
+        <div
+          role="tablist"
+          aria-label="Chuyển mục quản lý đồ của tôi"
+          className="inline-flex flex-wrap items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-[#D6E8EE] shadow-2xs"
+        >
+          <button
+            type="button"
+            role="tab"
+            id="tab-owned-items"
+            aria-selected={activePrimaryTab === "items"}
+            aria-controls="panel-owned-items"
+            onClick={() => handlePrimaryTabChange("items")}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+              activePrimaryTab === "items"
+                ? "bg-[#001B48] text-white shadow-2xs"
+                : "text-[#02457A] hover:bg-[#F4F9FB]"
+            }`}
+          >
+            <svg
+              className="w-4 h-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+              />
+            </svg>
+            <span>Đồ đang sở hữu</span>
+            <span
+              className={`px-2 py-0.5 leading-none rounded-full text-[11px] font-bold ${
+                activePrimaryTab === "items"
+                  ? "bg-white/20 text-white"
+                  : "bg-[#E3F1F9] text-[#02457A]"
+              }`}
+            >
+              {items.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            id="tab-my-listings"
+            aria-selected={activePrimaryTab === "listings"}
+            aria-controls="panel-my-listings"
+            onClick={() => handlePrimaryTabChange("listings")}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+              activePrimaryTab === "listings"
+                ? "bg-[#001B48] text-white shadow-2xs"
+                : "text-[#02457A] hover:bg-[#F4F9FB]"
+            }`}
+          >
+            <svg
+              className="w-4 h-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"
+              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
+            </svg>
+            <span>Tin đăng bán</span>
+            <span
+              className={`px-2 py-0.5 leading-none rounded-full text-[11px] font-bold ${
+                activePrimaryTab === "listings"
+                  ? "bg-white/20 text-white"
+                  : "bg-[#E3F1F9] text-[#02457A]"
+              }`}
+            >
+              {listingsCount}
+            </span>
+          </button>
+        </div>
+
+        {activePrimaryTab === "listings" ? (
+          <div role="tabpanel" id="panel-my-listings" aria-labelledby="tab-my-listings">
+            <MyListingsTab onNotify={showToast} onCountChange={setListingsCount} />
+          </div>
+        ) : (
+          <div role="tabpanel" id="panel-owned-items" aria-labelledby="tab-owned-items" className="space-y-5">
+            {/* Thanh công cụ lọc trạng thái & tìm kiếm nhanh */}
+            {items.length > 0 && (
           <div className="bg-white rounded-2xl border border-[#D6E8EE] p-3 sm:p-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-2xs">
             <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Lọc theo trạng thái món đồ">
               {filterTabs.map((tab) => {
@@ -754,6 +859,8 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
             })}
           </div>
         )}
+          </div>
+        )}
       </div>
 
       {/* Floating Toast thông báo thao tác */}
@@ -912,9 +1019,8 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
                   alt={`Mã QR hành trình của ${activeQrItem.title}`}
                   fill
                   sizes="256px"
-                  className={`object-contain p-3 transition-opacity duration-200 motion-reduce:transition-none ${
-                    qrLoadState === "loaded" ? "opacity-100" : "opacity-0"
-                  }`}
+                  className={`object-contain p-3 transition-opacity duration-200 motion-reduce:transition-none ${qrLoadState === "loaded" ? "opacity-100" : "opacity-0"
+                    }`}
                   unoptimized
                   onLoad={() => setQrLoadState("loaded")}
                   onError={() => setQrLoadState("error")}
@@ -930,11 +1036,10 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
               <button
                 type="button"
                 onClick={handleCopyPassportLink}
-                className={`flex-1 h-10 px-3.5 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
-                  copiedLink
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                    : "bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border-[#D6E8EE]"
-                }`}
+                className={`flex-1 h-10 px-3.5 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${copiedLink
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  : "bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border-[#D6E8EE]"
+                  }`}
               >
                 {copiedLink ? (
                   <>

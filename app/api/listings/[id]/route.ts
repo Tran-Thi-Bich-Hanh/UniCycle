@@ -7,6 +7,16 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+async function resolveDbUserId(user: { id: string; email?: string | null }): Promise<string> {
+  const dbUser = await prisma.user.findFirst({
+    where: user.email
+      ? { OR: [{ id: user.id }, { email: user.email }] }
+      : { id: user.id },
+    select: { id: true },
+  });
+  return dbUser?.id || user.id;
+}
+
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
@@ -58,9 +68,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Bảo mật SĐT Zalo (BR36): Nếu người bán bật hidePhone, ẩn SĐT đối với khách vãng lai
+    // Bảo mật SĐT Zalo: Nếu người bán bật hidePhone, ẩn SĐT đối với khách vãng lai
     const currentUser = await getSessionUser();
-    const isOwner = currentUser?.id === listing.sellerId;
+    const resolvedCurrentUserId = currentUser ? await resolveDbUserId(currentUser) : null;
+    const isOwner = Boolean(resolvedCurrentUserId && resolvedCurrentUserId === listing.sellerId);
     const isAdmin = currentUser?.role === "ADMIN";
 
     const safeZaloPhone =
@@ -115,10 +126,12 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Kiểm tra quyền sở hữu (BR03)
-    if (listing.sellerId !== user.id && user.role !== "ADMIN") {
+    const resolvedUserId = await resolveDbUserId(user);
+
+    // Kiểm tra quyền sở hữu
+    if (listing.sellerId !== resolvedUserId && user.role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Bạn không có quyền chỉnh sửa tin đăng này (BR03)." },
+        { error: "Bạn không có quyền chỉnh sửa tin đăng này." },
         { status: 403 }
       );
     }
@@ -128,12 +141,12 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     // 1. ACTION: CẬP NHẬT THÔNG TIN (update_info)
     if (action === "update_info") {
-      // Tuân thủ BR18: Khóa chỉnh sửa nếu đang giữ chỗ RESERVED
+      // Khóa chỉnh sửa nếu đang giữ chỗ cho người mua
       if (listing.status === "RESERVED") {
         return NextResponse.json(
           {
             error:
-              "Không thể chỉnh sửa thông tin khi tin đang ở trạng thái giữ chỗ (RESERVED) cho người mua (BR18).",
+              "Không thể chỉnh sửa thông tin khi tin đang ở trạng thái giữ chỗ cho người mua.",
           },
           { status: 400 }
         );
@@ -155,7 +168,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         if (prohibited) {
           return NextResponse.json(
             {
-              error: `Nội dung chứa từ khóa bị cấm: "${prohibited}" (BR17).`,
+              error: `Nội dung chứa từ khóa không phù hợp: "${prohibited}".`,
             },
             { status: 400 }
           );
@@ -209,7 +222,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       if (listing.status === "RESERVED") {
         return NextResponse.json(
           {
-            error: "Không thể tạm ẩn món đồ đang được giữ chỗ (RESERVED) theo quy định BR18.",
+            error: "Không thể tạm ẩn món đồ đang được giữ chỗ cho người mua.",
           },
           { status: 400 }
         );
@@ -218,7 +231,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       if (listing.item?.passportStatus === "FLAGGED") {
         return NextResponse.json(
           {
-            error: "Món đồ này đang bị Admin khóa do vi phạm hoặc nghi vấn tranh chấp (BR39).",
+            error: "Món đồ này đang bị tạm khóa do vi phạm hoặc nghi vấn tranh chấp.",
           },
           { status: 400 }
         );
@@ -248,7 +261,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       });
 
       return NextResponse.json({
-        message: "Đã đánh dấu món đồ là Đã Bán (BR10).",
+        message: "Đã đánh dấu món đồ là Đã bán.",
         status: "SOLD",
       });
     }
@@ -267,7 +280,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       });
 
       return NextResponse.json({
-        message: "Đã gia hạn tin đăng thêm 30 ngày (BR15)!",
+        message: "Đã gia hạn tin đăng thêm 30 ngày.",
         expiresAt: newExpiresAt.toISOString(),
         status: "AVAILABLE",
       });
@@ -316,20 +329,22 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Kiểm tra quyền sở hữu (BR03)
-    if (listing.sellerId !== user.id && user.role !== "ADMIN") {
+    const resolvedUserId = await resolveDbUserId(user);
+
+    // Kiểm tra quyền sở hữu
+    if (listing.sellerId !== resolvedUserId && user.role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Bạn không có quyền xóa tin đăng này (BR03)." },
+        { error: "Bạn không có quyền xóa tin đăng này." },
         { status: 403 }
       );
     }
 
-    // Tuân thủ nghiêm ngặt BR18: Khóa thao tác xóa khi đang giữ chỗ
+    // Khóa thao tác xóa khi đang giữ chỗ cho người mua
     if (listing.status === "RESERVED" || listing.orders.length > 0) {
       return NextResponse.json(
         {
           error:
-            "Không thể xóa sản phẩm đang được giữ chỗ (RESERVED) cho người mua (BR18). Bạn chỉ có thể xóa khi lịch hẹn đã được hủy hoặc hoàn tất.",
+            "Không thể xóa sản phẩm đang được giữ chỗ cho người mua. Bạn chỉ có thể xóa khi lịch hẹn đã được hủy hoặc hoàn tất.",
         },
         { status: 400 }
       );

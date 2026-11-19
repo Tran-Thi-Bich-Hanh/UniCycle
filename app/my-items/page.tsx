@@ -25,6 +25,7 @@ async function MyItemsContent() {
   }
 
   let formattedItems: MyItemData[] = [];
+  let initialListingsCount = 0;
 
   try {
     const dbUser = await prisma.user.findFirst({
@@ -33,59 +34,66 @@ async function MyItemsContent() {
     });
     const resolvedUserId = dbUser?.id || user.id;
 
-    const items = await prisma.item.findMany({
-      where: {
-        currentOwnerId: resolvedUserId,
-      },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
+    const [items, listingsCount] = await Promise.all([
+      prisma.item.findMany({
+        where: {
+          currentOwnerId: resolvedUserId,
         },
-        owners: {
-          orderBy: { seq: "asc" },
-          select: {
-            id: true,
-            seq: true,
-            userId: true,
-            showName: true,
-            since: true,
-            ownerHash: true,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
           },
-        },
-        listings: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-          select: {
-            id: true,
-            title: true,
-            price: true,
-            isFree: true,
-            status: true,
-            images: {
-              orderBy: { position: "asc" },
-              take: 1,
-              select: { url: true },
+          owners: {
+            orderBy: { seq: "asc" },
+            select: {
+              id: true,
+              seq: true,
+              userId: true,
+              showName: true,
+              since: true,
+              ownerHash: true,
+            },
+          },
+          listings: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: {
+              id: true,
+              title: true,
+              price: true,
+              isFree: true,
+              status: true,
+              images: {
+                orderBy: { position: "asc" },
+                take: 1,
+                select: { url: true },
+              },
+            },
+          },
+          chainTxs: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: {
+              id: true,
+              status: true,
+              txHash: true,
             },
           },
         },
-        chainTxs: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-          select: {
-            id: true,
-            status: true,
-            txHash: true,
-          },
+        orderBy: {
+          updatedAt: "desc",
         },
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
-    });
+      }),
+      prisma.listing.count({
+        where: { sellerId: resolvedUserId },
+      }),
+    ]);
+
+    initialListingsCount = listingsCount;
 
     formattedItems = items.map((item) => {
       const currentOwnerRecord = [...item.owners].reverse().find((o) => o.userId === resolvedUserId);
@@ -153,9 +161,15 @@ async function MyItemsContent() {
         txHash: `0xabc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef`,
       },
     }));
+    initialListingsCount = formattedItems.length;
   }
 
-  return <MyItemsClient initialItems={formattedItems} />;
+  return (
+    <MyItemsClient
+      initialItems={formattedItems}
+      initialListingsCount={initialListingsCount}
+    />
+  );
 }
 
 export default function MyItemsPage() {
