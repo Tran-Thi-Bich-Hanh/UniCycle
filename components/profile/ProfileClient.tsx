@@ -470,375 +470,481 @@ export function ProfileClient() {
         </div>
       </section>
 
-      {/* 2. Tabs Container */}
-      <div className="bg-white rounded-3xl border border-[#D6E8EE] shadow-xs overflow-hidden">
-        <div className="w-full flex border-b border-[#D6E8EE] bg-[#F4F9FB]">
-          <button
-            type="button"
-            onClick={() => handleTabChange("info")}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-5 py-3.5 sm:py-4 text-xs sm:text-sm font-bold text-center border-b-2 transition-colors cursor-pointer min-w-0 ${
-              activeTab === "info"
-                ? "bg-white text-[#001B48] border-[#018ABE]"
-                : "text-slate-600 border-transparent hover:text-[#02457A]"
-            }`}
-          >
-            <span className="shrink-0">👤</span>
-            <span className="truncate">Thông tin</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTabChange("reviews")}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-5 py-3.5 sm:py-4 text-xs sm:text-sm font-bold text-center border-b-2 transition-colors cursor-pointer min-w-0 ${
-              activeTab === "reviews"
-                ? "bg-white text-[#001B48] border-[#018ABE]"
-                : "text-slate-600 border-transparent hover:text-[#02457A]"
-            }`}
-          >
-            <span className="shrink-0">⭐</span>
-            <span className="truncate">Đánh giá ({reviews.length})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTabChange("privacy")}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-5 py-3.5 sm:py-4 text-xs sm:text-sm font-bold text-center border-b-2 transition-colors cursor-pointer min-w-0 ${
-              activeTab === "privacy"
-                ? "bg-white text-[#001B48] border-[#018ABE]"
-                : "text-slate-600 border-transparent hover:text-[#02457A]"
-            }`}
-          >
-            <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span className="truncate">Bảo mật &amp; tài khoản</span>
-          </button>
+      {/* 2. Tabs Bar (Chuẩn thiết kế ui-profile) */}
+      <div
+        role="tablist"
+        aria-label="Các phần của hồ sơ"
+        className="flex gap-1 border-b border-[#DCE6EE] overflow-x-auto no-scrollbar"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "info"}
+          onClick={() => handleTabChange("info")}
+          className={`shrink-0 whitespace-nowrap inline-flex items-center gap-2 min-h-[48px] px-4.5 bg-transparent border-b-[3px] -mb-px text-[15px] cursor-pointer transition-colors ${
+            activeTab === "info"
+              ? "border-[#0088C2] text-[#0B1F4B] font-bold"
+              : "border-transparent text-[#475569] font-semibold hover:text-[#0B1F4B]"
+          }`}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span>Thông tin</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "reviews"}
+          onClick={() => handleTabChange("reviews")}
+          className={`shrink-0 whitespace-nowrap inline-flex items-center gap-2 min-h-[48px] px-4.5 bg-transparent border-b-[3px] -mb-px text-[15px] cursor-pointer transition-colors ${
+            activeTab === "reviews"
+              ? "border-[#0088C2] text-[#0B1F4B] font-bold"
+              : "border-transparent text-[#475569] font-semibold hover:text-[#0B1F4B]"
+          }`}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          <span>Đánh giá</span>
+          <span className="min-w-[22px] px-1.5 py-0.5 rounded-full bg-[#E8EEF3] text-[#334155] text-xs font-bold text-center">
+            {reviews.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "privacy"}
+          onClick={() => handleTabChange("privacy")}
+          className={`shrink-0 whitespace-nowrap inline-flex items-center gap-2 min-h-[48px] px-4.5 bg-transparent border-b-[3px] -mb-px text-[15px] cursor-pointer transition-colors ${
+            activeTab === "privacy"
+              ? "border-[#0088C2] text-[#0B1F4B] font-bold"
+              : "border-transparent text-[#475569] font-semibold hover:text-[#0B1F4B]"
+          }`}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+          </svg>
+          <span>Bảo mật &amp; tài khoản</span>
+        </button>
+      </div>
+
+      {/* Thông báo kết quả lưu */}
+      {feedback && (
+        <div
+          role="alert"
+          className={`p-4 rounded-2xl border text-xs sm:text-sm font-medium flex items-start gap-2.5 ${
+            feedback.type === "success"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+              : "bg-rose-50 border-rose-200 text-rose-900"
+          }`}
+        >
+          <span className="shrink-0 mt-0.5">
+            {feedback.type === "success" ? (
+              <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            )}
+          </span>
+          <span>{feedback.message}</span>
         </div>
+      )}
 
-        <div className="p-6 sm:p-8">
-          {feedback && (
-            <div
-              role="alert"
-              className={`mb-5 p-4 rounded-2xl border text-xs sm:text-sm font-medium flex items-start gap-2.5 ${feedback.type === "success"
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                  : "bg-rose-50 border-rose-200 text-rose-900"
-                }`}
-            >
-              <span className="shrink-0 mt-0.5">
-                {feedback.type === "success" ? (
-                  <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                )}
-              </span>
-              <span>{feedback.message}</span>
-            </div>
-          )}
-
-          {/* TAB 1: Thông tin cá nhân */}
-          {activeTab === "info" && (
+      {/* 3. NỘI DUNG TAB: THÔNG TIN (Bố cục 2 cột: Form + Live Public Preview) */}
+      {activeTab === "info" && (
+        <div role="tabpanel" className="flex flex-col lg:flex-row items-start gap-6">
+          {/* Cột trái: Form thông tin */}
+          <section className="flex-1 w-full min-w-0 bg-white border border-[#DCE6EE] rounded-[20px] p-6 sm:p-7 shadow-xs">
             <form onSubmit={handleSaveProfile} className="space-y-5 w-full">
-                <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-100 text-xs text-[#02457A] leading-relaxed space-y-1">
-                  <div className="font-bold text-[#001B48]">Thông tin hiển thị công khai</div>
-                  <p>
-                    Những thông tin như tên hiển thị, trường/KTX, huy hiệu xác minh, điểm uy tín và tin đăng có thể được người khác xem.
-                  </p>
-                  <p className="text-slate-500">
-                    Email và các thông tin cá nhân khác luôn được giữ riêng tư.
-                  </p>
+              <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-100 text-xs text-[#02457A] leading-relaxed space-y-1">
+                <div className="font-bold text-[#001B48]">Thông tin hiển thị công khai</div>
+                <p>
+                  Những thông tin như tên hiển thị, trường/KTX, huy hiệu xác minh, điểm uy tín và tin đăng có thể được người khác xem.
+                </p>
+                <p className="text-slate-500">
+                  Email và các thông tin cá nhân khác luôn được giữ riêng tư.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="profile-display-name" className="block text-xs font-bold text-[#001B48] mb-1.5">
+                  Tên hiển thị <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  id="profile-display-name"
+                  type="text"
+                  required
+                  minLength={2}
+                  maxLength={60}
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="profile-school" className="block text-xs font-bold text-[#001B48] mb-1.5">
+                    Trường đại học
+                  </label>
+                  <select
+                    id="profile-school"
+                    value={schoolId}
+                    onChange={(e) => setSchoolId(e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
+                  >
+                    <option value="">-- Chọn trường / KTX --</option>
+                    {schools.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
-                  <label htmlFor="profile-display-name" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                    Tên hiển thị <span className="text-rose-500">*</span>
+                  <label htmlFor="profile-dorm" className="block text-xs font-bold text-[#001B48] mb-1.5">
+                    Khu vực giao dịch
                   </label>
                   <input
-                    id="profile-display-name"
+                    id="profile-dorm"
                     type="text"
-                    required
-                    minLength={2}
-                    maxLength={60}
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
+                    value={dorm}
+                    onChange={(e) => setDorm(e.target.value)}
+                    placeholder="VD: Tòa B4 - KTX Khu B"
                     className="w-full h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
                   />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="profile-school" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                      Trường đại học
-                    </label>
-                    <select
-                      id="profile-school"
-                      value={schoolId}
-                      onChange={(e) => setSchoolId(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
-                    >
-                      <option value="">-- Chọn trường / KTX --</option>
-                      {schools.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="profile-dorm" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                      Khu vực giao dịch
-                    </label>
-                    <input
-                      id="profile-dorm"
-                      type="text"
-                      value={dorm}
-                      onChange={(e) => setDorm(e.target.value)}
-                      placeholder="VD: Tòa B4 - KTX Khu B"
-                      className="w-full h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="profile-avatar-url" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                    Ảnh đại diện
-                  </label>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <input
-                      id="profile-avatar-url"
-                      type="text"
-                      value={avatarUrl}
-                      onChange={(e) => setAvatarUrl(e.target.value)}
-                      placeholder="https://..."
-                      className="flex-1 h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
-                    />
-                    <label className="h-11 px-4 rounded-xl border border-[#97CADB] bg-[#D6E8EE]/40 hover:bg-[#D6E8EE] text-[#001B48] text-xs font-bold inline-flex items-center justify-center cursor-pointer shrink-0">
-                      <span>Tải ảnh lên</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarUpload}
-                        className="sr-only"
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <div className="pt-2 flex flex-wrap items-center gap-3">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="px-6 h-11 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-sm font-bold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
-                  >
-                    {saving ? "Đang lưu thay đổi..." : "Lưu thay đổi"}
-                  </button>
-                  {!profile.isStudentVerified && (
-                    <Link
-                      href="/verify-student"
-                      className="px-5 h-11 rounded-xl border border-[#018ABE] text-[#018ABE] hover:bg-[#D6E8EE]/40 text-xs sm:text-sm font-bold inline-flex items-center justify-center transition-colors"
-                    >
-                      🎓 Xác minh sinh viên (.edu.vn / Thẻ SV)
-                    </Link>
-                  )}
-                </div>
-            </form>
-          )}
-
-          {/* TAB 2: Đánh giá uy tín công khai */}
-          {activeTab === "reviews" && (
-            <div className="space-y-5">
-              <div className="p-4 rounded-2xl bg-[#F4F9FB] border border-[#D6E8EE] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-extrabold text-[#001B48]">
-                    {reviews.length === 0
-                      ? "Chưa có đánh giá"
-                      : `Điểm uy tín: ${profile.reputationScore.toFixed(1)}/5.0 ⭐`}
-                  </h2>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    Đánh giá chỉ hiển thị công khai khi cả hai bên đã gửi đánh giá hoặc sau 48 giờ kể từ khi hoàn tất giao dịch.
-                  </p>
-                </div>
-                <span className="text-xs font-bold text-[#018ABE] bg-white px-3 py-1.5 rounded-xl border border-[#D6E8EE] shrink-0">
-                  {reviews.length} đánh giá
-                </span>
               </div>
 
-              {reviews.length === 0 ? (
-                <div className="py-10 text-center space-y-2 border border-dashed border-slate-200 rounded-2xl">
-                  <div className="text-3xl">⭐</div>
-                  <p className="text-sm font-bold text-[#001B48]">Chưa có đánh giá nào</p>
-                  <p className="text-xs text-slate-500">
-                    Hoàn tất giao dịch và nhận đánh giá từ người mua hoặc người bán để xây dựng uy tín trên UniCycle.
-                  </p>
+              <div>
+                <label htmlFor="profile-avatar-url" className="block text-xs font-bold text-[#001B48] mb-1.5">
+                  Ảnh đại diện
+                </label>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    id="profile-avatar-url"
+                    type="text"
+                    value={avatarUrl}
+                    onChange={(e) => setAvatarUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1 h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
+                  />
+                  <label className="h-11 px-4 rounded-xl border border-[#97CADB] bg-[#D6E8EE]/40 hover:bg-[#D6E8EE] text-[#001B48] text-xs font-bold inline-flex items-center justify-center cursor-pointer shrink-0">
+                    <span>Tải ảnh lên</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="sr-only"
+                    />
+                  </label>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {reviews.map((rev) => (
-                    <div
-                      key={rev.id}
-                      className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/users/${rev.reviewer.id}`}
-                            className="text-xs font-extrabold text-[#001B48] hover:text-[#018ABE]"
-                          >
-                            {rev.reviewer.displayName}
-                          </Link>
-                          {rev.reviewer.isStudentVerified && (
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                              ✓ SV
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs font-bold text-amber-500">
-                          {"★".repeat(rev.rating)}
-                          {"☆".repeat(Math.max(0, 5 - rev.rating))}
-                        </span>
-                      </div>
+              </div>
 
-                      <p className="text-xs text-slate-700 leading-relaxed">{rev.comment}</p>
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 h-11 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-sm font-bold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {saving ? "Đang lưu thay đổi..." : "Lưu thay đổi"}
+                </button>
+                {!profile.isStudentVerified && (
+                  <Link
+                    href="/verify-student"
+                    className="px-5 h-11 rounded-xl border border-[#018ABE] text-[#018ABE] hover:bg-[#D6E8EE]/40 text-xs sm:text-sm font-bold inline-flex items-center justify-center transition-colors"
+                  >
+                    🎓 Xác minh sinh viên (.edu.vn / Thẻ SV)
+                  </Link>
+                )}
+              </div>
+            </form>
+          </section>
 
-                      {rev.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {rev.tags.map((tag, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-[#02457A]"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1">
-                        <span className="truncate max-w-md">Món đồ: {rev.listingTitle}</span>
-                        <span>{new Date(rev.submittedAt).toLocaleDateString("vi-VN")}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {/* Cột phải: Live Public Preview */}
+          <aside className="w-full lg:w-[320px] xl:w-[360px] shrink-0 lg:sticky lg:top-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-sm font-bold text-[#0B1F4B]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span>Người khác sẽ thấy bạn như thế này</span>
             </div>
-          )}
 
-          {/* TAB 3: Bảo mật & tài khoản */}
-          {activeTab === "privacy" && (
-            <div className="space-y-6 w-full">
-              <div className="p-5 rounded-2xl bg-[#F4F9FB] border border-[#D6E8EE] space-y-3">
-                <h2 className="text-sm sm:text-base font-extrabold text-[#001B48] flex items-center gap-2">
-                  <span>🔐</span>
-                  <span>Bảo vệ dữ liệu cá nhân</span>
+            <div className="bg-white border border-[#DCE6EE] rounded-[20px] overflow-hidden shadow-xs">
+              <div className="h-14 bg-gradient-to-r from-[#0B1F4B] via-[#0A4A82] to-[#0088C2]" />
+              <div className="p-5 pt-0 flex flex-col gap-3">
+                <div className="-mt-8 w-16 h-16 box-border border-[3px] border-white rounded-[18px] bg-gradient-to-br from-[#0B1F4B] to-[#0088C2] text-white flex items-center justify-center text-[22px] font-bold overflow-hidden shadow-xs">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span>
+                      {(displayName || profile.displayName)
+                        .split(" ")
+                        .map((w) => w[0])
+                        .slice(-2)
+                        .join("")
+                        .toUpperCase() || "UN"}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="text-lg leading-tight font-bold text-[#0B1F4B]">
+                    {displayName || profile.displayName}
+                  </span>
+                  {profile.isStudentVerified && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E6F6EE] border border-[#B7E4CB] text-[#0B6B3A] text-xs font-semibold">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="m5 12 5 5L20 7" />
+                      </svg>
+                      <span>Đã xác minh</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1.5 text-sm text-[#475569]">
+                  <span className="flex items-center gap-2 truncate">
+                    <svg className="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M22 10 12 5 2 10l10 5 10-5z" />
+                      <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                    </svg>
+                    <span className="truncate">
+                      {schools.find((s) => s.id === schoolId)?.name || profile.school?.name || "Chưa chọn trường"}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2 truncate">
+                    <svg className="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <span className="truncate">{dorm || profile.dorm || "KTX Khu B ĐHQG"}</span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <svg className="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <span>{reviews.length === 0 ? "Chưa có đánh giá" : `${profile.reputationScore.toFixed(1)} uy tín`}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 rounded-[14px] bg-[#EEF2F6] text-[#334155] text-[13px] leading-relaxed">
+              <svg className="shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span>Email, {dorm || profile.dorm || "tòa nhà"} và số điện thoại sẽ không xuất hiện ở đây.</span>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* 4. NỘI DUNG TAB: ĐÁNH GIÁ */}
+      {activeTab === "reviews" && (
+        <section className="bg-white border border-[#DCE6EE] rounded-[20px] p-6 sm:p-8 shadow-xs">
+          <div className="space-y-5">
+            <div className="p-4 rounded-2xl bg-[#F4F9FB] border border-[#D6E8EE] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-extrabold text-[#001B48]">
+                  {reviews.length === 0
+                    ? "Chưa có đánh giá"
+                    : `Điểm uy tín: ${profile.reputationScore.toFixed(1)}/5.0 ⭐`}
                 </h2>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Khi bạn xóa tài khoản, UniCycle sẽ xử lý thông tin cá nhân theo chính sách bảo mật. Một số dữ liệu giao dịch cần được lưu lại để đảm bảo tính minh bạch và lịch sử giao dịch.
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Đánh giá chỉ hiển thị công khai khi cả hai bên đã gửi đánh giá hoặc sau 48 giờ kể từ khi hoàn tất giao dịch.
                 </p>
-                <ul className="space-y-2 text-xs text-slate-700 leading-relaxed list-disc pl-5">
-                  <li>
-                    <strong>Gỡ liên kết tài khoản:</strong> Hệ thống hủy liên kết định danh cá nhân trên hồ sơ đồ vật nhưng bảo toàn lịch sử giao dịch ẩn danh.
-                  </li>
-                  <li>
-                    <strong>Ngừng hoạt động tin đăng:</strong> Các món đồ và tin đăng của bạn sẽ ngừng hoạt động, không còn hiển thị công khai trên sàn.
-                  </li>
-                  <li>
-                    <strong>Xóa thông tin cá nhân:</strong> Tên hiển thị, email, số điện thoại và các dữ liệu nhận diện cá nhân sẽ được xử lý và ẩn danh vĩnh viễn.
-                  </li>
+              </div>
+              <span className="text-xs font-bold text-[#018ABE] bg-white px-3 py-1.5 rounded-xl border border-[#D6E8EE] shrink-0">
+                {reviews.length} đánh giá
+              </span>
+            </div>
+
+            {reviews.length === 0 ? (
+              <div className="py-10 text-center space-y-2 border border-dashed border-slate-200 rounded-2xl">
+                <div className="text-3xl">⭐</div>
+                <p className="text-sm font-bold text-[#001B48]">Chưa có đánh giá nào</p>
+                <p className="text-xs text-slate-500">
+                  Hoàn tất giao dịch và nhận đánh giá từ người mua hoặc người bán để xây dựng uy tín trên UniCycle.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reviews.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/users/${rev.reviewer.id}`}
+                          className="text-xs font-extrabold text-[#001B48] hover:text-[#018ABE]"
+                        >
+                          {rev.reviewer.displayName}
+                        </Link>
+                        {rev.reviewer.isStudentVerified && (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                            ✓ SV
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-bold text-amber-500">
+                        {"★".repeat(rev.rating)}
+                        {"☆".repeat(Math.max(0, 5 - rev.rating))}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-700 leading-relaxed">{rev.comment}</p>
+
+                    {rev.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {rev.tags.map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-[#02457A]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1">
+                      <span className="truncate max-w-md">Món đồ: {rev.listingTitle}</span>
+                      <span>{new Date(rev.submittedAt).toLocaleDateString("vi-VN")}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 5. NỘI DUNG TAB: BẢO MẬT & TÀI KHOẢN */}
+      {activeTab === "privacy" && (
+        <section className="bg-white border border-[#DCE6EE] rounded-[20px] p-6 sm:p-8 shadow-xs">
+          <div className="space-y-6 w-full">
+            <div className="p-5 rounded-2xl bg-[#F4F9FB] border border-[#D6E8EE] space-y-3">
+              <h2 className="text-sm sm:text-base font-extrabold text-[#001B48] flex items-center gap-2">
+                <span>🔐</span>
+                <span>Bảo vệ dữ liệu cá nhân</span>
+              </h2>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Khi bạn xóa tài khoản, UniCycle sẽ xử lý thông tin cá nhân theo chính sách bảo mật. Một số dữ liệu giao dịch cần được lưu lại để đảm bảo tính minh bạch và lịch sử giao dịch.
+              </p>
+              <ul className="space-y-2 text-xs text-slate-700 leading-relaxed list-disc pl-5">
+                <li>
+                  <strong>Gỡ liên kết tài khoản:</strong> Hệ thống hủy liên kết định danh cá nhân trên hồ sơ đồ vật nhưng bảo toàn lịch sử giao dịch ẩn danh.
+                </li>
+                <li>
+                  <strong>Ngừng hoạt động tin đăng:</strong> Các món đồ và tin đăng của bạn sẽ ngừng hoạt động, không còn hiển thị công khai trên sàn.
+                </li>
+                <li>
+                  <strong>Xóa thông tin cá nhân:</strong> Tên hiển thị, email, số điện thoại và các dữ liệu nhận diện cá nhân sẽ được xử lý và ẩn danh vĩnh viễn.
+                </li>
+              </ul>
+            </div>
+
+            <div className="p-5 rounded-2xl border border-rose-200 bg-rose-50/60 space-y-4">
+              <div>
+                <h3 className="text-sm font-extrabold text-rose-900">
+                  Xóa tài khoản vĩnh viễn
+                </h3>
+                <p className="text-xs text-rose-800/90 mt-1 leading-relaxed">
+                  Sau khi xác nhận, bạn sẽ bị đăng xuất và không thể khôi phục tài khoản này.
+                </p>
+                <ul className="list-disc pl-5 space-y-0.5 text-xs text-rose-800/90 mt-1">
+                  <li>Thông tin cá nhân sẽ được xử lý theo chính sách xóa dữ liệu.</li>
+                  <li>Các tin đăng của bạn sẽ ngừng hoạt động.</li>
+                  <li>Lịch sử giao dịch cần được bảo toàn theo quy định của hệ thống.</li>
                 </ul>
               </div>
 
-              <div className="p-5 rounded-2xl border border-rose-200 bg-rose-50/60 space-y-4">
-                <div>
-                  <h3 className="text-sm font-extrabold text-rose-900">
-                    Xóa tài khoản vĩnh viễn
-                  </h3>
-                  <p className="text-xs text-rose-800/90 mt-1 leading-relaxed">
-                    Sau khi xác nhận, bạn sẽ bị đăng xuất và không thể khôi phục tài khoản này.
-                  </p>
-                  <ul className="list-disc pl-5 space-y-0.5 text-xs text-rose-800/90 mt-1">
-                    <li>Thông tin cá nhân sẽ được xử lý theo chính sách xóa dữ liệu.</li>
-                    <li>Các tin đăng của bạn sẽ ngừng hoạt động.</li>
-                    <li>Lịch sử giao dịch cần được bảo toàn theo quy định của hệ thống.</li>
-                  </ul>
+              {stats.blockingOrdersCount > 0 && (
+                <div className="p-3 rounded-xl bg-amber-100/80 border border-amber-300 text-xs text-amber-950 font-semibold flex items-start gap-2">
+                  <svg className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>
+                    Bạn đang có {stats.blockingOrdersCount} đơn hẹn ở trạng thái giữ chỗ, chờ xác nhận hoặc khiếu nại. Vui lòng xử lý xong tại trang{" "}
+                    <Link href="/orders" className="underline font-bold">
+                      Quản lý đơn hẹn
+                    </Link>{" "}
+                    trước khi xóa tài khoản.
+                  </span>
                 </div>
+              )}
 
-                {stats.blockingOrdersCount > 0 && (
-                  <div className="p-3 rounded-xl bg-amber-100/80 border border-amber-300 text-xs text-amber-950 font-semibold flex items-start gap-2">
-                    <svg className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <span>
-                      Bạn đang có {stats.blockingOrdersCount} đơn hẹn ở trạng thái giữ chỗ, chờ xác nhận hoặc khiếu nại. Vui lòng xử lý xong tại trang{" "}
-                      <Link href="/orders" className="underline font-bold">
-                        Quản lý đơn hẹn
-                      </Link>{" "}
-                      trước khi xóa tài khoản.
-                    </span>
+              {!deleteDialogOpen ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteDialogOpen(true);
+                    setDeleteError(null);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Xóa tài khoản
+                </button>
+              ) : (
+                <form onSubmit={handleDeleteAccount} className="space-y-3 pt-2 border-t border-rose-200">
+                  <div>
+                    <label htmlFor="confirm-delete-input" className="block text-xs font-bold text-rose-950 mb-1.5">
+                      Nhập chính xác <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-rose-300">XOA TAI KHOAN</code> để xác nhận:
+                    </label>
+                    <input
+                      id="confirm-delete-input"
+                      type="text"
+                      required
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                      placeholder="XOA TAI KHOAN"
+                      className="w-full h-11 px-4 rounded-xl border border-rose-300 bg-white focus:border-rose-600 focus:outline-none text-sm font-mono text-rose-950"
+                    />
                   </div>
-                )}
 
-                {!deleteDialogOpen ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDeleteDialogOpen(true);
-                      setDeleteError(null);
-                    }}
-                    className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    Xóa tài khoản
-                  </button>
-                ) : (
-                  <form onSubmit={handleDeleteAccount} className="space-y-3 pt-2 border-t border-rose-200">
-                    <div>
-                      <label htmlFor="confirm-delete-input" className="block text-xs font-bold text-rose-950 mb-1.5">
-                        Nhập chính xác <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-rose-300">XOA TAI KHOAN</code> để xác nhận:
-                      </label>
-                      <input
-                        id="confirm-delete-input"
-                        type="text"
-                        required
-                        value={confirmText}
-                        onChange={(e) => setConfirmText(e.target.value)}
-                        placeholder="XOA TAI KHOAN"
-                        className="w-full h-11 px-4 rounded-xl border border-rose-300 bg-white focus:border-rose-600 focus:outline-none text-sm font-mono text-rose-950"
-                      />
-                    </div>
+                  {deleteError && (
+                    <p className="text-xs font-bold text-rose-700">{deleteError}</p>
+                  )}
 
-                    {deleteError && (
-                      <p className="text-xs font-bold text-rose-700">{deleteError}</p>
-                    )}
-
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="submit"
-                        disabled={deleting || confirmText.trim().toUpperCase() !== "XOA TAI KHOAN"}
-                        className="px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
-                      >
-                        {deleting ? "Đang xử lý..." : "Xác nhận xóa tài khoản"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeleteDialogOpen(false);
-                          setConfirmText("");
-                          setDeleteError(null);
-                        }}
-                        className="px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer"
-                      >
-                        Hủy bỏ
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="submit"
+                      disabled={deleting || confirmText.trim().toUpperCase() !== "XOA TAI KHOAN"}
+                      className="px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
+                    >
+                      {deleting ? "Đang xử lý..." : "Xác nhận xóa tài khoản"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteDialogOpen(false);
+                        setConfirmText("");
+                        setDeleteError(null);
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
