@@ -145,13 +145,6 @@ function LoginContent() {
             </p>
           </div>
 
-          {returnTo !== "/" && (
-            <div className="mb-4 p-3 rounded-xl bg-[#D6E8EE]/50 border border-[#97CADB] text-xs font-medium text-[#001B48] flex items-center gap-2">
-              <span>🔒</span>
-              <span>Bạn sẽ được quay lại trang trước đó sau khi đăng nhập.</span>
-            </div>
-          )}
-
           {error && (
             <div className="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs sm:text-sm font-semibold text-rose-700">
               {error}
