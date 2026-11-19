@@ -5,7 +5,6 @@ import prisma from "@/lib/prisma";
 import { ProductCardData } from "@/components/products/ProductCard";
 import { CategoryItem } from "@/components/home/CategoryGrid";
 import { HomeProductFeed } from "@/components/home/HomeProductFeed";
-import { PassportBanner } from "@/components/home/PassportBanner";
 import { TrustStrip } from "@/components/home/TrustStrip";
 import { CircularStorySection } from "@/components/home/CircularStorySection";
 import { HowItWorksSection } from "@/components/home/HowItWorksSection";
@@ -178,7 +177,7 @@ export default function Home() {
                   href="#live-feed"
                   className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-white text-[#001B48] hover:bg-[#D6E8EE] font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md transition-colors cursor-pointer"
                 >
-                  <span>Khám phá đồ ngay</span>
+                  <span>Khám phá đồ</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
                   </svg>
@@ -190,7 +189,7 @@ export default function Home() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.5v15m7.5-7.5h-15" />
                   </svg>
-                  <span>Đăng bán 60s</span>
+                  <span>Đăng bán</span>
                 </Link>
               </div>
 
@@ -256,7 +255,13 @@ export default function Home() {
       {/* 3. Khối Câu chuyện Tuần hoàn & Hành trình 3 đời chủ */}
       <CircularStorySection />
 
-      {/* 4. Lưới Danh Mục & Feed Sản Phẩm Sinh Viên (Bọc Suspense chuẩn Next.js 16 cacheComponents) */}
+      {/* 4. Quy trình giao dịch 3 bước an toàn tại cổng trường & KTX */}
+      <HowItWorksSection />
+
+      {/* 5. Đánh giá & Chia sẻ từ cộng đồng sinh viên Làng ĐH */}
+      <StudentTestimonialsSection />
+
+      {/* 6. Danh mục & Sản phẩm mới đăng (gộp 1 khối, kề cuối trang) */}
       <Suspense
         fallback={
           <HomeProductFeed
@@ -269,14 +274,37 @@ export default function Home() {
         <LiveMarketplaceFeed />
       </Suspense>
 
-      {/* 5. Quy trình giao dịch 3 bước an toàn tại cổng trường & KTX */}
-      <HowItWorksSection />
-
-      {/* 6. Đánh giá & Chia sẻ từ cộng đồng sinh viên Làng ĐH */}
-      <StudentTestimonialsSection />
-
-      {/* 7. Banner Giới Thiệu Đặc Quyền: Digital Product Passport (off-chain & Fuji ready) */}
-      <PassportBanner />
+      {/* 7. Khối CTA cuối trang: lặp lại 2 nút đồng bộ với Hero */}
+      <section className="py-14 sm:py-20 bg-white border-t border-[#D6E8EE]/70">
+        <ScrollReveal
+          variant="fade-up"
+          className="max-w-3xl mx-auto px-4 sm:px-6 text-center"
+        >
+          <span className="inline-flex items-center px-3.5 py-1 rounded-full border border-[#D6E8EE] bg-[#F8FAFC] text-[11px] font-bold uppercase tracking-wider text-[#02457A]">
+            Tuần hoàn đồ dùng sinh viên
+          </span>
+          <h2 className="mt-4 text-2xl sm:text-4xl font-extrabold text-[#001B48] tracking-tight leading-tight">
+            Trao tay món đồ cũ, tiết kiệm chi phí cho học kỳ mới
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-[#02457A] leading-relaxed">
+            Giáo trình, bàn ghế, quạt máy và đồ dùng ký túc xá luôn sẵn sàng tìm chủ mới ngay tại cổng trường.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="#live-feed"
+              className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-[#001B48] text-white hover:bg-[#02457A] font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md transition-colors cursor-pointer"
+            >
+              <span>Khám phá đồ</span>
+            </a>
+            <Link
+              href="/sell"
+              className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-sm transition-colors"
+            >
+              <span>Đăng bán</span>
+            </Link>
+          </div>
+        </ScrollReveal>
+      </section>
 
       {/* Nút cuộn nhanh lên đầu trang */}
       <ScrollToTopButton />

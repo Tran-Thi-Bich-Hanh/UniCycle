@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import { ProductCard, ProductCardData } from "@/components/products/ProductCard";
 import { CategoryGrid, CategoryItem } from "@/components/home/CategoryGrid";
 import ScrollReveal from "@/components/ui/ScrollReveal";
@@ -105,30 +106,48 @@ export function HomeProductFeed({
   };
 
   return (
-    <>
-      {/* 1. Danh mục sản phẩm */}
-      <CategoryGrid
-        categories={categories}
-        selectedSlug={activeCategorySlug}
-        onSelectCategory={handleCategorySelect}
-      />
-
-      {/* 2. Sản phẩm mới đăng & Thanh lọc gọn gàng */}
-      <section className="py-8 sm:py-12 bg-white" id="live-feed">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <ScrollReveal variant="fade-up">
-            {/* Tiêu đề mục */}
-            <div className="mb-5">
+    <section
+      className="py-10 sm:py-14 bg-[#F8FAFC] border-t border-[#D6E8EE]/70"
+      id="live-feed"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ScrollReveal variant="fade-up">
+          {/* Tiêu đề mục gộp: Danh mục & Sản phẩm mới đăng */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+            <div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
                 Sản phẩm mới đăng
               </h2>
               <p className="text-xs sm:text-sm text-[#02457A] mt-1">
-                Tìm đồ quanh trường, liên hệ người bán và hẹn gặp trực tiếp để giao dịch.
+                Chọn danh mục bên dưới để tìm đồ quanh trường, liên hệ người bán và hẹn gặp trực tiếp để giao dịch.
               </p>
             </div>
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#02457A] hover:text-[#018ABE] transition-colors group shrink-0"
+            >
+              <span>Xem tất cả</span>
+              <span
+                className="group-hover:translate-x-0.5 transition-transform"
+                aria-hidden="true"
+              >
+                →
+              </span>
+            </Link>
+          </div>
+        </ScrollReveal>
 
-            {/* Thanh công cụ lọc nhanh (trái) & Khu vực + Sắp xếp (phải) trên cùng một hàng */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6 pb-4 border-b border-[#D6E8EE]">
+        {/* Lưới 6 danh mục nhúng trực tiếp */}
+        <CategoryGrid
+          embedded
+          categories={categories}
+          selectedSlug={activeCategorySlug}
+          onSelectCategory={handleCategorySelect}
+        />
+
+        <ScrollReveal variant="fade-up">
+          {/* Thanh công cụ lọc nhanh (trái) & Khu vực + Sắp xếp (phải) trên cùng một hàng */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6 pb-4 border-b border-[#D6E8EE]">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -242,7 +261,7 @@ export function HomeProductFeed({
             </div>
           </ScrollReveal>
 
-          {/* 3. Lưới hiển thị các thẻ món đồ (Responsive 4 cột desktop, 3 tablet, 2 mobile) */}
+          {/* Lưới hiển thị các thẻ món đồ (Responsive 4 cột desktop, 3 tablet, 2 mobile) */}
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-5 lg:gap-6">
               {filteredProducts.map((product) => (
@@ -250,7 +269,7 @@ export function HomeProductFeed({
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 px-4 bg-[#F8FAFC] rounded-2xl border border-dashed border-[#D6E8EE]">
+            <div className="text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-[#D6E8EE]">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#D6E8EE]/50 flex items-center justify-center text-[#018ABE]">
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -269,9 +288,8 @@ export function HomeProductFeed({
               </button>
             </div>
           )}
-        </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
 
