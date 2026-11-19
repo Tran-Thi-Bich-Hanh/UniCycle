@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { HEADER_CATEGORIES } from "@/lib/constants/categories";
 
 interface HeaderUser {
   id: string;
@@ -25,46 +26,6 @@ const CAMPUS_AREAS = [
   { id: "hcmus", name: "ĐH Khoa học Tự nhiên", shortName: "ĐH KHTN" },
   { id: "ueh", name: "ĐH Kinh tế TP.HCM (UEH)", shortName: "ĐH Kinh tế" },
   { id: "uit", name: "ĐH Công nghệ Thông tin (UIT)", shortName: "ĐH CNTT" },
-];
-
-const CATEGORIES = [
-  {
-    slug: "giao-trinh-sach",
-    name: "Giáo trình & Sách",
-    desc: "Giáo trình đại học, sách chuyên ngành và tài liệu học tập",
-    count: "140+ tin",
-  },
-  {
-    slug: "ban-ghe-tu-ktx",
-    name: "Bàn ghế & Nội thất",
-    desc: "Bàn học, ghế xoay, kệ sách và nội thất phòng trọ",
-    count: "85+ tin",
-  },
-  {
-    slug: "do-gia-dung-quat",
-    name: "Đồ gia dụng",
-    desc: "Quạt điện, ấm siêu tốc, nồi cơm mini và vật dụng sinh hoạt",
-    count: "110+ tin",
-  },
-  {
-    slug: "do-dien-tu-phu-kien",
-    name: "Đồ điện tử",
-    desc: "Máy tính, máy tính cầm tay, chuột, bàn phím và tai nghe",
-    count: "95+ tin",
-  },
-  {
-    slug: "xe-dap-phuong-tien",
-    name: "Xe đạp & Di chuyển",
-    desc: "Xe đạp, mũ bảo hiểm và vật dụng đi lại",
-    count: "40+ tin",
-  },
-  {
-    slug: "goc-0d-cho-tang",
-    name: "Góc Cho Tặng",
-    desc: "Đồ dùng miễn phí được sinh viên khóa trước chia sẻ",
-    count: "60+ tin",
-    highlight: true,
-  },
 ];
 
 const POPULAR_KEYWORDS = [
@@ -262,7 +223,7 @@ export function Header() {
                       <div className="absolute left-0 top-full pt-2 w-[calc(100vw-2rem)] max-w-[680px] z-50 animate-in fade-in duration-150">
                         <div className="bg-white rounded-2xl border border-[#D6E8EE] shadow-2xl p-5 grid grid-cols-12 gap-5">
                           <div className="col-span-8 grid grid-cols-2 gap-2.5">
-                            {CATEGORIES.map((cat) => (
+                            {HEADER_CATEGORIES.map((cat) => (
                               <Link
                                 key={cat.slug}
                                 href={`/categories/${cat.slug}`}
@@ -763,7 +724,7 @@ export function Header() {
                           Danh mục đồ sinh viên
                         </p>
                         <ul className="space-y-1">
-                          {CATEGORIES.map((cat) => (
+                          {HEADER_CATEGORIES.map((cat) => (
                             <li key={cat.slug}>
                               <Link
                                 href={`/categories/${cat.slug}`}

@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { formatConditionGradeLabel } from "@/lib/utils/condition";
 
 export interface ProductCardData {
   id: string;
@@ -119,8 +120,11 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Góc trên bên phải: Tình trạng món đồ */}
         {condition && (
           <div className="absolute top-2.5 right-2.5 z-10">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-white/95 text-[#02457A] shadow-xs backdrop-blur-xs border border-[#D6E8EE]">
-              {condition}
+            <span
+              title={condition}
+              className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-white/95 text-[#02457A] shadow-xs backdrop-blur-xs border border-[#D6E8EE]"
+            >
+              {formatConditionGradeLabel(condition)}
             </span>
           </div>
         )}

@@ -8,6 +8,7 @@ import {
   FALLBACK_CATEGORIES,
   FALLBACK_SCHOOLS,
 } from "@/lib/data/mock-fallback";
+import { syncCategoriesWithHeader } from "@/lib/constants/categories";
 
 interface PageProps {
   searchParams: Promise<{
@@ -135,7 +136,7 @@ async function ProductsListContent({ searchParams }: PageProps) {
   return (
     <ProductsExplorer
       initialProducts={products}
-      categories={categories}
+      categories={syncCategoriesWithHeader(categories)}
       schools={schools}
       initialQuery={q}
       initialCategory={category}
