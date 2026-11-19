@@ -113,7 +113,7 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
   {
     id: "goc-0d-cho-tang",
     slug: "goc-0d-cho-tang",
-    name: "Góc Cho Tặng",
+    name: "Đồ tặng miễn phí",
     description: "Đồ dùng miễn phí được sinh viên khóa trước chia sẻ",
     count: "50+ tin",
     imageUrl: "/categories/goc-0d-cho-tang.jpg",
@@ -183,22 +183,17 @@ export function CategoryGrid({
   return (
     <section className="py-8 sm:py-12 bg-[#F8FAFC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Tiêu đề mục theo chuẩn phong cách widget-title trong index.html */}
+        {/* Tiêu đề mục danh mục */}
         <ScrollReveal variant="fade-up">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6 sm:mb-8">
-            <div>
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE] block mb-1">
-                Khám Phá Theo Nhu Cầu Sinh Viên
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
-                Danh Mục Mua Bán &amp; Cho Tặng
-              </h2>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
+              Danh mục sản phẩm
+            </h2>
             <Link
               href="/products"
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#02457A] hover:text-[#018ABE] transition-colors group cursor-pointer"
             >
-              <span>Xem tất cả danh mục</span>
+              <span>Xem tất cả</span>
               <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -247,16 +242,6 @@ export function CategoryGrid({
                     </span>
                   )}
 
-                  {/* Huy hiệu Góc 0đ Cho Tặng nổi bật */}
-                  {isFree && (
-                    <span className="absolute -top-2.5 right-2 sm:right-3 z-10 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] sm:text-[11px] font-extrabold px-2.5 py-0.5 rounded-full shadow-sm ring-2 ring-white inline-flex items-center gap-1 shrink-0">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                      </svg>
-                      <span>0đ Tặng</span>
-                    </span>
-                  )}
-
                   {/* Khung ảnh đại diện 3D danh mục kích thước lớn (96px desktop / 80px mobile) */}
                   <span
                     className={`relative block w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden mb-3 p-1 bg-gradient-to-br ${theme.bgGradient} border ${theme.borderAccent} shadow-xs group-hover:scale-105 group-hover:shadow-md transition-all duration-300`}
@@ -296,7 +281,7 @@ export function CategoryGrid({
                         : "text-[#001B48] group-hover:text-[#018ABE]"
                     }`}
                   >
-                    {cat.name}
+                    {isFree ? "Đồ tặng miễn phí" : cat.name}
                   </span>
 
                   {/* Số lượng tin dạng Capsule Pill Badge */}

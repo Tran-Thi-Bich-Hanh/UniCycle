@@ -50,7 +50,7 @@ export const FALLBACK_CATEGORIES: CategoryItem[] = [
   {
     id: "goc-0d-cho-tang",
     slug: "goc-0d-cho-tang",
-    name: "Góc 0đ Cho Tặng",
+    name: "Đồ tặng miễn phí",
     description: "Đồ dùng, giáo trình miễn phí 0đ",
     count: "50+ tin",
     imageUrl: "/categories/goc-0d-cho-tang.jpg",
@@ -161,7 +161,7 @@ export const FALLBACK_PRODUCTS: ProductCardData[] = [
     },
     category: {
       id: "goc-0d-cho-tang",
-      name: "Góc 0đ Cho Tặng",
+      name: "Đồ tặng miễn phí",
       slug: "goc-0d-cho-tang",
     },
     seller: {

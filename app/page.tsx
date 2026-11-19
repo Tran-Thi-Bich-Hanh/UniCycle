@@ -118,7 +118,7 @@ async function LiveMarketplaceFeed() {
       categories = dbCategories.map((c) => ({
         id: c.id,
         slug: c.slug,
-        name: c.name,
+        name: c.slug === "goc-0d-cho-tang" ? "Đồ tặng miễn phí" : c.name,
         description: c.description,
         icon: c.icon,
         imageUrl: `/categories/${c.slug}.jpg`,
