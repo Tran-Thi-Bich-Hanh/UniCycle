@@ -113,12 +113,18 @@ export function Header() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = searchQuery.trim();
     const params = new URLSearchParams();
-    if (searchQuery.trim()) {
-      params.set("q", searchQuery.trim());
+    if (trimmed) {
+      params.set("q", trimmed);
     }
     setMobileSearchOpen(false);
     setMobileMenuOpen(false);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("unicycle-header-search", { detail: { q: trimmed } })
+      );
+    }
     router.push(`/products${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
@@ -667,6 +673,11 @@ export function Header() {
                         onClick={() => {
                           setSearchQuery(kw);
                           setMobileSearchOpen(false);
+                          if (typeof window !== "undefined") {
+                            window.dispatchEvent(
+                              new CustomEvent("unicycle-header-search", { detail: { q: kw } })
+                            );
+                          }
                           router.push(`/products?q=${encodeURIComponent(kw)}`);
                         }}
                         className="text-xs px-2.5 py-1 rounded-full bg-white border border-[#D6E8EE] text-[#001B48] hover:border-[#018ABE] shrink-0 cursor-pointer"

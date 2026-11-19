@@ -51,9 +51,27 @@ export function ProductsExplorer({
   initialCategory = "all",
   initialCampus = "all",
 }: ProductsExplorerProps) {
+  const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery);
+  const [prevInitialCategory, setPrevInitialCategory] = useState(initialCategory);
+  const [prevInitialCampus, setPrevInitialCampus] = useState(initialCampus);
+
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedCampus, setSelectedCampus] = useState(initialCampus);
+
+  if (prevInitialQuery !== initialQuery) {
+    setPrevInitialQuery(initialQuery);
+    setSearchQuery(initialQuery);
+  }
+  if (prevInitialCategory !== initialCategory) {
+    setPrevInitialCategory(initialCategory);
+    setSelectedCategory(initialCategory);
+  }
+  if (prevInitialCampus !== initialCampus) {
+    setPrevInitialCampus(initialCampus);
+    setSelectedCampus(initialCampus);
+  }
+
   const [selectedPriceIndex, setSelectedPriceIndex] = useState(0);
   const [selectedConditions, setSelectedConditions] = useState<ConditionGrade[]>([]);
   const [onlyPassport, setOnlyPassport] = useState(false);
@@ -63,6 +81,18 @@ export function ProductsExplorer({
 
   const mobileFilterTriggerRef = useRef<HTMLButtonElement | null>(null);
   const closeMobileFilterBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const handleHeaderSearch = (event: Event) => {
+      const customEvent = event as CustomEvent<{ q?: string }>;
+      setSearchQuery(customEvent.detail?.q ?? "");
+    };
+
+    window.addEventListener("unicycle-header-search", handleHeaderSearch);
+    return () => {
+      window.removeEventListener("unicycle-header-search", handleHeaderSearch);
+    };
+  }, []);
 
   const normalizedCategories = useMemo(
     () => syncCategoriesWithHeader(categories),
@@ -296,36 +326,7 @@ export function ProductsExplorer({
         {/* Bố cục 2 cột: Sidebar Bộ Lọc (Trái) + Lưới Sản Phẩm (Phải) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           {/* Cột Trái (3/12): Sidebar Bộ lọc trên Desktop */}
-          <aside className="hidden lg:block lg:col-span-3 bg-white rounded-2xl border border-[#D6E8EE] p-5 shadow-xs sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-[#D6E8EE]">
-              <h2 className="font-extrabold text-[#001B48] text-base flex items-center gap-2">
-                <svg
-                  className="w-4 h-4 text-[#018ABE] shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 3c2.755 0 5.455.232 8.083.678.539.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.378-1.006.917-1.096A48.32 48.32 0 0112 3z"
-                  />
-                </svg>
-                <span>Bộ lọc chi tiết</span>
-              </h2>
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="text-xs text-rose-700 hover:underline font-semibold cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-                >
-                  Xóa lọc
-                </button>
-              )}
-            </div>
-
+          <aside className="hidden lg:block lg:col-span-3 bg-white rounded-2xl border border-[#D6E8EE] p-5 shadow-xs sticky top-24">
             <FilterPanelContent
               idPrefix="desktop"
               initialProducts={initialProducts}
@@ -338,6 +339,8 @@ export function ProductsExplorer({
               selectedConditions={selectedConditions}
               onlyPassport={onlyPassport}
               onlyVerifiedStudent={onlyVerifiedStudent}
+              showResetButton={hasActiveFilters}
+              onResetFilters={resetFilters}
               onSearchChange={setSearchQuery}
               onSelectCategory={setSelectedCategory}
               onSelectCampus={setSelectedCampus}
@@ -603,6 +606,8 @@ interface FilterPanelContentProps {
   selectedConditions: ConditionGrade[];
   onlyPassport: boolean;
   onlyVerifiedStudent: boolean;
+  showResetButton?: boolean;
+  onResetFilters?: () => void;
   onSearchChange: (value: string) => void;
   onSelectCategory: (slug: string) => void;
   onSelectCampus: (campusId: string) => void;
@@ -624,6 +629,8 @@ function FilterPanelContent({
   selectedConditions,
   onlyPassport,
   onlyVerifiedStudent,
+  showResetButton = false,
+  onResetFilters,
   onSearchChange,
   onSelectCategory,
   onSelectCampus,
@@ -686,12 +693,23 @@ function FilterPanelContent({
     <div className="divide-y divide-[#EBF3F7]">
       {/* 1. Từ khóa tìm kiếm */}
       <div className="pb-4">
-        <label
-          htmlFor={searchInputId}
-          className="block text-[11px] font-bold text-slate-500 mb-2 uppercase tracking-wider"
-        >
-          Từ khóa tìm kiếm
-        </label>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <label
+            htmlFor={searchInputId}
+            className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider"
+          >
+            Từ khóa tìm kiếm
+          </label>
+          {showResetButton && onResetFilters && (
+            <button
+              type="button"
+              onClick={onResetFilters}
+              className="text-xs text-rose-700 hover:underline font-semibold cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+            >
+              Xóa lọc
+            </button>
+          )}
+        </div>
         <div className="relative">
           <svg
             className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
