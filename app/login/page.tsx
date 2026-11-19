@@ -7,25 +7,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 const QUICK_ACCOUNTS = [
   {
-    label: "SV Bách Khoa (KTX Khu B)",
-    name: "Nguyễn Hoàng Nam",
+    name: "Hoàng Nam",
+    role: "Sinh viên Bách Khoa",
     email: "hoangnam.bka@gmail.com",
     password: "Student@123456",
-    badge: "Đang bán Casio & Quạt",
   },
   {
-    label: "SV KHTN (KTX Khu B)",
-    name: "Trần Hải Yến",
+    name: "Hải Yến",
+    role: "Sinh viên KHTN",
     email: "haiyen.khtn@gmail.com",
     password: "Student@123456",
-    badge: "Tặng giáo trình 0đ",
   },
   {
-    label: "Quản trị viên (Admin)",
-    name: "Ban Quản Trị UniCycle",
+    name: "Quản trị viên",
+    role: "Ban quản trị",
     email: "admin@unicycle.vn",
     password: "Admin@123456",
-    badge: "Quyền kiểm duyệt",
   },
 ];
 
@@ -100,36 +97,33 @@ function LoginContent() {
             </Link>
 
             <div className="pt-2">
-              <span className="inline-block px-3 py-1 rounded-full bg-white/15 border border-white/20 text-[11px] font-bold text-[#D6E8EE] mb-3">
-                An Toàn · Minh Bạch · Không Lo Lừa Đảo
-              </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight text-white">
-                Chào mừng bạn quay lại cộng đồng KTX!
+                Chào mừng bạn trở lại!
               </h1>
               <p className="text-xs sm:text-sm text-[#D6E8EE]/90 mt-2.5 leading-relaxed">
-                Đăng nhập để nhắn Zalo trực tiếp cho người bán, đặt lịch hẹn giữ chỗ tại cổng trường và quản lý Hộ chiếu đồ vật Product Passport.
+                Tiếp tục hành trình mua bán và trao đổi đồ cũ cùng cộng đồng sinh viên.
               </p>
             </div>
           </div>
 
-          <div className="pt-8 space-y-3 relative z-10 border-t border-white/15 mt-8">
+          <div className="pt-8 space-y-3.5 relative z-10 border-t border-white/15 mt-8">
             <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
-              <span className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-bold shrink-0">
-                ✓
-              </span>
-              <span>Xác minh thẻ sinh viên chính chủ</span>
+              <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
+              <span>Xác minh sinh viên chính chủ</span>
             </div>
             <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
-              <span className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-bold shrink-0">
-                ✓
-              </span>
-              <span>Bảo vệ số điện thoại Zalo khỏi tin rác</span>
+              <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.861-.861 5.972 5.972 0 011.057-3.035C4.604 15.69 4 13.93 4 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+              </svg>
+              <span>Kết nối trực tiếp với người bán</span>
             </div>
             <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
-              <span className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-bold shrink-0">
-                ✓
-              </span>
-              <span>Tra cứu lịch sử đời chủ minh bạch</span>
+              <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Lịch sử giao dịch minh bạch</span>
             </div>
           </div>
         </div>
@@ -138,15 +132,15 @@ function LoginContent() {
         <div className="lg:col-span-7 p-6 sm:p-9 flex flex-col justify-center">
           <div className="mb-6">
             <h2 className="text-xl sm:text-2xl font-extrabold text-[#001B48]">
-              Đăng nhập tài khoản
+              Đăng nhập
             </h2>
             <p className="text-xs sm:text-sm text-[#02457A] mt-1">
-              Chưa có tài khoản sinh viên?{" "}
+              Chưa có tài khoản?{" "}
               <Link
                 href={`/register${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
                 className="font-bold text-[#018ABE] hover:underline"
               >
-                Đăng ký ngay trong 30 giây &rarr;
+                Đăng ký ngay
               </Link>
             </p>
           </div>
@@ -154,7 +148,7 @@ function LoginContent() {
           {returnTo !== "/" && (
             <div className="mb-4 p-3 rounded-xl bg-[#D6E8EE]/50 border border-[#97CADB] text-xs font-medium text-[#001B48] flex items-center gap-2">
               <span>🔒</span>
-              <span>Sau khi đăng nhập, bạn sẽ được đưa quay lại trang đang xem ngay lập tức.</span>
+              <span>Bạn sẽ được quay lại trang trước đó sau khi đăng nhập.</span>
             </div>
           )}
 
@@ -164,7 +158,7 @@ function LoginContent() {
             </div>
           )}
 
-          {/* Nút Đăng nhập Google 1-chạm */}
+          {/* Nút Đăng nhập Google */}
           <button
             type="button"
             onClick={handleGoogleLogin}
@@ -189,7 +183,7 @@ function LoginContent() {
                 d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"
               />
             </svg>
-            <span>Tiếp tục 1-chạm với Google Sinh Viên</span>
+            <span>Tiếp tục với Google</span>
           </button>
 
           <div className="relative my-5 flex items-center justify-center">
@@ -203,7 +197,7 @@ function LoginContent() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#001B48] mb-1.5">
-                Email sinh viên hoặc cá nhân
+                Địa chỉ email
               </label>
               <input
                 type="email"
@@ -225,7 +219,7 @@ function LoginContent() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Nhập mật khẩu..."
+                  placeholder="Nhập mật khẩu của bạn"
                   className="w-full h-11 pl-3.5 pr-10 rounded-xl border border-[#D6E8EE] text-sm text-[#001B48] focus:outline-none focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20"
                 />
                 <button
@@ -254,20 +248,23 @@ function LoginContent() {
               disabled={loading}
               className="w-full h-11 sm:h-12 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white font-bold text-sm shadow-sm transition-colors cursor-pointer disabled:opacity-50"
             >
-              {loading ? "Đang xác thực..." : "Đăng nhập ngay"}
+              {loading ? "Đang xác thực..." : "Đăng nhập"}
             </button>
           </form>
 
-          {/* Khối Chọn Nhanh Tài Khoản Sinh Viên Dùng Thử (1-Click Demo) */}
+          {/* Khối Trải nghiệm nhanh (Demo) */}
           <div className="mt-6 pt-5 border-t border-[#D6E8EE]">
-            <div className="flex items-center justify-between mb-2.5">
-              <span className="text-xs font-extrabold text-[#001B48] uppercase tracking-wider">
-                ⚡ Đăng nhập nhanh 1-Click (Tài khoản mẫu Seed)
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-[#001B48]">
+                Trải nghiệm nhanh
               </span>
-              <span className="text-[11px] text-[#018ABE] font-semibold">
-                Dành cho kiểm thử &amp; Demo
+              <span className="text-[10px] font-semibold text-[#02457A] bg-[#D6E8EE]/70 px-2 py-0.5 rounded-full">
+                Demo
               </span>
             </div>
+            <p className="text-[11px] text-slate-500 mb-2.5">
+              Chọn một tài khoản mẫu để khám phá các tính năng của UniCycle.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {QUICK_ACCOUNTS.map((acc) => (
                 <button
@@ -284,10 +281,7 @@ function LoginContent() {
                   <p className="text-xs font-bold text-[#001B48] group-hover:text-[#018ABE] truncate">
                     {acc.name}
                   </p>
-                  <p className="text-[11px] text-[#02457A] truncate">{acc.label}</p>
-                  <span className="inline-block mt-1 px-1.5 py-0.5 rounded bg-[#D6E8EE]/70 text-[#001B48] text-[10px] font-semibold">
-                    {acc.badge}
-                  </span>
+                  <p className="text-[11px] text-[#02457A] truncate mt-0.5">{acc.role}</p>
                 </button>
               ))}
             </div>
