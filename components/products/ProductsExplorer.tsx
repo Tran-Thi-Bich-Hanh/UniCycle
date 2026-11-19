@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ProductCard, ProductCardData } from "@/components/products/ProductCard";
 import { CategoryItem } from "@/components/home/CategoryGrid";
+import { CategorySyncItem, syncCategoriesWithHeader } from "@/lib/constants/categories";
+import {
+  CONDITION_GRADE_OPTIONS,
+  ConditionGrade,
+  getConditionGrade,
+} from "@/lib/utils/condition";
 import { removeVietnameseTones } from "@/lib/utils/vietnamese";
 
 interface SchoolOption {
@@ -21,20 +27,20 @@ interface ProductsExplorerProps {
   initialCampus?: string;
 }
 
-const PRICE_RANGES = [
-  { label: "Tất cả mức giá", min: undefined, max: undefined },
-  { label: "🎁 0đ Cho Tặng", min: 0, max: 0, isFreeOnly: true },
-  { label: "Dưới 100.000 ₫", min: 1, max: 100000 },
-  { label: "100.000 ₫ - 300.000 ₫", min: 100000, max: 300000 },
-  { label: "Trên 300.000 ₫", min: 300000, max: undefined },
-];
+interface PriceRangeOption {
+  chipLabel: string;
+  label: string;
+  min?: number;
+  max?: number;
+  isFreeOnly?: boolean;
+}
 
-const CONDITIONS = [
-  { label: "Tất cả tình trạng", value: "all" },
-  { label: "Mới 99%", value: "99%" },
-  { label: "Mới 98%", value: "98%" },
-  { label: "Còn rất tốt", value: "Còn rất tốt" },
-  { label: "Đã sử dụng", value: "Đã sử dụng" },
+const PRICE_RANGES: PriceRangeOption[] = [
+  { chipLabel: "Tất cả", label: "Tất cả mức giá" },
+  { chipLabel: "0đ Cho Tặng", label: "0đ Cho Tặng", min: 0, max: 0, isFreeOnly: true },
+  { chipLabel: "Dưới 100k", label: "Dưới 100.000 ₫", min: 1, max: 100000 },
+  { chipLabel: "100k – 300k", label: "100.000 ₫ – 300.000 ₫", min: 100000, max: 300000 },
+  { chipLabel: "Trên 300k", label: "Trên 300.000 ₫", min: 300000 },
 ];
 
 export function ProductsExplorer({
@@ -45,27 +51,79 @@ export function ProductsExplorer({
   initialCategory = "all",
   initialCampus = "all",
 }: ProductsExplorerProps) {
-  // Trạng thái bộ lọc
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedCampus, setSelectedCampus] = useState(initialCampus);
   const [selectedPriceIndex, setSelectedPriceIndex] = useState(0);
-  const [selectedCondition, setSelectedCondition] = useState("all");
+  const [selectedConditions, setSelectedConditions] = useState<ConditionGrade[]>([]);
   const [onlyPassport, setOnlyPassport] = useState(false);
   const [onlyVerifiedStudent, setOnlyVerifiedStudent] = useState(false);
   const [sortBy, setSortBy] = useState<"verified" | "newest" | "price_asc" | "price_desc">("verified");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  // Lọc dữ liệu client-side tức thì
+  const mobileFilterTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const closeMobileFilterBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  const normalizedCategories = useMemo(
+    () => syncCategoriesWithHeader(categories),
+    [categories]
+  );
+
+  const categoryNameBySlug = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const cat of normalizedCategories) {
+      map.set(cat.slug, cat.name);
+    }
+    return map;
+  }, [normalizedCategories]);
+
+  useEffect(() => {
+    if (!mobileFilterOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const triggerEl = mobileFilterTriggerRef.current;
+    document.body.style.overflow = "hidden";
+
+    const frameId = requestAnimationFrame(() => {
+      closeMobileFilterBtnRef.current?.focus();
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMobileFilterOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      cancelAnimationFrame(frameId);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      triggerEl?.focus();
+    };
+  }, [mobileFilterOpen]);
+
+  const toggleConditionGrade = (grade: ConditionGrade) => {
+    setSelectedConditions((prev) =>
+      prev.includes(grade) ? prev.filter((item) => item !== grade) : [...prev, grade]
+    );
+  };
+
   const filteredProducts = useMemo(() => {
     return initialProducts
       .filter((p) => {
-        // 1. Tìm kiếm theo từ khóa (tiếng Việt có/không dấu)
         if (searchQuery.trim()) {
           const normQ = removeVietnameseTones(searchQuery);
           const normTitle = removeVietnameseTones(p.title);
-          const normCat = p.category ? removeVietnameseTones(p.category.name) : "";
-          const normSchool = p.school ? removeVietnameseTones(p.school.name + " " + p.school.shortName) : "";
+          const rawCatName = p.category ? p.category.name : "";
+          const syncedCatName = p.category?.slug
+            ? categoryNameBySlug.get(p.category.slug) || rawCatName
+            : rawCatName;
+          const normCat = removeVietnameseTones(`${rawCatName} ${syncedCatName}`);
+          const normSchool = p.school
+            ? removeVietnameseTones(`${p.school.name} ${p.school.shortName}`)
+            : "";
 
           if (
             !normTitle.includes(normQ) &&
@@ -76,7 +134,6 @@ export function ProductsExplorer({
           }
         }
 
-        // 2. Lọc theo danh mục
         if (selectedCategory !== "all") {
           if (selectedCategory === "goc-0d-cho-tang") {
             if (!p.isFree && p.price > 0 && p.category?.slug !== "goc-0d-cho-tang") {
@@ -87,7 +144,6 @@ export function ProductsExplorer({
           }
         }
 
-        // 3. Lọc theo Trường / KTX
         if (selectedCampus !== "all") {
           if (
             p.school?.id !== selectedCampus &&
@@ -97,7 +153,6 @@ export function ProductsExplorer({
           }
         }
 
-        // 4. Lọc theo khoảng giá
         const priceRange = PRICE_RANGES[selectedPriceIndex];
         if (priceRange.isFreeOnly) {
           if (!p.isFree && p.price > 0) return false;
@@ -106,21 +161,19 @@ export function ProductsExplorer({
           if (priceRange.max !== undefined && p.price > priceRange.max) return false;
         }
 
-        // 5. Lọc theo tình trạng
-        if (selectedCondition !== "all") {
-          if (!p.condition.toLowerCase().includes(selectedCondition.toLowerCase())) {
+        if (selectedConditions.length > 0) {
+          const productGrade = getConditionGrade(p.condition);
+          if (!productGrade || !selectedConditions.includes(productGrade)) {
             return false;
           }
         }
 
-        // 6. Lọc chỉ đồ có Product Passport
         if (onlyPassport) {
           if (!p.item?.passportEnabled && !p.item?.passportId) {
             return false;
           }
         }
 
-        // 7. Lọc chỉ người bán sinh viên đã xác minh
         if (onlyVerifiedStudent) {
           if (!p.seller.isStudentVerified) {
             return false;
@@ -146,10 +199,11 @@ export function ProductsExplorer({
     selectedCategory,
     selectedCampus,
     selectedPriceIndex,
-    selectedCondition,
+    selectedConditions,
     onlyPassport,
     onlyVerifiedStudent,
     sortBy,
+    categoryNameBySlug,
   ]);
 
   const resetFilters = () => {
@@ -157,19 +211,33 @@ export function ProductsExplorer({
     setSelectedCategory("all");
     setSelectedCampus("all");
     setSelectedPriceIndex(0);
-    setSelectedCondition("all");
+    setSelectedConditions([]);
     setOnlyPassport(false);
     setOnlyVerifiedStudent(false);
   };
 
-  const hasActiveFilters =
-    searchQuery.trim() !== "" ||
-    selectedCategory !== "all" ||
-    selectedCampus !== "all" ||
-    selectedPriceIndex !== 0 ||
-    selectedCondition !== "all" ||
-    onlyPassport ||
-    onlyVerifiedStudent;
+  const activeFilterCount =
+    (searchQuery.trim() !== "" ? 1 : 0) +
+    (selectedCategory !== "all" ? 1 : 0) +
+    (selectedCampus !== "all" ? 1 : 0) +
+    (selectedPriceIndex !== 0 ? 1 : 0) +
+    selectedConditions.length +
+    (onlyPassport ? 1 : 0) +
+    (onlyVerifiedStudent ? 1 : 0);
+
+  const hasActiveFilters = activeFilterCount > 0;
+
+  const activeCategoryName =
+    selectedCategory !== "all"
+      ? categoryNameBySlug.get(selectedCategory) || selectedCategory
+      : null;
+
+  const activeCampusLabel =
+    selectedCampus !== "all"
+      ? schools.find(
+          (s) => s.id === selectedCampus || s.shortName === selectedCampus
+        )?.shortName || selectedCampus
+      : null;
 
   return (
     <div className="bg-[#F8FAFC] min-h-screen py-6 sm:py-10">
@@ -180,39 +248,46 @@ export function ProductsExplorer({
             <Link href="/" className="hover:text-[#018ABE]">
               Trang chủ
             </Link>
-            <span>/</span>
+            <span aria-hidden="true">/</span>
             <span className="text-[#001B48] font-bold">Khám phá đồ cũ</span>
-            {selectedCategory !== "all" && (
+            {activeCategoryName && (
               <>
-                <span>/</span>
-                <span className="text-[#018ABE] font-bold">
-                  {categories.find((c) => c.slug === selectedCategory)?.name}
-                </span>
+                <span aria-hidden="true">/</span>
+                <span className="text-[#016D96] font-bold">{activeCategoryName}</span>
               </>
             )}
           </nav>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
-                Sàn Trao Đổi Đồ Cũ Sinh Viên
-              </h1>
-              <p className="text-xs sm:text-sm text-[#02457A] mt-1">
-                Tìm kiếm thông minh quanh các trường ĐH và KTX TP.HCM
-              </p>
-            </div>
 
-            {/* Mobile Filter Button */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
+              Sàn Trao Đổi Đồ Cũ Sinh Viên
+            </h1>
+
             <button
+              ref={mobileFilterTriggerRef}
               type="button"
               onClick={() => setMobileFilterOpen(true)}
-              className="lg:hidden h-11 px-4 rounded-xl bg-white border border-[#D6E8EE] text-sm font-bold text-[#001B48] inline-flex items-center justify-center gap-2 shadow-2xs"
+              className="lg:hidden h-11 px-4 rounded-xl bg-white border border-[#D6E8EE] text-sm font-bold text-[#001B48] inline-flex items-center justify-center gap-2 shadow-2xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
             >
-              <svg className="w-4 h-4 text-[#018ABE]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              <svg
+                className="w-4 h-4 text-[#018ABE] shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                />
               </svg>
               <span>Bộ lọc tìm kiếm</span>
-              {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full bg-[#018ABE]" />
+              {activeFilterCount > 0 && (
+                <span className="px-2 py-0.5 leading-none rounded-full text-[11px] font-bold bg-[#018ABE] text-white tabular-nums">
+                  {activeFilterCount}
+                </span>
               )}
             </button>
           </div>
@@ -221,94 +296,544 @@ export function ProductsExplorer({
         {/* Bố cục 2 cột: Sidebar Bộ Lọc (Trái) + Lưới Sản Phẩm (Phải) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           {/* Cột Trái (3/12): Sidebar Bộ lọc trên Desktop */}
-          <aside className="hidden lg:block lg:col-span-3 bg-white rounded-2xl border border-[#D6E8EE] p-5 shadow-xs space-y-6 sticky top-24">
-            <div className="flex items-center justify-between pb-3 border-b border-[#D6E8EE]">
-              <h3 className="font-extrabold text-[#001B48] text-base flex items-center gap-2">
-                <svg className="w-4 h-4 text-[#018ABE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.539.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.378-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+          <aside className="hidden lg:block lg:col-span-3 bg-white rounded-2xl border border-[#D6E8EE] p-5 shadow-xs sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-[#D6E8EE]">
+              <h2 className="font-extrabold text-[#001B48] text-base flex items-center gap-2">
+                <svg
+                  className="w-4 h-4 text-[#018ABE] shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 3c2.755 0 5.455.232 8.083.678.539.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.378-1.006.917-1.096A48.32 48.32 0 0112 3z"
+                  />
                 </svg>
                 <span>Bộ lọc chi tiết</span>
-              </h3>
+              </h2>
               {hasActiveFilters && (
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="text-xs text-rose-600 hover:underline font-semibold cursor-pointer"
+                  className="text-xs text-rose-700 hover:underline font-semibold cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
                 >
                   Xóa lọc
                 </button>
               )}
             </div>
 
-            {/* Ô tìm kiếm từ khóa */}
-            <div>
-              <label className="block text-xs font-bold text-[#001B48] mb-2 uppercase tracking-wider">
-                Từ khóa tìm kiếm
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Gõ có dấu hoặc không dấu..."
-                  className="w-full h-10 pl-3 pr-8 rounded-xl border border-[#D6E8EE] text-xs text-[#001B48] focus:outline-none focus:border-[#018ABE]"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            </div>
+            <FilterPanelContent
+              idPrefix="desktop"
+              initialProducts={initialProducts}
+              categories={normalizedCategories}
+              schools={schools}
+              searchQuery={searchQuery}
+              selectedCategory={selectedCategory}
+              selectedCampus={selectedCampus}
+              selectedPriceIndex={selectedPriceIndex}
+              selectedConditions={selectedConditions}
+              onlyPassport={onlyPassport}
+              onlyVerifiedStudent={onlyVerifiedStudent}
+              onSearchChange={setSearchQuery}
+              onSelectCategory={setSelectedCategory}
+              onSelectCampus={setSelectedCampus}
+              onSelectPriceIndex={setSelectedPriceIndex}
+              onToggleCondition={toggleConditionGrade}
+              onTogglePassport={() => setOnlyPassport((prev) => !prev)}
+              onToggleVerifiedStudent={() => setOnlyVerifiedStudent((prev) => !prev)}
+            />
+          </aside>
 
-            {/* Lọc theo Trường / KTX */}
-            <div>
-              <label className="block text-xs font-bold text-[#001B48] mb-2 uppercase tracking-wider">
-                Khu vực Trường / KTX
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedCampus}
-                  onChange={(e) => setSelectedCampus(e.target.value)}
-                  className="w-full h-10 pl-3 pr-8 rounded-xl border border-[#D6E8EE] bg-white text-xs font-semibold text-[#001B48] focus:outline-none focus:border-[#018ABE] cursor-pointer appearance-none"
+          {/* Cột Phải (9/12): Danh Sách Sản Phẩm & Thanh Công Cụ */}
+          <main className="lg:col-span-9 space-y-4">
+            {/* Thanh sắp xếp & Thống kê kết quả */}
+            <div className="bg-white rounded-2xl border border-[#D6E8EE] p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="text-xs sm:text-sm font-bold text-[#001B48]">
+                Tìm thấy{" "}
+                <span className="text-[#016D96] text-base tabular-nums">
+                  {filteredProducts.length}
+                </span>{" "}
+                món đồ phù hợp
+              </div>
+
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <label
+                  htmlFor="products-sort-select"
+                  className="text-xs text-[#02457A] font-semibold whitespace-nowrap"
                 >
-                  <option value="all">Tất cả KTX &amp; Trường</option>
-                  {schools.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.shortName}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#02457A]">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  Sắp xếp:
+                </label>
+                <div className="relative">
+                  <select
+                    id="products-sort-select"
+                    value={sortBy}
+                    onChange={(e) =>
+                      setSortBy(
+                        e.target.value as "verified" | "newest" | "price_asc" | "price_desc"
+                      )
+                    }
+                    className="h-9 pl-3 pr-8 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] text-xs font-bold text-[#001B48] focus:outline-none focus:border-[#018ABE] focus-visible:ring-2 focus-visible:ring-[#018ABE]/25 cursor-pointer appearance-none"
+                  >
+                    <option value="verified">Ưu tiên SV Đã duyệt</option>
+                    <option value="newest">Mới đăng nhất</option>
+                    <option value="price_asc">Giá: Thấp đến Cao</option>
+                    <option value="price_desc">Giá: Cao đến Thấp</option>
+                  </select>
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#02457A]">
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Lọc theo Danh mục */}
-            <div>
-              <label className="block text-xs font-bold text-[#001B48] mb-2 uppercase tracking-wider">
-                Danh mục đồ dùng
-              </label>
-              <div className="space-y-1">
+            {/* Thanh Active Filter Chips */}
+            {hasActiveFilters && (
+              <div
+                className="flex flex-wrap items-center gap-2"
+                role="region"
+                aria-label="Các bộ lọc đang áp dụng"
+              >
+                {searchQuery.trim() !== "" && (
+                  <ActiveFilterChip
+                    label={`Từ khóa: "${searchQuery.trim()}"`}
+                    onClear={() => setSearchQuery("")}
+                  />
+                )}
+                {activeCategoryName && (
+                  <ActiveFilterChip
+                    label={activeCategoryName}
+                    onClear={() => setSelectedCategory("all")}
+                  />
+                )}
+                {activeCampusLabel && (
+                  <ActiveFilterChip
+                    label={activeCampusLabel}
+                    onClear={() => setSelectedCampus("all")}
+                  />
+                )}
+                {selectedPriceIndex !== 0 && (
+                  <ActiveFilterChip
+                    label={PRICE_RANGES[selectedPriceIndex].chipLabel}
+                    onClear={() => setSelectedPriceIndex(0)}
+                  />
+                )}
+                {selectedConditions.map((grade) => (
+                  <ActiveFilterChip
+                    key={grade}
+                    label={`Hạng ${grade}`}
+                    onClear={() => toggleConditionGrade(grade)}
+                  />
+                ))}
+                {onlyPassport && (
+                  <ActiveFilterChip
+                    label="Có Digital Passport"
+                    onClear={() => setOnlyPassport(false)}
+                  />
+                )}
+                {onlyVerifiedStudent && (
+                  <ActiveFilterChip
+                    label="SV đã xác minh"
+                    onClear={() => setOnlyVerifiedStudent(false)}
+                  />
+                )}
+
                 <button
                   type="button"
-                  onClick={() => setSelectedCategory("all")}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-between cursor-pointer ${
+                  onClick={resetFilters}
+                  className="text-xs font-semibold text-rose-700 hover:underline px-1.5 py-1 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                >
+                  Xóa tất cả
+                </button>
+              </div>
+            )}
+
+            {/* Lưới sản phẩm Responsive */}
+            {filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-5">
+                {filteredProducts.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 px-4 bg-white rounded-2xl border border-[#D6E8EE] shadow-2xs space-y-3">
+                <div className="w-16 h-16 mx-auto rounded-full bg-[#E3F1F9] text-[#018ABE] flex items-center justify-center">
+                  <svg
+                    className="w-7 h-7"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-[#001B48]">
+                  Không tìm thấy món đồ phù hợp
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                  Hãy thử gõ từ khóa không dấu hoặc xóa bớt tiêu chí lọc để xem thêm đồ dùng sinh
+                  viên.
+                </p>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="h-10 px-5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white font-bold text-xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2"
+                  >
+                    Xóa toàn bộ bộ lọc
+                  </button>
+                </div>
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
+
+      {/* Mobile Filter Drawer (WCAG 2.2) */}
+      {mobileFilterOpen && (
+        <div
+          className="fixed inset-0 z-50 lg:hidden flex"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mobile-filter-title"
+        >
+          <div
+            className="fixed inset-0 bg-[#001B48]/60 backdrop-blur-xs"
+            onClick={() => setMobileFilterOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="relative w-[88%] max-w-sm bg-white h-full flex flex-col justify-between z-10 shadow-2xl ml-auto">
+            <div className="p-5 pb-3.5 border-b border-[#D6E8EE] flex items-center justify-between">
+              <h3 id="mobile-filter-title" className="font-extrabold text-[#001B48] text-base">
+                Bộ lọc tìm kiếm
+              </h3>
+              <button
+                ref={closeMobileFilterBtnRef}
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                aria-label="Đóng bộ lọc tìm kiếm"
+                className="w-10 h-10 -mr-1.5 rounded-xl text-slate-500 hover:text-[#001B48] hover:bg-slate-100 inline-flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5">
+              <FilterPanelContent
+                idPrefix="mobile"
+                initialProducts={initialProducts}
+                categories={normalizedCategories}
+                schools={schools}
+                searchQuery={searchQuery}
+                selectedCategory={selectedCategory}
+                selectedCampus={selectedCampus}
+                selectedPriceIndex={selectedPriceIndex}
+                selectedConditions={selectedConditions}
+                onlyPassport={onlyPassport}
+                onlyVerifiedStudent={onlyVerifiedStudent}
+                onSearchChange={setSearchQuery}
+                onSelectCategory={setSelectedCategory}
+                onSelectCampus={setSelectedCampus}
+                onSelectPriceIndex={setSelectedPriceIndex}
+                onToggleCondition={toggleConditionGrade}
+                onTogglePassport={() => setOnlyPassport((prev) => !prev)}
+                onToggleVerifiedStudent={() => setOnlyVerifiedStudent((prev) => !prev)}
+              />
+            </div>
+
+            <div className="p-4 border-t border-[#D6E8EE] bg-white flex gap-2.5">
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="w-1/2 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+              >
+                Xóa lọc
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="w-1/2 h-11 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2"
+              >
+                Xem {filteredProducts.length} món
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface FilterPanelContentProps {
+  idPrefix: string;
+  initialProducts: ProductCardData[];
+  categories: CategorySyncItem[];
+  schools: SchoolOption[];
+  searchQuery: string;
+  selectedCategory: string;
+  selectedCampus: string;
+  selectedPriceIndex: number;
+  selectedConditions: ConditionGrade[];
+  onlyPassport: boolean;
+  onlyVerifiedStudent: boolean;
+  onSearchChange: (value: string) => void;
+  onSelectCategory: (slug: string) => void;
+  onSelectCampus: (campusId: string) => void;
+  onSelectPriceIndex: (index: number) => void;
+  onToggleCondition: (grade: ConditionGrade) => void;
+  onTogglePassport: () => void;
+  onToggleVerifiedStudent: () => void;
+}
+
+function FilterPanelContent({
+  idPrefix,
+  initialProducts,
+  categories,
+  schools,
+  searchQuery,
+  selectedCategory,
+  selectedCampus,
+  selectedPriceIndex,
+  selectedConditions,
+  onlyPassport,
+  onlyVerifiedStudent,
+  onSearchChange,
+  onSelectCategory,
+  onSelectCampus,
+  onSelectPriceIndex,
+  onToggleCondition,
+  onTogglePassport,
+  onToggleVerifiedStudent,
+}: FilterPanelContentProps) {
+  const searchInputId = `${idPrefix}-products-search`;
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!categoryDropdownOpen) return;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      if (
+        categoryDropdownRef.current &&
+        event.target instanceof Node &&
+        !categoryDropdownRef.current.contains(event.target)
+      ) {
+        setCategoryDropdownOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setCategoryDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, [categoryDropdownOpen]);
+
+  const isSelectedFreeCategory = selectedCategory === "goc-0d-cho-tang";
+  const selectedCategoryObj =
+    selectedCategory === "all"
+      ? null
+      : categories.find((c) => c.slug === selectedCategory) || null;
+  const selectedCategoryLabel = selectedCategoryObj
+    ? selectedCategoryObj.name
+    : "Tất cả danh mục";
+  const selectedCategoryCount =
+    selectedCategory === "all"
+      ? initialProducts.length
+      : initialProducts.filter((p) =>
+          isSelectedFreeCategory
+            ? p.isFree || p.price === 0
+            : p.category?.slug === selectedCategory
+        ).length;
+
+  return (
+    <div className="divide-y divide-[#EBF3F7]">
+      {/* 1. Từ khóa tìm kiếm */}
+      <div className="pb-4">
+        <label
+          htmlFor={searchInputId}
+          className="block text-[11px] font-bold text-slate-500 mb-2 uppercase tracking-wider"
+        >
+          Từ khóa tìm kiếm
+        </label>
+        <div className="relative">
+          <svg
+            className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+            />
+          </svg>
+          <input
+            id={searchInputId}
+            type="search"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Gõ có dấu hoặc không dấu..."
+            className="w-full h-10 pl-9 pr-9 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white text-xs text-[#001B48] placeholder:text-slate-400 focus:outline-none focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20 transition-colors [&::-webkit-search-cancel-button]:hidden"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              aria-label="Xóa từ khóa tìm kiếm"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-slate-400 hover:text-[#001B48] hover:bg-slate-200/70 inline-flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+            >
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.2}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 2. Danh mục đồ dùng (1 ô gọn, rê chuột hoặc bấm để xổ danh sách đồng bộ Header) */}
+      <div className="py-4">
+        <p className="text-[11px] font-bold text-slate-500 mb-2.5 uppercase tracking-wider">
+          Danh mục đồ dùng
+        </p>
+
+        <div
+          ref={categoryDropdownRef}
+          className="relative"
+          onPointerEnter={(e) => {
+            if (e.pointerType !== "touch") setCategoryDropdownOpen(true);
+          }}
+          onPointerLeave={(e) => {
+            if (e.pointerType !== "touch") setCategoryDropdownOpen(false);
+          }}
+        >
+          <button
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={categoryDropdownOpen}
+            aria-label={`Danh mục đồ dùng: ${selectedCategoryLabel}`}
+            onClick={() => setCategoryDropdownOpen((prev) => !prev)}
+            className={`w-full h-10 px-3 rounded-xl border text-xs font-bold transition-colors flex items-center justify-between gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+              selectedCategory === "all"
+                ? "bg-[#F8FAFC] hover:bg-[#F4F9FB] text-[#001B48] border-[#D6E8EE] hover:border-[#018ABE]/60"
+                : isSelectedFreeCategory
+                  ? "bg-emerald-700 text-white border-emerald-700 shadow-2xs"
+                  : "bg-[#001B48] text-white border-[#001B48] shadow-2xs"
+            }`}
+          >
+            <span className="inline-flex items-center gap-1.5 min-w-0">
+              {isSelectedFreeCategory && <GiftIcon className="w-3.5 h-3.5 shrink-0" />}
+              <span className="truncate">{selectedCategoryLabel}</span>
+            </span>
+
+            <span className="inline-flex items-center gap-1.5 shrink-0">
+              <span
+                className={`px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums leading-none ${
+                  selectedCategory === "all"
+                    ? "bg-white text-[#02457A] border border-[#D6E8EE]"
+                    : "bg-white/20 text-white"
+                }`}
+              >
+                {selectedCategoryCount}
+              </span>
+              <svg
+                className={`w-4 h-4 shrink-0 transition-transform duration-200 motion-reduce:transition-none ${
+                  selectedCategory === "all" ? "text-[#02457A]" : "text-white/90"
+                } ${categoryDropdownOpen ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                />
+              </svg>
+            </span>
+          </button>
+
+          {categoryDropdownOpen && (
+            <div className="absolute left-0 right-0 top-full pt-1.5 z-30">
+              <div
+                role="listbox"
+                aria-label="Chọn danh mục đồ dùng"
+                className="rounded-2xl bg-white border border-[#D6E8EE] shadow-xl p-1.5 space-y-1"
+              >
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selectedCategory === "all"}
+                  onClick={() => {
+                    onSelectCategory("all");
+                    setCategoryDropdownOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-between gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
                     selectedCategory === "all"
                       ? "bg-[#001B48] text-white"
-                      : "text-[#02457A] hover:bg-[#D6E8EE]/30"
+                      : "text-[#02457A] hover:bg-[#F4F9FB]"
                   }`}
                 >
                   <span>Tất cả danh mục</span>
-                  <span>{initialProducts.length}</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums leading-none ${
+                      selectedCategory === "all"
+                        ? "bg-white/20 text-white"
+                        : "bg-[#F4F9FB] text-[#02457A] border border-[#D6E8EE]"
+                    }`}
+                  >
+                    {initialProducts.length}
+                  </span>
                 </button>
+
                 {categories.map((c) => {
                   const isSelected = selectedCategory === c.slug;
                   const isFree = c.slug === "goc-0d-cho-tang";
@@ -320,273 +845,304 @@ export function ProductsExplorer({
                     <button
                       key={c.slug}
                       type="button"
-                      onClick={() => setSelectedCategory(c.slug)}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-between cursor-pointer ${
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => {
+                        onSelectCategory(isSelected ? "all" : c.slug);
+                        setCategoryDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-between gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
                         isSelected
                           ? isFree
-                            ? "bg-emerald-600 text-white"
+                            ? "bg-emerald-700 text-white"
                             : "bg-[#018ABE] text-white"
                           : isFree
-                          ? "text-emerald-800 hover:bg-emerald-50"
-                          : "text-[#02457A] hover:bg-[#D6E8EE]/30"
+                            ? "text-emerald-800 hover:bg-emerald-50"
+                            : "text-[#02457A] hover:bg-[#F4F9FB]"
                       }`}
                     >
-                      <span className="truncate">
-                        {isFree ? "🎁 " : ""}
-                        {c.name}
+                      <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
+                        {isFree && <GiftIcon className="w-3.5 h-3.5 shrink-0" />}
+                        <span className="truncate">{c.name}</span>
                       </span>
-                      <span className="text-[11px] opacity-80">{count}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums leading-none shrink-0 ${
+                          isSelected
+                            ? "bg-white/20 text-white"
+                            : isFree
+                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : "bg-[#F4F9FB] text-[#02457A] border border-[#D6E8EE]"
+                        }`}
+                      >
+                        {count}
+                      </span>
                     </button>
                   );
                 })}
               </div>
             </div>
-
-            {/* Lọc theo Khoảng giá */}
-            <div>
-              <label className="block text-xs font-bold text-[#001B48] mb-2 uppercase tracking-wider">
-                Khoảng giá sinh viên
-              </label>
-              <div className="space-y-1.5">
-                {PRICE_RANGES.map((pr, idx) => (
-                  <label
-                    key={pr.label}
-                    className="flex items-center gap-2 text-xs font-medium text-[#02457A] cursor-pointer hover:text-[#001B48]"
-                  >
-                    <input
-                      type="radio"
-                      name="priceRange"
-                      checked={selectedPriceIndex === idx}
-                      onChange={() => setSelectedPriceIndex(idx)}
-                      className="accent-[#018ABE]"
-                    />
-                    <span>{pr.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Lọc theo Tình trạng */}
-            <div>
-              <label className="block text-xs font-bold text-[#001B48] mb-2 uppercase tracking-wider">
-                Tình trạng món đồ
-              </label>
-              <select
-                value={selectedCondition}
-                onChange={(e) => setSelectedCondition(e.target.value)}
-                className="w-full h-10 px-3 rounded-xl border border-[#D6E8EE] bg-white text-xs font-semibold text-[#001B48] focus:outline-none focus:border-[#018ABE] cursor-pointer"
-              >
-                {CONDITIONS.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Công tắc đặc biệt */}
-            <div className="pt-3 border-t border-[#D6E8EE] space-y-2.5">
-              <label className="flex items-center gap-2 text-xs font-bold text-[#02457A] cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={onlyPassport}
-                  onChange={(e) => setOnlyPassport(e.target.checked)}
-                  className="rounded-sm accent-[#018ABE]"
-                />
-                <span className="flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 text-[#018ABE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                  </svg>
-                  <span>Có Digital Passport</span>
-                </span>
-              </label>
-              <label className="flex items-center gap-2 text-xs font-bold text-[#02457A] cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={onlyVerifiedStudent}
-                  onChange={(e) => setOnlyVerifiedStudent(e.target.checked)}
-                  className="rounded-sm accent-emerald-600"
-                />
-                <span className="flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>SV Đã xác minh</span>
-                </span>
-              </label>
-            </div>
-          </aside>
-
-          {/* Cột Phải (9/12): Danh Sách Sản Phẩm & Thanh Công Cụ */}
-          <main className="lg:col-span-9 space-y-4">
-            {/* Thanh sắp xếp & Thống kê kết quả */}
-            <div className="bg-white rounded-2xl border border-[#D6E8EE] p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-              <div className="text-xs sm:text-sm font-bold text-[#001B48]">
-                Tìm thấy{" "}
-                <span className="text-[#018ABE] text-base">{filteredProducts.length}</span>{" "}
-                món đồ phù hợp
-              </div>
-
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <span className="text-xs text-[#02457A] font-semibold whitespace-nowrap">
-                  Sắp xếp:
-                </span>
-                <div className="relative">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as "verified" | "newest" | "price_asc" | "price_desc")}
-                    className="h-9 pl-3 pr-8 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] text-xs font-bold text-[#001B48] focus:outline-none focus:border-[#018ABE] cursor-pointer appearance-none"
-                  >
-                    <option value="verified">Ưu tiên SV Đã duyệt</option>
-                    <option value="newest">Mới đăng nhất</option>
-                    <option value="price_asc">Giá: Thấp đến Cao</option>
-                    <option value="price_desc">Giá: Cao đến Thấp</option>
-                  </select>
-                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#02457A]">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Lưới sản phẩm Responsive */}
-            {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-5">
-                {filteredProducts.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 px-4 bg-white rounded-2xl border border-[#D6E8EE] shadow-2xs">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#D6E8EE]/40 flex items-center justify-center text-2xl">
-                  🔍
-                </div>
-                <h3 className="text-lg font-bold text-[#001B48] mb-1">
-                  Không tìm thấy món đồ phù hợp
-                </h3>
-                <p className="text-xs sm:text-sm text-[#02457A] max-w-md mx-auto mb-5 leading-relaxed">
-                  Hãy thử gõ từ khóa không dấu, chọn &quot;Tất cả mức giá&quot; hoặc chọn &quot;Tất cả KTX &amp; Trường&quot; để tìm thấy nhiều đồ hơn.
-                </p>
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="h-10 px-5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white font-bold text-xs transition-colors cursor-pointer"
-                >
-                  Xóa toàn bộ bộ lọc
-                </button>
-              </div>
-            )}
-          </main>
+          )}
         </div>
       </div>
 
-      {/* Mobile Filter Modal / Drawer */}
-      {mobileFilterOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div
-            className="fixed inset-0 bg-[#001B48]/60 backdrop-blur-xs"
-            onClick={() => setMobileFilterOpen(false)}
-          />
-          <div className="relative w-[85%] max-w-sm bg-white h-full flex flex-col justify-between overflow-y-auto z-10 p-5 shadow-2xl ml-auto">
-            <div className="space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-[#D6E8EE]">
-                <h3 className="font-extrabold text-[#001B48] text-base">Bộ lọc tìm kiếm</h3>
-                <button
-                  type="button"
-                  onClick={() => setMobileFilterOpen(false)}
-                  className="text-slate-400 text-lg font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Ô tìm kiếm */}
-              <div>
-                <label className="block text-xs font-bold text-[#001B48] mb-1.5">Từ khóa</label>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Gõ có/không dấu..."
-                  className="w-full h-10 px-3 rounded-xl border border-[#D6E8EE] text-xs text-[#001B48]"
-                />
-              </div>
-
-              {/* Trường KTX */}
-              <div>
-                <label className="block text-xs font-bold text-[#001B48] mb-1.5">Khu vực</label>
-                <select
-                  value={selectedCampus}
-                  onChange={(e) => setSelectedCampus(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-[#D6E8EE] bg-white text-xs font-bold text-[#001B48]"
-                >
-                  <option value="all">Tất cả KTX &amp; Trường</option>
-                  {schools.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.shortName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Danh mục */}
-              <div>
-                <label className="block text-xs font-bold text-[#001B48] mb-1.5">Danh mục</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-[#D6E8EE] bg-white text-xs font-bold text-[#001B48]"
-                >
-                  <option value="all">Tất cả danh mục</option>
-                  {categories.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Mức giá */}
-              <div>
-                <label className="block text-xs font-bold text-[#001B48] mb-1.5">Khoảng giá</label>
-                <div className="space-y-1.5">
-                  {PRICE_RANGES.map((pr, idx) => (
-                    <label key={pr.label} className="flex items-center gap-2 text-xs text-[#02457A]">
-                      <input
-                        type="radio"
-                        name="mobilePrice"
-                        checked={selectedPriceIndex === idx}
-                        onChange={() => setSelectedPriceIndex(idx)}
-                        className="accent-[#018ABE]"
-                      />
-                      <span>{pr.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-[#D6E8EE] flex gap-2">
+      {/* 3. Tình trạng món đồ (Hạng A / B / C, multi-select toggle cards) */}
+      <div className="py-4">
+        <p className="text-[11px] font-bold text-slate-500 mb-2.5 uppercase tracking-wider">
+          Tình trạng món đồ
+        </p>
+        <div
+          className="grid grid-cols-3 gap-1.5"
+          role="group"
+          aria-label="Lọc theo hạng tình trạng món đồ"
+        >
+          {CONDITION_GRADE_OPTIONS.map((opt) => {
+            const isSelected = selectedConditions.includes(opt.grade);
+            return (
               <button
+                key={opt.grade}
                 type="button"
-                onClick={resetFilters}
-                className="w-1/2 h-11 rounded-xl bg-slate-100 text-xs font-bold text-slate-700"
+                aria-pressed={isSelected}
+                title={opt.description}
+                onClick={() => onToggleCondition(opt.grade)}
+                className={`min-h-[52px] px-2 py-2 rounded-xl border text-center flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+                  isSelected
+                    ? "bg-[#001B48] text-white border-[#001B48] shadow-2xs"
+                    : "bg-[#F8FAFC] hover:bg-[#F4F9FB] text-[#001B48] border-[#D6E8EE] hover:border-[#018ABE]/60"
+                }`}
               >
-                Xóa lọc
+                <span className="text-xs font-bold leading-tight whitespace-nowrap">
+                  {opt.label}
+                </span>
+                <span
+                  className={`text-[11px] font-medium leading-tight whitespace-nowrap ${
+                    isSelected ? "text-[#BAE6FD]" : "text-slate-600"
+                  }`}
+                >
+                  {opt.shortDesc}
+                </span>
               </button>
-              <button
-                type="button"
-                onClick={() => setMobileFilterOpen(false)}
-                className="w-1/2 h-11 rounded-xl bg-[#018ABE] text-white text-xs font-bold"
-              >
-                Xem {filteredProducts.length} món
-              </button>
-            </div>
-          </div>
+            );
+          })}
         </div>
-      )}
+      </div>
+
+      {/* 4. Khoảng giá sinh viên (toggle chips) */}
+      <div className="py-4">
+        <p className="text-[11px] font-bold text-slate-500 mb-2.5 uppercase tracking-wider">
+          Khoảng giá sinh viên
+        </p>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Lọc theo khoảng giá">
+          {PRICE_RANGES.map((pr, idx) => {
+            const isSelected = selectedPriceIndex === idx;
+            const isFreeChip = Boolean(pr.isFreeOnly);
+
+            return (
+              <button
+                key={pr.chipLabel}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => onSelectPriceIndex(isSelected && idx !== 0 ? 0 : idx)}
+                className={`h-8 px-2.5 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+                  isSelected
+                    ? isFreeChip
+                      ? "bg-emerald-700 text-white border-emerald-700 shadow-2xs"
+                      : "bg-[#001B48] text-white border-[#001B48] shadow-2xs"
+                    : isFreeChip
+                      ? "bg-emerald-50/70 text-emerald-800 border-emerald-200 hover:bg-emerald-50"
+                      : "bg-[#F8FAFC] text-[#02457A] border-[#D6E8EE] hover:bg-[#F4F9FB]"
+                }`}
+              >
+                {isFreeChip && <GiftIcon className="w-3.5 h-3.5 shrink-0" />}
+                <span>{pr.chipLabel}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 5. Khu vực Trường / KTX (toggle chips) */}
+      <div className="py-4">
+        <p className="text-[11px] font-bold text-slate-500 mb-2.5 uppercase tracking-wider">
+          Khu vực Trường / KTX
+        </p>
+        <div
+          className="flex flex-wrap gap-1.5"
+          role="group"
+          aria-label="Lọc theo khu vực trường và KTX"
+        >
+          <button
+            type="button"
+            aria-pressed={selectedCampus === "all"}
+            onClick={() => onSelectCampus("all")}
+            className={`h-8 px-2.5 rounded-xl border text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+              selectedCampus === "all"
+                ? "bg-[#001B48] text-white border-[#001B48] shadow-2xs"
+                : "bg-[#F8FAFC] text-[#02457A] border-[#D6E8EE] hover:bg-[#F4F9FB]"
+            }`}
+          >
+            Tất cả
+          </button>
+
+          {schools.map((s) => {
+            const isSelected =
+              selectedCampus === s.id || selectedCampus === s.shortName;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => onSelectCampus(isSelected ? "all" : s.id)}
+                className={`h-8 px-2.5 rounded-xl border text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+                  isSelected
+                    ? "bg-[#001B48] text-white border-[#001B48] shadow-2xs"
+                    : "bg-[#F8FAFC] text-[#02457A] border-[#D6E8EE] hover:bg-[#F4F9FB]"
+                }`}
+              >
+                {s.shortName}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 6. Tiêu chí xác thực (2 accessible role="switch" toggles) */}
+      <div className="pt-4 space-y-2">
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          Tiêu chí xác thực
+        </p>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={onlyPassport}
+          onClick={onTogglePassport}
+          className={`w-full px-3 py-2.5 rounded-xl border flex items-center justify-between gap-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+            onlyPassport
+              ? "bg-[#F4F9FB] border-[#97CADB]"
+              : "bg-[#F8FAFC] border-[#E2EEF3] hover:bg-[#F4F9FB]"
+          }`}
+        >
+          <span className="inline-flex items-center gap-2 min-w-0 text-xs font-bold text-[#001B48]">
+            <svg
+              className="w-4 h-4 text-[#018ABE] shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.9}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+              />
+            </svg>
+            <span className="truncate">Có Digital Passport</span>
+          </span>
+
+          <span
+            aria-hidden="true"
+            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200 motion-reduce:transition-none ${
+              onlyPassport ? "bg-[#018ABE]" : "bg-slate-300"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 motion-reduce:transition-none ${
+                onlyPassport ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </span>
+        </button>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={onlyVerifiedStudent}
+          onClick={onToggleVerifiedStudent}
+          className={`w-full px-3 py-2.5 rounded-xl border flex items-center justify-between gap-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+            onlyVerifiedStudent
+              ? "bg-emerald-50/70 border-emerald-200"
+              : "bg-[#F8FAFC] border-[#E2EEF3] hover:bg-[#F4F9FB]"
+          }`}
+        >
+          <span className="inline-flex items-center gap-2 min-w-0 text-xs font-bold text-[#001B48]">
+            <svg
+              className="w-4 h-4 text-emerald-600 shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="truncate">SV đã xác minh</span>
+          </span>
+
+          <span
+            aria-hidden="true"
+            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200 motion-reduce:transition-none ${
+              onlyVerifiedStudent ? "bg-emerald-600" : "bg-slate-300"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 motion-reduce:transition-none ${
+                onlyVerifiedStudent ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </span>
+        </button>
+      </div>
     </div>
+  );
+}
+
+function GiftIcon({ className }: { className: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+      />
+    </svg>
+  );
+}
+
+function ActiveFilterChip({
+  label,
+  onClear,
+}: {
+  label: string;
+  onClear: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      aria-label={`Bỏ bộ lọc ${label}`}
+      className="h-7 pl-2.5 pr-2 rounded-full bg-white hover:bg-[#F4F9FB] border border-[#D6E8EE] text-xs font-semibold text-[#02457A] inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+    >
+      <span className="max-w-[180px] truncate">{label}</span>
+      <svg
+        className="w-3.5 h-3.5 text-slate-400 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2.2}
+        aria-hidden="true"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
   );
 }
