@@ -4,7 +4,6 @@ import React, { Suspense, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FALLBACK_SCHOOLS } from "@/lib/data/mock-fallback";
 
 function RegisterContent() {
   const router = useRouter();
@@ -16,7 +15,7 @@ function RegisterContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [schoolId, setSchoolId] = useState("ktx-b");
+  const [schoolId] = useState("ktx-b");
   const [dorm, setDorm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(urlError);
@@ -86,25 +85,54 @@ function RegisterContent() {
 
             <div className="pt-2">
               <span className="inline-block px-3 py-1 rounded-full bg-white/15 border border-white/20 text-[11px] font-bold text-[#D6E8EE] mb-3">
-                Dành Riêng Cho Sinh Viên
+                Dành riêng cho sinh viên
               </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight text-white">
-                Tạo tài khoản sinh viên trong 30 giây
+                Tham gia cộng đồng UniCycle!
               </h1>
               <p className="text-xs sm:text-sm text-[#D6E8EE]/90 mt-2.5 leading-relaxed">
-                Sử dụng email trường (<code className="text-white font-bold">*.edu.vn</code>) để nhận ngay huy hiệu <strong>SV Đã duyệt</strong> tự động, hoặc dùng email cá nhân và xác minh thẻ sinh viên sau.
+                Đăng ký tài khoản để mua bán, trao đổi đồ cũ và kết nối với sinh viên trên khắp TP.HCM.
               </p>
+            </div>
+
+            {/* Các điểm nổi bật kèm icon sinh động tương tự trang đăng nhập */}
+            <div className="pt-5 space-y-3.5 border-t border-white/15">
+              <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
+                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                </svg>
+                <span>Xác minh sinh viên chính chủ</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
+                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.861-.861 5.972 5.972 0 011.057-3.035C4.604 15.69 4 13.93 4 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                </svg>
+                <span>Kết nối trực tiếp với người bán</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
+                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Lịch sử giao dịch minh bạch</span>
+              </div>
             </div>
           </div>
 
-          <div className="pt-8 space-y-3 relative z-10 border-t border-white/15 mt-8">
+          <div className="pt-6 relative z-10 mt-6">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15">
-              <p className="text-xs font-bold text-white mb-1">
-                🛡️ Bảo mật dữ liệu cá nhân (NĐ 13/2023)
-              </p>
-              <p className="text-[11px] text-[#D6E8EE] leading-relaxed">
-                Số điện thoại Zalo của bạn được bảo vệ qua lớp trung gian chống cào dữ liệu. Lịch sử đời chủ trên Product Passport mặc định ẩn danh.
-              </p>
+              <div className="flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                <div>
+                  <p className="text-xs font-bold text-white mb-1">
+                    Thông tin của bạn luôn được bảo vệ
+                  </p>
+                  <p className="text-[11px] text-[#D6E8EE] leading-relaxed">
+                    Số điện thoại được bảo vệ khi giao dịch. Lịch sử trao đổi trên Product Passport được mặc định ẩn danh.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -113,7 +141,7 @@ function RegisterContent() {
         <div className="lg:col-span-7 p-6 sm:p-9 flex flex-col justify-center">
           <div className="mb-6">
             <h2 className="text-xl sm:text-2xl font-extrabold text-[#001B48]">
-              Đăng ký tài khoản mới
+              Tạo tài khoản
             </h2>
             <p className="text-xs sm:text-sm text-[#02457A] mt-1">
               Đã có tài khoản?{" "}
@@ -121,7 +149,7 @@ function RegisterContent() {
                 href={`/login${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
                 className="font-bold text-[#018ABE] hover:underline"
               >
-                Đăng nhập tại đây &rarr;
+                Đăng nhập
               </Link>
             </p>
           </div>
@@ -157,13 +185,13 @@ function RegisterContent() {
                 d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"
               />
             </svg>
-            <span>Đăng ký 1-chạm với Google Sinh Viên</span>
+            <span>Tiếp tục với Google</span>
           </button>
 
           <div className="relative my-5 flex items-center justify-center">
             <div className="border-t border-[#D6E8EE] w-full" />
             <span className="bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-[#02457A]/70 whitespace-nowrap">
-              hoặc điền thông tin bên dưới
+              HOẶC ĐĂNG KÝ BẰNG EMAIL
             </span>
             <div className="border-t border-[#D6E8EE] w-full" />
           </div>
@@ -171,7 +199,7 @@ function RegisterContent() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#001B48] mb-1.5">
-                Họ và tên hiển thị
+                Họ và tên
               </label>
               <input
                 type="text"
@@ -186,7 +214,7 @@ function RegisterContent() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-bold text-[#001B48]">
-                  Email đăng ký
+                  Địa chỉ email
                 </label>
                 {isEduEmail && (
                   <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
@@ -204,41 +232,23 @@ function RegisterContent() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-bold text-[#001B48] mb-1.5">
-                  Trường / Cụm KTX chính
-                </label>
-                <select
-                  value={schoolId}
-                  onChange={(e) => setSchoolId(e.target.value)}
-                  className="w-full h-11 px-3 rounded-xl border border-[#D6E8EE] bg-white text-sm text-[#001B48] font-medium focus:outline-none focus:border-[#018ABE]"
-                >
-                  {FALLBACK_SCHOOLS.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.shortName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#001B48] mb-1.5">
-                  Tòa KTX / Khu vực giao dịch
-                </label>
-                <input
-                  type="text"
-                  value={dorm}
-                  onChange={(e) => setDorm(e.target.value)}
-                  placeholder="VD: Tòa B4 - KTX Khu B"
-                  className="w-full h-11 px-3.5 rounded-xl border border-[#D6E8EE] text-sm text-[#001B48] focus:outline-none focus:border-[#018ABE]"
-                />
-              </div>
+            {/* Gộp 2 ô KTX thành 1 ô Nơi ở hiện tại */}
+            <div>
+              <label className="block text-xs font-bold text-[#001B48] mb-1.5">
+                Nơi ở hiện tại
+              </label>
+              <input
+                type="text"
+                value={dorm}
+                onChange={(e) => setDorm(e.target.value)}
+                placeholder="Ví dụ: KTX Khu B, Tòa B4, ĐHQG TP.HCM"
+                className="w-full h-11 px-3.5 rounded-xl border border-[#D6E8EE] text-sm text-[#001B48] focus:outline-none focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20"
+              />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#001B48] mb-1.5">
-                Mật khẩu (tối thiểu 6 ký tự)
+                Mật khẩu
               </label>
               <div className="relative">
                 <input
@@ -276,7 +286,7 @@ function RegisterContent() {
               disabled={loading}
               className="w-full h-11 sm:h-12 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white font-bold text-sm shadow-sm transition-colors cursor-pointer disabled:opacity-50 mt-2"
             >
-              {loading ? "Đang khởi tạo tài khoản..." : "Hoàn tất đăng ký"}
+              {loading ? "Đang khởi tạo tài khoản..." : "Tạo tài khoản"}
             </button>
           </form>
         </div>
