@@ -8,6 +8,7 @@ import type {
 } from "@/lib/admin/types";
 import { AdminOverviewSection } from "./AdminOverviewSection";
 import { AdminListingsSection } from "./AdminListingsSection";
+import { AdminUsersSection } from "./AdminUsersSection";
 
 export interface AdminDashboardClientProps {
   currentAdminId: string;
@@ -156,36 +157,22 @@ function AdminSkeleton() {
 }
 
 function SectionPreviewCard({
-  section,
   stats,
   onBackToOverview,
 }: {
-  section: Exclude<AdminSection, "overview" | "listings">;
   stats: AdminOverviewStats;
   onBackToOverview: () => void;
 }) {
-  const config =
-    section === "users"
-      ? {
-          title: "Người dùng & Duyệt sinh viên",
-          description:
-            "Bảng quản lý tài khoản, khóa hoặc mở khóa và hàng đợi đối chiếu ảnh thẻ sinh viên sẽ được kích hoạt ở bước tiếp theo.",
-          metrics: [
-            { label: "Tổng thành viên", value: stats.totalUsers },
-            { label: "Thẻ sinh viên chờ duyệt", value: stats.pendingStudentCardsCount },
-            { label: "Tài khoản đang tạm khóa", value: stats.suspendedUsersCount },
-          ],
-        }
-      : {
-          title: "Kiểm duyệt & Khiếu nại",
-          description:
-            "Khu vực xử lý báo cáo vi phạm, phân xử đơn hàng tranh chấp và theo dõi đồng bộ hệ thống sẽ được kích hoạt ở bước tiếp theo.",
-          metrics: [
-            { label: "Đơn tranh chấp cần xử lý", value: stats.disputedOrdersCount },
-            { label: "Báo cáo vi phạm mới", value: stats.pendingReportsCount },
-            { label: "Bản ghi chờ đồng bộ", value: stats.pendingChainTxsCount },
-          ],
-        };
+  const config = {
+    title: "Kiểm duyệt & Khiếu nại",
+    description:
+      "Khu vực xử lý báo cáo vi phạm, phân xử đơn hàng tranh chấp và theo dõi đồng bộ hệ thống sẽ được kích hoạt ở bước tiếp theo.",
+    metrics: [
+      { label: "Đơn tranh chấp cần xử lý", value: stats.disputedOrdersCount },
+      { label: "Báo cáo vi phạm mới", value: stats.pendingReportsCount },
+      { label: "Bản ghi chờ đồng bộ", value: stats.pendingChainTxsCount },
+    ],
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-[0_1px_2px_rgba(0,27,72,0.04)] space-y-6">
@@ -586,9 +573,16 @@ export function AdminDashboardClient({
               passports={payload.passports}
               onRunAction={runAdminAction}
             />
+          ) : activeSection === "users" ? (
+            <AdminUsersSection
+              users={payload.users}
+              pendingStudents={payload.pendingStudents}
+              currentAdminId={currentAdminId}
+              currentAdminEmail={currentAdminEmail}
+              onRunAction={runAdminAction}
+            />
           ) : (
             <SectionPreviewCard
-              section={activeSection}
               stats={stats}
               onBackToOverview={() => setActiveSection("overview")}
             />
