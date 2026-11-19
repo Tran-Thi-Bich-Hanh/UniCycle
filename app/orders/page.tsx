@@ -3,9 +3,9 @@ import { Metadata } from "next";
 import { OrdersManager } from "@/components/orders/OrdersManager";
 
 export const metadata: Metadata = {
-  title: "Quản Lý Lịch Hẹn & Đơn Hàng | UniCycle Sinh Viên",
+  title: "Lịch hẹn & giao dịch | UniCycle Sinh Viên",
   description:
-    "Quản lý lịch hẹn xem hàng, xác nhận giữ chỗ món đồ độc quyền (RESERVED) và kết nối trao tay an toàn tại khuôn viên trường, ký túc xá TP.HCM.",
+    "Theo dõi lịch hẹn mua bán, xác nhận giữ chỗ và hẹn gặp và bàn giao tại KTX TP.HCM.",
 };
 
 export default function OrdersPage() {

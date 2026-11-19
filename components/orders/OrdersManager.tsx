@@ -288,13 +288,13 @@ export function OrdersManager() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE] block mb-1">
-            Giao Dịch Sinh Viên
+            Lịch hẹn & giao dịch
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
-            Quản Lý Lịch Hẹn & Đơn Hàng
+            Lịch hẹn & giao dịch
           </h1>
           <p className="text-xs sm:text-sm text-[#02457A] mt-1">
-            Theo dõi yêu cầu xem đồ, duyệt giữ chỗ độc quyền và quản lý trao tay an toàn tại KTX
+            Theo dõi lịch hẹn mua bán, xác nhận giữ chỗ và hẹn gặp và bàn giao tại KTX
           </p>
         </div>
 
@@ -302,7 +302,7 @@ export function OrdersManager() {
           href="/products"
           className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-[#D6E8EE] hover:bg-[#D6E8EE]/40 text-[#001B48] text-xs sm:text-sm font-bold transition-all shadow-xs"
         >
-          <span>Khám phá thêm món đồ ↗</span>
+          <span>Khám phá đồ cũ ↗</span>
         </Link>
       </div>
 
@@ -337,26 +337,37 @@ export function OrdersManager() {
         </div>
       )}
 
-      {/* 2. DẢI TABS CHÍNH: BÁN (Nhận được) vs MUA (Đã gửi) */}
-      <div className="flex items-center gap-3 p-1.5 bg-slate-100 rounded-2xl w-fit mb-6">
+      {/* 2. DẢI TABS CHÍNH: DẠNG CARD (Giống ảnh mẫu) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
         <button
           type="button"
           onClick={() => {
             setActiveTab("seller");
             setStatusFilter("all");
           }}
-          className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer relative shadow-xs ${
             activeTab === "seller"
-              ? "bg-white text-[#001B48] shadow-sm"
-              : "text-[#02457A] hover:text-[#001B48]"
+              ? "bg-white border-[#018ABE] ring-2 ring-[#018ABE]/20 shadow-sm"
+              : "bg-white border-[#D6E8EE] hover:border-slate-300 opacity-80 hover:opacity-100"
           }`}
         >
-          <span>📥 Yêu Cầu Nhận Được (Bán)</span>
-          {pendingSellerCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white animate-pulse">
-              {pendingSellerCount} mới
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-[#02457A]">Yêu cầu mua đồ</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-extrabold text-[#001B48]">
+              {sellerOrders.length}
             </span>
-          )}
+            {pendingSellerCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white animate-pulse">
+                {pendingSellerCount} mới
+              </span>
+            )}
+          </div>
+          <span className="text-[11px] text-[#02457A]/80 block mt-1">
+            Đơn người khác đặt mua đồ của bạn
+          </span>
         </button>
 
         <button
@@ -365,14 +376,22 @@ export function OrdersManager() {
             setActiveTab("buyer");
             setStatusFilter("all");
           }}
-          className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer relative shadow-xs ${
             activeTab === "buyer"
-              ? "bg-white text-[#001B48] shadow-sm"
-              : "text-[#02457A] hover:text-[#001B48]"
+              ? "bg-white border-[#018ABE] ring-2 ring-[#018ABE]/20 shadow-sm"
+              : "bg-white border-[#D6E8EE] hover:border-slate-300 opacity-80 hover:opacity-100"
           }`}
         >
-          <span>📤 Lịch Hẹn Đã Gửi (Mua)</span>
-          <span className="text-xs text-slate-400">({buyerOrders.length})</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-amber-700">Lịch hẹn của tôi</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+          </div>
+          <span className="text-2xl sm:text-3xl font-extrabold text-amber-900">
+            {buyerOrders.length}
+          </span>
+          <span className="text-[11px] text-amber-700/80 block mt-1">
+            Lịch hẹn bạn đã gửi cho người bán khác
+          </span>
         </button>
       </div>
 
@@ -382,15 +401,15 @@ export function OrdersManager() {
           { key: "all", label: `Tất cả (${currentTabOrders.length})` },
           {
             key: "PENDING",
-            label: `Chờ duyệt (${currentTabOrders.filter((o) => o.status === "PENDING").length})`,
+            label: `Chờ xác nhận (${currentTabOrders.filter((o) => o.status === "PENDING").length})`,
           },
           {
             key: "ACCEPTED",
-            label: `Giữ chỗ / Bàn giao (${currentTabOrders.filter((o) => ["ACCEPTED", "WAITING_CONFIRMATION", "DISPUTED"].includes(o.status)).length})`,
+            label: `Đang giao dịch (${currentTabOrders.filter((o) => ["ACCEPTED", "WAITING_CONFIRMATION", "DISPUTED"].includes(o.status)).length})`,
           },
           {
             key: "COMPLETED",
-            label: `Đã hoàn tất (${currentTabOrders.filter((o) => ["COMPLETED", "AUTO_COMPLETED"].includes(o.status)).length})`,
+            label: `Hoàn tất (${currentTabOrders.filter((o) => ["COMPLETED", "AUTO_COMPLETED"].includes(o.status)).length})`,
           },
           {
             key: "CANCELLED",
@@ -426,18 +445,18 @@ export function OrdersManager() {
             </svg>
           </div>
           <h3 className="text-lg font-extrabold text-[#001B48] mb-1">
-            Chưa có lịch hẹn nào ở mục này
+            Chưa có lịch hẹn nào
           </h3>
           <p className="text-xs sm:text-sm text-[#02457A] mb-5">
             {activeTab === "seller"
-              ? "Khi có sinh viên quan tâm và đặt lịch hẹn xem món đồ bạn đăng bán, yêu cầu sẽ xuất hiện tại đây."
+              ? "Khi có người đặt lịch xem món đồ bạn đăng bán, yêu cầu sẽ xuất hiện tại đây."
               : "Bạn có thể duyệt tìm món đồ ưng ý và bấm 'Đặt lịch hẹn xem hàng' để giữ chỗ trước khi người khác mua."}
           </p>
           <Link
             href="/products"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white font-bold text-xs sm:text-sm shadow-md transition-all"
           >
-            <span>Khám phá chợ đồ sinh viên</span>
+            <span>Khám phá đồ cũ ngay</span>
           </Link>
         </div>
       ) : (
