@@ -8,6 +8,7 @@ interface ScrollRevealProps {
   children: React.ReactNode;
   variant?: ScrollRevealVariant;
   delayMs?: number;
+  once?: boolean;
   className?: string;
   as?: "div" | "section" | "article" | "li" | "span" | "p";
 }
@@ -53,6 +54,7 @@ export default function ScrollReveal({
   children,
   variant = "fade-up",
   delayMs = 0,
+  once = false,
   className = "",
   as: Component = "div",
 }: ScrollRevealProps) {
@@ -74,8 +76,9 @@ export default function ScrollReveal({
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (entry && entry.isIntersecting) {
-          setIsIntersected(true);
+        if (!entry) return;
+        setIsIntersected(entry.isIntersecting);
+        if (once && entry.isIntersecting) {
           observer.disconnect();
         }
       },
@@ -90,7 +93,7 @@ export default function ScrollReveal({
     return () => {
       observer.disconnect();
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, once]);
 
   const isVisible = prefersReducedMotion || isIntersected;
   const hiddenClass = variantHiddenClasses[variant];
