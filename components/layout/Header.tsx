@@ -40,12 +40,13 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [selectedCampus, setSelectedCampus] = useState(CAMPUS_AREAS[1]);
+  const [selectedCampus] = useState(CAMPUS_AREAS[1]);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const [accountPopupOpen, setAccountPopupOpen] = useState(false);
+  const [authLoaded, setAuthLoaded] = useState(false);
   const [currentUser, setCurrentUser] = useState<HeaderUser | null>(null);
   const [userCounts, setUserCounts] = useState<{
     itemsCount: number;
@@ -86,6 +87,8 @@ export function Header() {
         }
       } catch {
         // Ignore
+      } finally {
+        if (active) setAuthLoaded(true);
       }
     };
 
@@ -98,6 +101,7 @@ export function Header() {
   }, [pathname]);
 
   const handleLogout = async () => {
+    const shouldGoHome = pathname?.startsWith("/admin") || currentUser?.role === "ADMIN";
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setCurrentUser(null);
@@ -105,6 +109,9 @@ export function Header() {
       setAccountPopupOpen(false);
       setMobileMenuOpen(false);
       window.dispatchEvent(new Event("unicycle-auth-change"));
+      if (shouldGoHome) {
+        router.push("/");
+      }
       router.refresh();
     } catch {
       // Ignore
@@ -127,6 +134,120 @@ export function Header() {
     }
     router.push(`/products${params.toString() ? `?${params.toString()}` : ""}`);
   };
+
+  const isAdminMode =
+    currentUser?.role === "ADMIN" || (pathname?.startsWith("/admin") && !authLoaded);
+
+  if (isAdminMode) {
+    return (
+      <header className="sticky top-0 z-40 w-full bg-white border-b border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          <Link
+            href="/admin"
+            className="flex items-center gap-2.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] rounded-xl"
+            aria-label="Trang quản trị UniCycle"
+          >
+            <div className="relative h-9 w-9 rounded-xl overflow-hidden border border-slate-200 bg-white">
+              <Image
+                src="/logo.jpg"
+                alt="Logo UniCycle"
+                fill
+                sizes="36px"
+                className="object-contain p-0.5"
+                priority
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-lg font-extrabold tracking-tight text-[#001B48] leading-none">
+                Uni<span className="text-[#018ABE]">Cycle</span>
+              </span>
+              <span className="text-[11px] font-medium text-slate-500 mt-0.5">
+                Quản trị hệ thống
+              </span>
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {!currentUser && !authLoaded ? (
+              <div
+                className="h-9 w-36 rounded-xl bg-slate-100 animate-pulse"
+                aria-hidden="true"
+              />
+            ) : currentUser ? (
+              <>
+                {!pathname?.startsWith("/admin") && (
+                  <Link
+                    href="/admin"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EEF7FB] hover:bg-[#D6E8EE] text-xs font-semibold text-[#001B48] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                  >
+                    <svg
+                      className="w-3.5 h-3.5 text-[#018ABE]"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+                      />
+                    </svg>
+                    <span>Quay lại Quản trị</span>
+                  </Link>
+                )}
+
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-white ring-1 ring-slate-200 bg-[#001B48] text-white flex items-center justify-center text-xs font-bold relative">
+                    {currentUser.avatarUrl ? (
+                      <Image
+                        src={currentUser.avatarUrl}
+                        alt={currentUser.displayName}
+                        fill
+                        sizes="28px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <span>{currentUser.displayName.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="hidden sm:flex flex-col leading-tight max-w-[160px]">
+                    <span className="text-xs font-semibold text-[#001B48] truncate">
+                      {currentUser.displayName}
+                    </span>
+                    <span className="text-[10px] font-medium text-slate-500">Quản trị viên</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border border-slate-200 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 text-slate-700 text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                >
+                  <svg
+                    className="w-3.5 h-3.5 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.9}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"
+                    />
+                  </svg>
+                  <span>Đăng xuất</span>
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white border-b border-[#D6E8EE] shadow-[0_2px_12px_rgba(0,27,72,0.04)]">

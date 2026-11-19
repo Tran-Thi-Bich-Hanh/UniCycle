@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const errorDescription = searchParams.get("error_description");
-  const returnTo = searchParams.get("returnTo") || "/";
+  const rawReturnTo = searchParams.get("returnTo");
 
   if (errorDescription) {
     return NextResponse.redirect(
@@ -85,7 +85,14 @@ export async function GET(req: NextRequest) {
     };
 
     const token = createSessionToken(sessionUser);
-    const destination = returnTo.startsWith("/") ? returnTo : "/";
+    const defaultHome = sessionUser.role === "ADMIN" ? "/admin" : "/";
+    const destination =
+      rawReturnTo &&
+      rawReturnTo.startsWith("/") &&
+      !rawReturnTo.startsWith("//") &&
+      rawReturnTo !== "/"
+        ? rawReturnTo
+        : defaultHome;
     const response = NextResponse.redirect(new URL(destination, req.url));
 
     response.cookies.set(SESSION_COOKIE_NAME, token, {

@@ -56,7 +56,15 @@ function LoginContent() {
       }
 
       window.dispatchEvent(new Event("unicycle-auth-change"));
-      const destination = returnTo.startsWith("/") ? returnTo : "/";
+      const rawReturnTo = searchParams.get("returnTo");
+      const defaultHome = data.user?.role === "ADMIN" ? "/admin" : "/";
+      const destination =
+        rawReturnTo &&
+        rawReturnTo.startsWith("/") &&
+        !rawReturnTo.startsWith("//") &&
+        rawReturnTo !== "/"
+          ? rawReturnTo
+          : defaultHome;
       router.push(destination);
       router.refresh();
     } catch {

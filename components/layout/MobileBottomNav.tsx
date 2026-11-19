@@ -6,6 +6,9 @@ import { usePathname } from "next/navigation";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   const isHome = pathname === "/";
   const isExplore =

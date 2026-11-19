@@ -61,7 +61,9 @@ export default function RootLayout({
 
         <main className="flex-1 flex flex-col">{children}</main>
 
-        <Footer />
+        <Suspense fallback={null}>
+          <Footer />
+        </Suspense>
 
         <Suspense fallback={null}>
           <MobileBottomNav />
