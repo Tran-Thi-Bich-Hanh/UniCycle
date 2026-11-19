@@ -16,36 +16,50 @@ export async function GET() {
     }
 
     const dbUser = await prisma.user.findFirst({
-      where: { OR: [{ id: user.id }, { email: user.email }] },
+      where: user.email
+        ? { OR: [{ id: user.id }, { email: user.email }] }
+        : { id: user.id },
       select: { id: true },
     });
     const resolvedUserId = dbUser?.id || user.id;
 
-    const [itemsCount, productsCount, activeOrdersCount, totalOrdersCount] = await Promise.all([
-      prisma.item.count({
-        where: { currentOwnerId: resolvedUserId },
-      }),
-      prisma.listing.count({
-        where: { sellerId: resolvedUserId },
-      }),
-      prisma.order.count({
-        where: {
-          OR: [{ buyerId: resolvedUserId }, { sellerId: resolvedUserId }],
-          status: {
-            in: ["PENDING", "ACCEPTED", "WAITING_CONFIRMATION", "DISPUTED"],
+    const [ownedItems, userListings, activeOrdersCount, totalOrdersCount] =
+      await Promise.all([
+        prisma.item.findMany({
+          where: { currentOwnerId: resolvedUserId },
+          select: { id: true },
+        }),
+        prisma.listing.findMany({
+          where: {
+            sellerId: resolvedUserId,
+            status: { not: "REMOVED" },
           },
-        },
-      }),
-      prisma.order.count({
-        where: {
-          OR: [{ buyerId: resolvedUserId }, { sellerId: resolvedUserId }],
-        },
-      }),
-    ]);
+          select: { id: true, itemId: true },
+        }),
+        prisma.order.count({
+          where: {
+            OR: [{ buyerId: resolvedUserId }, { sellerId: resolvedUserId }],
+            status: {
+              in: ["PENDING", "ACCEPTED", "WAITING_CONFIRMATION", "DISPUTED"],
+            },
+          },
+        }),
+        prisma.order.count({
+          where: {
+            OR: [{ buyerId: resolvedUserId }, { sellerId: resolvedUserId }],
+          },
+        }),
+      ]);
+
+    const ownedItemIds = new Set(ownedItems.map((item) => item.id));
+    const unmatchedListingsCount = userListings.filter(
+      (listing) => !listing.itemId || !ownedItemIds.has(listing.itemId)
+    ).length;
+    const unifiedItemsCount = ownedItems.length + unmatchedListingsCount;
 
     return NextResponse.json({
-      itemsCount: productsCount,
-      productsCount,
+      itemsCount: unifiedItemsCount,
+      productsCount: unifiedItemsCount,
       ordersCount: totalOrdersCount,
       activeOrdersCount,
       totalOrdersCount,
@@ -53,7 +67,13 @@ export async function GET() {
   } catch (err) {
     console.error("Lỗi khi lấy user counts:", err);
     return NextResponse.json(
-      { itemsCount: 0, ordersCount: 0, activeOrdersCount: 0, totalOrdersCount: 0 },
+      {
+        itemsCount: 0,
+        productsCount: 0,
+        ordersCount: 0,
+        activeOrdersCount: 0,
+        totalOrdersCount: 0,
+      },
       { status: 500 }
     );
   }
