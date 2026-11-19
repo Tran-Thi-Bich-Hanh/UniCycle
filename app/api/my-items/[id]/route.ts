@@ -38,12 +38,18 @@ export async function PATCH(
       );
     }
 
+    const dbUser = await prisma.user.findFirst({
+      where: { OR: [{ id: user.id }, { email: user.email }] },
+      select: { id: true },
+    });
+    const resolvedUserId = dbUser?.id || user.id;
+
     // Kiểm tra quyền sở hữu món đồ
     const item = await prisma.item.findUnique({
       where: { id: itemId },
       include: {
         owners: {
-          where: { userId: user.id },
+          where: { userId: resolvedUserId },
           orderBy: { seq: "desc" },
           take: 1,
         },
@@ -58,14 +64,14 @@ export async function PATCH(
     }
 
     const myOwnerRecord = item.owners[0];
-    if (!myOwnerRecord || item.currentOwnerId !== user.id) {
+    if (!myOwnerRecord || item.currentOwnerId !== resolvedUserId) {
       return NextResponse.json(
-        { error: "Bạn không có quyền chỉnh sửa tùy chọn món đồ này (BR25)." },
+        { error: "Bạn không có quyền chỉnh sửa tùy chọn của món đồ này." },
         { status: 403 }
       );
     }
 
-    // Cập nhật showName cho bản ghi PassportOwner của người dùng (BR29)
+    // Cập nhật showName cho bản ghi PassportOwner của người dùng
     await prisma.passportOwner.update({
       where: { id: myOwnerRecord.id },
       data: {
@@ -76,8 +82,8 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       message: showName
-        ? "Đã bật hiển thị tên của bạn trên lịch sử Digital Product Passport (BR29)."
-        : "Đã chuyển sang chế độ ẩn danh trên Digital Product Passport (BR29).",
+        ? "Đã bật hiển thị tên của bạn trên hành trình đồ vật."
+        : "Đã chuyển sang chế độ ẩn danh trên hành trình đồ vật.",
       showName: Boolean(showName),
     });
   } catch (error) {
