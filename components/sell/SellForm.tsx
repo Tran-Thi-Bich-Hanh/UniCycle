@@ -82,12 +82,12 @@ const DEMO_PRESETS = [
 ];
 
 const DEFAULT_CATEGORIES: CategoryOption[] = [
-  { id: "giao-trinh-sach", slug: "giao-trinh-sach", name: "Giáo trình & Sách học" },
-  { id: "do-dien-tu-phu-kien", slug: "do-dien-tu-phu-kien", name: "Đồ điện tử & Phụ kiện" },
-  { id: "xe-dap-phuong-tien", slug: "xe-dap-phuong-tien", name: "Xe đạp & Phương tiện" },
-  { id: "ban-ghe-tu-ktx", slug: "ban-ghe-tu-ktx", name: "Bàn ghế & Tủ KTX" },
-  { id: "do-gia-dung-quat", slug: "do-gia-dung-quat", name: "Đồ gia dụng & Quạt điện" },
-  { id: "goc-0d-cho-tang", slug: "goc-0d-cho-tang", name: "Góc 0đ Cho Tặng" },
+  { id: "giao-trinh-sach", slug: "giao-trinh-sach", name: "Giáo trình & Sách" },
+  { id: "do-dien-tu-phu-kien", slug: "do-dien-tu-phu-kien", name: "Đồ điện tử" },
+  { id: "xe-dap-phuong-tien", slug: "xe-dap-phuong-tien", name: "Xe đạp & Di chuyển" },
+  { id: "ban-ghe-tu-ktx", slug: "ban-ghe-tu-ktx", name: "Bàn ghế & Nội thất" },
+  { id: "do-gia-dung-quat", slug: "do-gia-dung-quat", name: "Đồ gia dụng" },
+  { id: "goc-0d-cho-tang", slug: "goc-0d-cho-tang", name: "Góc Cho Tặng" },
 ];
 
 const DEFAULT_SCHOOLS: SchoolOption[] = [

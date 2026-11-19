@@ -98,27 +98,27 @@ export function Footer() {
           <ul className="space-y-2 text-sm text-[#D6E8EE]/90">
             <li>
               <Link href="/categories/giao-trinh-sach" className="hover:text-white transition-colors">
-                Giáo trình &amp; Sách đại học
+                Giáo trình &amp; Sách
               </Link>
             </li>
             <li>
               <Link href="/categories/ban-ghe-tu-ktx" className="hover:text-white transition-colors">
-                Bàn học gấp &amp; Nội thất KTX
+                Bàn ghế &amp; Nội thất
               </Link>
             </li>
             <li>
               <Link href="/categories/do-gia-dung-quat" className="hover:text-white transition-colors">
-                Quạt điện &amp; Đồ gia dụng phòng trọ
+                Đồ gia dụng
               </Link>
             </li>
             <li>
               <Link href="/categories/do-dien-tu-phu-kien" className="hover:text-white transition-colors">
-                Máy tính Casio &amp; Phụ kiện học tập
+                Đồ điện tử
               </Link>
             </li>
             <li>
               <Link href="/categories/goc-0d-cho-tang" className="text-[#97CADB] font-semibold hover:text-white transition-colors">
-                Góc 0đ – Sinh viên chia sẻ
+                Góc Cho Tặng
               </Link>
             </li>
           </ul>

@@ -30,38 +30,38 @@ const CAMPUS_AREAS = [
 const CATEGORIES = [
   {
     slug: "giao-trinh-sach",
-    name: "Giáo trình & Sách học",
-    desc: "Giáo trình đại cương, chuyên ngành, tài liệu ôn thi",
+    name: "Giáo trình & Sách",
+    desc: "Giáo trình đại học, sách chuyên ngành và tài liệu học tập",
     count: "140+ tin",
   },
   {
     slug: "ban-ghe-tu-ktx",
-    name: "Bàn ghế & Tủ KTX",
-    desc: "Bàn học gấp, ghế xoay, kệ sách, tủ vải sinh viên",
+    name: "Bàn ghế & Nội thất",
+    desc: "Bàn học, ghế xoay, kệ sách và nội thất phòng trọ",
     count: "85+ tin",
   },
   {
     slug: "do-gia-dung-quat",
-    name: "Đồ gia dụng & Quạt điện",
-    desc: "Quạt đứng Senko, ấm siêu tốc, nồi cơm mini, đèn bàn",
+    name: "Đồ gia dụng",
+    desc: "Quạt điện, ấm siêu tốc, nồi cơm mini và vật dụng sinh hoạt",
     count: "110+ tin",
   },
   {
     slug: "do-dien-tu-phu-kien",
-    name: "Đồ điện tử & Phụ kiện",
-    desc: "Máy tính Casio fx-580VNX, chuột, bàn phím, tai nghe",
+    name: "Đồ điện tử",
+    desc: "Máy tính, máy tính cầm tay, chuột, bàn phím và tai nghe",
     count: "95+ tin",
   },
   {
     slug: "xe-dap-phuong-tien",
-    name: "Xe đạp & Phương tiện",
-    desc: "Xe đạp đi học trong làng đại học, mũ bảo hiểm",
+    name: "Xe đạp & Di chuyển",
+    desc: "Xe đạp, mũ bảo hiểm và vật dụng đi lại",
     count: "40+ tin",
   },
   {
     slug: "goc-0d-cho-tang",
-    name: "Góc 0đ Cho Tặng",
-    desc: "Đồ dùng sinh viên khóa trước tặng lại tân sinh viên",
+    name: "Góc Cho Tặng",
+    desc: "Đồ dùng miễn phí được sinh viên khóa trước chia sẻ",
     count: "60+ tin",
     highlight: true,
   },
@@ -295,10 +295,10 @@ export function Header() {
                         Digital Passport
                       </span>
                       <h3 className="text-base font-bold mt-2.5 leading-snug">
-                        Món đồ có lịch sử chuyền tay rõ ràng
+                        Mỗi món đồ, một câu chuyện.
                       </h3>
                       <p className="text-xs text-[#D6E8EE] mt-1.5 leading-relaxed">
-                        Kiểm tra các đời chủ trước qua mã QR màn hình và bán lại trong 1 chạm khi ra trường.
+                        Theo dõi hành trình của món đồ qua mã QR, từ người sở hữu đầu tiên đến những lần trao đổi tiếp theo.
                       </p>
                     </div>
                     <Link
