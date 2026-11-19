@@ -414,34 +414,16 @@ export function ProductDetailClient({
               <div className="absolute -bottom-24 right-4 w-96 h-96 rounded-full bg-gradient-to-tl from-[#38BDF8]/45 via-[#0284C7]/25 to-transparent blur-3xl pointer-events-none" />
 
               {/* Header */}
-              <div className="relative flex flex-wrap items-center justify-between gap-3 pb-4.5 border-b border-[#BAE6FD]">
+              <div className="relative flex items-center justify-between gap-3 pb-4 border-b border-[#BAE6FD]">
                 <div className="flex items-center gap-3">
-                  <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#E3F1F9] to-[#BAE6FD]/70 border border-[#7DD3FC] text-[#0088C2] flex items-center justify-center shrink-0 shadow-[0_0_18px_rgba(0,136,194,0.3)]">
+                  <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E3F1F9] to-[#BAE6FD]/70 border border-[#7DD3FC] text-[#0088C2] flex items-center justify-center shrink-0 shadow-[0_0_18px_rgba(0,136,194,0.3)]">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </span>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-[#0B1F4B] flex items-center gap-2">
-                      <span>Lịch Sử Đồ Vật (Product Passport)</span>
-                    </h3>
-                    <span className="inline-flex items-center gap-1.5 text-xs text-[#0B6B3A] font-semibold mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#0B6B3A] animate-pulse" />
-                      Trạng thái: Hợp lệ • Đã đăng ký hệ thống
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-left sm:text-right">
-                  <span className="text-[11px] text-[#475569] block font-medium">Mã định danh (bytes32):</span>
-                  <span
-                    className="inline-block text-xs text-[#0B1F4B] font-mono font-semibold bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-[#7DD3FC] shadow-2xs mt-0.5"
-                    title={product.item?.passportId || ""}
-                  >
-                    {product.item?.passportId
-                      ? `${product.item.passportId.slice(0, 10)}...${product.item.passportId.slice(-6)}`
-                      : "Chưa cấp"}
-                  </span>
+                  <h3 className="text-base sm:text-lg font-bold text-[#0B1F4B]">
+                    Hành trình đồ vật
+                  </h3>
                 </div>
               </div>
 
@@ -516,12 +498,12 @@ export function ProductDetailClient({
                                   href={`https://testnet.snowtrace.io/tx/${owner.txHash}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F0F9FF] border border-[#BAE6FD] text-[11px] font-mono font-semibold text-[#0088C2] hover:bg-[#0088C2] hover:text-white transition-all shadow-2xs"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#F0F9FF] border border-[#BAE6FD] text-xs font-semibold text-[#0088C2] hover:bg-[#0088C2] hover:text-white transition-all shadow-2xs"
                                 >
-                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <span>Tra cứu nhanh</span>
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                                   </svg>
-                                  <span>Snowtrace ({owner.txHash.slice(0, 8)}...) ↗</span>
                                 </a>
                               </div>
                             )}
