@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { ProductCard, ProductCardData } from "@/components/products/ProductCard";
 import { CategoryGrid, CategoryItem } from "@/components/home/CategoryGrid";
+import ScrollReveal from "@/components/ui/ScrollReveal";
 
 interface SchoolOption {
   id: string;
@@ -106,64 +107,66 @@ export function HomeProductFeed({
       <section className="py-8 sm:py-12 bg-white" id="live-feed">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header phân đoạn */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-[#D6E8EE]">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE]">
-                  Cập Nhật Trực Tiếp
-                </span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
-                Món Đồ Đang Chờ Trao Tay
-              </h2>
-              <p className="text-xs sm:text-sm text-[#02457A] mt-1">
-                Giao dịch an toàn trực tiếp tại cổng KTX & trường học, không lo lừa đảo chuyển khoản trước
-              </p>
-            </div>
-
-            {/* Bộ lọc trường học & sắp xếp */}
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-              {/* Dropdown chọn Trường / KTX */}
-              <div className="relative">
-                <select
-                  value={selectedSchoolId}
-                  onChange={(e) => setSelectedSchoolId(e.target.value)}
-                  className="h-10 pl-3 pr-8 rounded-xl border border-[#D6E8EE] bg-white text-xs sm:text-sm font-semibold text-[#001B48] focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20 outline-none appearance-none cursor-pointer"
-                >
-                  <option value="all">Tất cả KTX &amp; Trường</option>
-                  {schools.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.shortName}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#02457A]">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+          <ScrollReveal variant="fade-up">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-[#D6E8EE]">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 motion-safe:animate-pulse" />
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE]">
+                    Cập Nhật Trực Tiếp
+                  </span>
                 </div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
+                  Món Đồ Đang Chờ Trao Tay
+                </h2>
+                <p className="text-xs sm:text-sm text-[#02457A] mt-1">
+                  Giao dịch an toàn trực tiếp tại cổng KTX &amp; trường học, không lo lừa đảo chuyển khoản trước
+                </p>
               </div>
 
-              {/* Dropdown sắp xếp */}
-              <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "newest" | "price-asc" | "price-desc")}
-                  className="h-10 pl-3 pr-8 rounded-xl border border-[#D6E8EE] bg-white text-xs sm:text-sm font-semibold text-[#001B48] focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20 outline-none appearance-none cursor-pointer"
-                >
-                  <option value="newest">Mới đăng nhất</option>
-                  <option value="price-asc">Giá: Thấp đến Cao</option>
-                  <option value="price-desc">Giá: Cao đến Thấp</option>
-                </select>
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#02457A]">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+              {/* Bộ lọc trường học & sắp xếp */}
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                {/* Dropdown chọn Trường / KTX */}
+                <div className="relative">
+                  <select
+                    value={selectedSchoolId}
+                    onChange={(e) => setSelectedSchoolId(e.target.value)}
+                    className="h-10 pl-3 pr-8 rounded-xl border border-[#D6E8EE] bg-white text-xs sm:text-sm font-semibold text-[#001B48] focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20 outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="all">Tất cả KTX &amp; Trường</option>
+                    {schools.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.shortName}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#02457A]">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Dropdown sắp xếp */}
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as "newest" | "price-asc" | "price-desc")}
+                    className="h-10 pl-3 pr-8 rounded-xl border border-[#D6E8EE] bg-white text-xs sm:text-sm font-semibold text-[#001B48] focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20 outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="newest">Mới đăng nhất</option>
+                    <option value="price-asc">Giá: Thấp đến Cao</option>
+                    <option value="price-desc">Giá: Cao đến Thấp</option>
+                  </select>
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#02457A]">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* Dải Tabs Lọc Danh Mục (theo chuẩn nav-tabs tabs-product st_3 từ index.html) */}
           <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none">

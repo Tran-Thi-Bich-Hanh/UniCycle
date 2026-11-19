@@ -7,6 +7,7 @@ import { CategoryItem } from "@/components/home/CategoryGrid";
 import { HomeProductFeed } from "@/components/home/HomeProductFeed";
 import { PassportBanner } from "@/components/home/PassportBanner";
 import { TrustStrip } from "@/components/home/TrustStrip";
+import { CircularStorySection } from "@/components/home/CircularStorySection";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import {
   FALLBACK_PRODUCTS,
@@ -249,7 +250,10 @@ export default function Home() {
       {/* 2. Dải 4 Cam kết Niềm tin ngay dưới Hero */}
       <TrustStrip />
 
-      {/* 2. Lưới Danh Mục & Feed Sản Phẩm Sinh Viên (Bọc Suspense chuẩn Next.js 16 cacheComponents) */}
+      {/* 3. Khối Câu chuyện Tuần hoàn & Hành trình 3 đời chủ */}
+      <CircularStorySection />
+
+      {/* 4. Lưới Danh Mục & Feed Sản Phẩm Sinh Viên (Bọc Suspense chuẩn Next.js 16 cacheComponents) */}
       <Suspense
         fallback={
           <HomeProductFeed

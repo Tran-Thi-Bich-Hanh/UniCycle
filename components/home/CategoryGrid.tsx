@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import ScrollReveal from "@/components/ui/ScrollReveal";
 
 export interface CategoryItem {
   id: string;
@@ -183,29 +184,31 @@ export function CategoryGrid({
     <section className="py-8 sm:py-12 bg-[#F8FAFC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Tiêu đề mục theo chuẩn phong cách widget-title trong index.html */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6 sm:mb-8">
-          <div>
-            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE] block mb-1">
-              Khám Phá Theo Nhu Cầu Sinh Viên
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
-              Danh Mục Mua Bán & Cho Tặng
-            </h2>
+        <ScrollReveal variant="fade-up">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6 sm:mb-8">
+            <div>
+              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE] block mb-1">
+                Khám Phá Theo Nhu Cầu Sinh Viên
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight">
+                Danh Mục Mua Bán &amp; Cho Tặng
+              </h2>
+            </div>
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#02457A] hover:text-[#018ABE] transition-colors group cursor-pointer"
+            >
+              <span>Xem tất cả danh mục</span>
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
-          <Link
-            href="/products"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#02457A] hover:text-[#018ABE] transition-colors group cursor-pointer"
-          >
-            <span>Xem tất cả danh mục</span>
-            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
+        </ScrollReveal>
 
         {/* Lưới danh mục 6 ô (phong cách widget-categories-box index.html - UI/UX Pro Max) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4 lg:gap-5">
-          {categories.map((cat) => {
+          {categories.map((cat, index) => {
             const isSelected = selectedSlug === cat.slug;
             const isFree = cat.slug === "goc-0d-cho-tang";
             const imageSrc = cat.imageUrl || CATEGORY_IMAGES[cat.slug];
@@ -216,92 +219,100 @@ export function CategoryGrid({
             };
 
             return (
-              <div
+              <ScrollReveal
                 key={cat.id || cat.slug}
-                onClick={() => onSelectCategory && onSelectCategory(cat.slug)}
-                className={`group relative bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col items-center text-center border cursor-pointer transition-all duration-300 ${
-                  isSelected
-                    ? "border-[#018ABE] ring-2 ring-[#018ABE]/20 shadow-[0_12px_28px_rgba(1,138,190,0.22)] bg-[#D6E8EE]/15 -translate-y-1.5"
-                    : isFree
-                    ? "border-emerald-200 hover:border-emerald-500 hover:shadow-[0_14px_30px_rgba(16,185,129,0.18)] hover:-translate-y-1.5"
-                    : `border-slate-200/80 hover:border-[#018ABE] ${theme.glowColor} hover:-translate-y-1.5`
-                }`}
+                variant="fade-up"
+                delayMs={index * 45}
+                className="h-full"
               >
-                {/* Chỉ báo trạng thái đang chọn lọc */}
-                {isSelected && (
-                  <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 bg-[#018ABE] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
-                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                    <span className="hidden sm:inline">Đang lọc</span>
-                  </span>
-                )}
-
-                {/* Huy hiệu Góc 0đ Cho Tặng nổi bật */}
-                {isFree && (
-                  <span className="absolute -top-2.5 right-2 sm:right-3 z-10 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] sm:text-[11px] font-extrabold px-2.5 py-0.5 rounded-full shadow-sm ring-2 ring-white inline-flex items-center gap-1 shrink-0">
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                    </svg>
-                    <span>0đ Tặng</span>
-                  </span>
-                )}
-
-                {/* Khung ảnh đại diện 3D danh mục kích thước lớn (96px desktop / 80px mobile) */}
-                <div
-                  className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden mb-3 p-1 bg-gradient-to-br ${theme.bgGradient} border ${theme.borderAccent} shadow-xs group-hover:scale-105 group-hover:shadow-md transition-all duration-300`}
-                >
-                  <div className="relative w-full h-full rounded-xl overflow-hidden">
-                    {imageSrc ? (
-                      <Image
-                        src={imageSrc}
-                        alt={cat.name}
-                        fill
-                        sizes="(max-width: 640px) 80px, 96px"
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div
-                        className={`w-full h-full flex items-center justify-center transition-colors duration-300 ${
-                          isSelected
-                            ? "bg-[#018ABE] text-white"
-                            : isFree
-                            ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"
-                            : "bg-[#D6E8EE]/40 text-[#018ABE] group-hover:bg-[#018ABE]/15"
-                        }`}
-                      >
-                        {renderIcon(cat.icon || cat.slug)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tên danh mục */}
-                <h3
-                  className={`text-xs sm:text-[14px] font-bold line-clamp-2 leading-snug transition-colors mb-2 min-h-[2.5rem] flex items-center justify-center ${
+                <button
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onSelectCategory && onSelectCategory(cat.slug)}
+                  className={`group relative w-full h-full bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col items-center text-center border cursor-pointer transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2 ${
                     isSelected
-                      ? "text-[#018ABE]"
+                      ? "border-[#018ABE] ring-2 ring-[#018ABE]/20 shadow-[0_12px_28px_rgba(1,138,190,0.22)] bg-[#D6E8EE]/15 -translate-y-1.5"
                       : isFree
-                      ? "text-emerald-800 group-hover:text-emerald-600"
-                      : "text-[#001B48] group-hover:text-[#018ABE]"
+                      ? "border-emerald-200 hover:border-emerald-500 hover:shadow-[0_14px_30px_rgba(16,185,129,0.18)] hover:-translate-y-1.5"
+                      : `border-slate-200/80 hover:border-[#018ABE] ${theme.glowColor} hover:-translate-y-1.5`
                   }`}
                 >
-                  {cat.name}
-                </h3>
+                  {/* Chỉ báo trạng thái đang chọn lọc */}
+                  {isSelected && (
+                    <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 bg-[#018ABE] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span className="hidden sm:inline">Đang lọc</span>
+                    </span>
+                  )}
 
-                {/* Số lượng tin dạng Capsule Pill Badge */}
-                <span
-                  className={`inline-flex items-center text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-colors ${
-                    isSelected
-                      ? "bg-[#018ABE] text-white"
-                      : isFree
-                      ? "bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100"
-                      : "bg-slate-100 text-slate-600 group-hover:bg-[#D6E8EE]/70 group-hover:text-[#018ABE]"
-                  }`}
-                >
-                  {cat.count || "Khám phá"}
-                </span>
-              </div>
+                  {/* Huy hiệu Góc 0đ Cho Tặng nổi bật */}
+                  {isFree && (
+                    <span className="absolute -top-2.5 right-2 sm:right-3 z-10 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] sm:text-[11px] font-extrabold px-2.5 py-0.5 rounded-full shadow-sm ring-2 ring-white inline-flex items-center gap-1 shrink-0">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                      </svg>
+                      <span>0đ Tặng</span>
+                    </span>
+                  )}
+
+                  {/* Khung ảnh đại diện 3D danh mục kích thước lớn (96px desktop / 80px mobile) */}
+                  <span
+                    className={`relative block w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden mb-3 p-1 bg-gradient-to-br ${theme.bgGradient} border ${theme.borderAccent} shadow-xs group-hover:scale-105 group-hover:shadow-md transition-all duration-300`}
+                  >
+                    <span className="relative block w-full h-full rounded-xl overflow-hidden">
+                      {imageSrc ? (
+                        <Image
+                          src={imageSrc}
+                          alt={cat.name}
+                          fill
+                          sizes="(max-width: 640px) 80px, 96px"
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <span
+                          className={`w-full h-full flex items-center justify-center transition-colors duration-300 ${
+                            isSelected
+                              ? "bg-[#018ABE] text-white"
+                              : isFree
+                              ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"
+                              : "bg-[#D6E8EE]/40 text-[#018ABE] group-hover:bg-[#018ABE]/15"
+                          }`}
+                        >
+                          {renderIcon(cat.icon || cat.slug)}
+                        </span>
+                      )}
+                    </span>
+                  </span>
+
+                  {/* Tên danh mục */}
+                  <span
+                    className={`text-xs sm:text-[14px] font-bold line-clamp-2 leading-snug transition-colors mb-2 min-h-[2.5rem] flex items-center justify-center ${
+                      isSelected
+                        ? "text-[#018ABE]"
+                        : isFree
+                        ? "text-emerald-800 group-hover:text-emerald-600"
+                        : "text-[#001B48] group-hover:text-[#018ABE]"
+                    }`}
+                  >
+                    {cat.name}
+                  </span>
+
+                  {/* Số lượng tin dạng Capsule Pill Badge */}
+                  <span
+                    className={`inline-flex items-center text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-colors ${
+                      isSelected
+                        ? "bg-[#018ABE] text-white"
+                        : isFree
+                        ? "bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100"
+                        : "bg-slate-100 text-slate-600 group-hover:bg-[#D6E8EE]/70 group-hover:text-[#018ABE]"
+                    }`}
+                  >
+                    {cat.count || "Khám phá"}
+                  </span>
+                </button>
+              </ScrollReveal>
             );
           })}
         </div>
