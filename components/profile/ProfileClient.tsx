@@ -138,6 +138,26 @@ export function ProfileClient() {
     };
   }, [router]);
 
+  const hasChanges =
+    Boolean(profile) &&
+    (displayName.trim() !== (profile?.displayName || "") ||
+      schoolId !== (profile?.schoolId || "") ||
+      dorm.trim() !== (profile?.dorm || "") ||
+      avatarUrl.trim() !== (profile?.avatarUrl || ""));
+
+  const handleReset = () => {
+    if (!profile) return;
+    setDisplayName(profile.displayName || "");
+    setSchoolId(profile.schoolId || "");
+    setDorm(profile.dorm || "");
+    setAvatarUrl(profile.avatarUrl || "");
+    setFeedback(null);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarUrl("");
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -562,109 +582,246 @@ export function ProfileClient() {
         <div role="tabpanel" className="flex flex-col lg:flex-row items-start gap-6">
           {/* Cột trái: Form thông tin */}
           <section className="flex-1 w-full min-w-0 bg-white border border-[#DCE6EE] rounded-[20px] p-6 sm:p-7 shadow-xs">
-            <form onSubmit={handleSaveProfile} className="space-y-5 w-full">
-              <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-100 text-xs text-[#02457A] leading-relaxed space-y-1">
-                <div className="font-bold text-[#001B48]">Thông tin hiển thị công khai</div>
-                <p>
-                  Những thông tin như tên hiển thị, trường/KTX, huy hiệu xác minh, điểm uy tín và tin đăng có thể được người khác xem.
-                </p>
-                <p className="text-slate-500">
-                  Email và các thông tin cá nhân khác luôn được giữ riêng tư.
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="profile-display-name" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                  Tên hiển thị <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  id="profile-display-name"
-                  type="text"
-                  required
-                  minLength={2}
-                  maxLength={60}
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="profile-school" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                    Trường đại học
-                  </label>
-                  <select
-                    id="profile-school"
-                    value={schoolId}
-                    onChange={(e) => setSchoolId(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
-                  >
-                    <option value="">-- Chọn trường / KTX --</option>
-                    {schools.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+            <form onSubmit={handleSaveProfile} className="flex flex-col gap-7 w-full">
+              {/* Nhóm 1: Hiển thị công khai */}
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="m-0 text-lg leading-snug font-bold text-[#0B1F4B]">Hiển thị công khai</h2>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E3F1F9] text-[#0B1F4B] text-xs font-semibold">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M2 12h20" />
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                    <span>Mọi người đều thấy</span>
+                  </span>
                 </div>
 
-                <div>
-                  <label htmlFor="profile-dorm" className="block text-xs font-bold text-[#001B48] mb-1.5">
+                {/* Ảnh đại diện */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-semibold text-[#0B1F4B]">Ảnh đại diện</span>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="w-[72px] h-[72px] rounded-[20px] bg-gradient-to-br from-[#0B1F4B] to-[#0088C2] text-white flex items-center justify-center text-[26px] font-bold shrink-0 overflow-hidden shadow-xs">
+                      {avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>
+                          {(displayName || profile.displayName)
+                            .split(" ")
+                            .map((w) => w[0])
+                            .slice(-2)
+                            .join("")
+                            .toUpperCase() || "UN"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-xl border border-[#C9D7E3] bg-white hover:bg-slate-50 text-[#0B1F4B] text-sm font-semibold cursor-pointer transition-colors">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <path d="m17 8-5-5-5 5" />
+                            <path d="M12 3v12" />
+                          </svg>
+                          <span>Tải ảnh lên</span>
+                          <input type="file" accept="image/*" onChange={handleAvatarUpload} className="sr-only" />
+                        </label>
+                        {avatarUrl && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveAvatar}
+                            className="min-h-[44px] px-3 rounded-xl border-none bg-transparent hover:bg-rose-50 text-[#B42318] text-sm font-semibold cursor-pointer transition-colors"
+                          >
+                            Xóa ảnh
+                          </button>
+                        )}
+                      </div>
+                      <span className="text-[13px] leading-relaxed text-[#475569]">
+                        Ảnh vuông sẽ hiển thị đẹp nhất trên hồ sơ và tin đăng.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tên hiển thị */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="f-name" className="text-sm font-semibold text-[#0B1F4B]">
+                    Tên hiển thị <span className="text-[#B42318]" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="f-name"
+                    type="text"
+                    required
+                    minLength={2}
+                    maxLength={60}
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="box-border w-full min-h-[48px] px-3.5 border border-[#C9D7E3] rounded-xl bg-white text-[#0B1F4B] text-[15px] focus:outline-none focus:border-[#0088C2]"
+                  />
+                  <span className="text-[13px] leading-relaxed text-[#475569]">
+                    Tên này hiển thị trên hồ sơ và các tin đăng của bạn.
+                  </span>
+                </div>
+
+                {/* Trường đại học */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="f-school" className="text-sm font-semibold text-[#0B1F4B]">
+                    Trường đại học
+                  </label>
+                  {profile.isStudentVerified ? (
+                    <>
+                      <input
+                        id="f-school"
+                        type="text"
+                        readOnly
+                        value={profile.school?.name || "Trường ĐH Bách Khoa - ĐHQG TP.HCM"}
+                        className="box-border w-full min-h-[48px] px-3.5 border border-[#DCE6EE] rounded-xl bg-[#F1F5F9] text-[#334155] text-[15px] focus:outline-none cursor-default"
+                      />
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-3 text-[13px] leading-relaxed text-[#475569]">
+                        <span className="inline-flex items-center gap-1 text-[#0B6B3A] font-semibold">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="m5 12 5 5L20 7" />
+                          </svg>
+                          <span>Đã xác minh</span>
+                        </span>
+                        <span>
+                          Muốn đổi trường?{" "}
+                          <Link href="/verify-student" className="text-[#0088C2] font-semibold underline hover:text-[#02457A]">
+                            Xác minh lại
+                          </Link>{" "}
+                          (huy hiệu hiện tại sẽ bị thu hồi).
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <select
+                        id="f-school"
+                        value={schoolId}
+                        onChange={(e) => setSchoolId(e.target.value)}
+                        className="box-border w-full min-h-[48px] px-3 border border-[#C9D7E3] rounded-xl bg-white text-[#0B1F4B] text-[15px] focus:outline-none focus:border-[#0088C2] cursor-pointer"
+                      >
+                        <option value="">-- Chọn trường / KTX --</option>
+                        {schools.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex flex-wrap items-center gap-2 text-[13px] leading-relaxed text-[#475569]">
+                        <Link href="/verify-student" className="text-[#0088C2] font-semibold underline hover:text-[#02457A]">
+                          🎓 Xác minh thẻ sinh viên để nhận huy hiệu
+                        </Link>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Khu vực giao dịch */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="f-area" className="text-sm font-semibold text-[#0B1F4B]">
                     Khu vực giao dịch
                   </label>
                   <input
-                    id="profile-dorm"
+                    id="f-area"
                     type="text"
                     value={dorm}
                     onChange={(e) => setDorm(e.target.value)}
-                    placeholder="VD: Tòa B4 - KTX Khu B"
-                    className="w-full h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
+                    placeholder="VD: KTX Khu B ĐHQG, Tòa B4..."
+                    className="box-border w-full min-h-[48px] px-3.5 border border-[#C9D7E3] rounded-xl bg-white text-[#0B1F4B] text-[15px] focus:outline-none focus:border-[#0088C2]"
                   />
+                  <span className="text-[13px] leading-relaxed text-[#475569]">
+                    Chỉ hiển thị khu vực chung để người mua biết bạn ở gần đâu.
+                  </span>
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="profile-avatar-url" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                  Ảnh đại diện
-                </label>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    id="profile-avatar-url"
-                    type="text"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="flex-1 h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
-                  />
-                  <label className="h-11 px-4 rounded-xl border border-[#97CADB] bg-[#D6E8EE]/40 hover:bg-[#D6E8EE] text-[#001B48] text-xs font-bold inline-flex items-center justify-center cursor-pointer shrink-0">
-                    <span>Tải ảnh lên</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      className="sr-only"
-                    />
+              {/* Đường kẻ phân cách */}
+              <div className="h-px bg-[#E6EDF3]" />
+
+              {/* Nhóm 2: Thông tin riêng tư */}
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="m-0 text-lg leading-snug font-bold text-[#0B1F4B]">Thông tin riêng tư</h2>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EEF2F6] text-[#334155] text-xs font-semibold">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span>Chỉ mình bạn thấy</span>
+                  </span>
+                </div>
+
+                {/* Email */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="f-email" className="text-sm font-semibold text-[#0B1F4B]">
+                    Email
                   </label>
+                  <input
+                    id="f-email"
+                    type="email"
+                    readOnly
+                    value={profile.email}
+                    className="box-border w-full min-h-[48px] px-3.5 border border-[#DCE6EE] rounded-xl bg-[#F1F5F9] text-[#334155] text-[15px] focus:outline-none cursor-default"
+                  />
+                  <span className="text-[13px] leading-relaxed text-[#475569]">
+                    Email đăng nhập, không hiển thị trên hồ sơ công khai.
+                  </span>
+                </div>
+
+                {/* Tòa / ghi chú nhận đồ */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="f-building" className="text-sm font-semibold text-[#0B1F4B]">
+                    Tòa / ghi chú nhận đồ
+                  </label>
+                  <input
+                    id="f-building"
+                    type="text"
+                    value={dorm}
+                    onChange={(e) => setDorm(e.target.value)}
+                    placeholder="VD: Tòa B4, Phòng 302..."
+                    className="box-border w-full min-h-[48px] px-3.5 border border-[#C9D7E3] rounded-xl bg-white text-[#0B1F4B] text-[15px] focus:outline-none focus:border-[#0088C2]"
+                  />
+                  <span className="text-[13px] leading-relaxed text-[#475569]">
+                    Không hiển thị trên hồ sơ công khai.
+                  </span>
                 </div>
               </div>
 
-              <div className="pt-2 flex flex-wrap items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-6 h-11 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-sm font-bold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {saving ? "Đang lưu thay đổi..." : "Lưu thay đổi"}
-                </button>
-                {!profile.isStudentVerified && (
-                  <Link
-                    href="/verify-student"
-                    className="px-5 h-11 rounded-xl border border-[#018ABE] text-[#018ABE] hover:bg-[#D6E8EE]/40 text-xs sm:text-sm font-bold inline-flex items-center justify-center transition-colors"
+              {/* Thanh lưu dính đáy (Sticky Action Bar) */}
+              <div className="sticky bottom-0 -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 p-4 sm:px-6 bg-white border-t border-[#E6EDF3] rounded-b-[20px] flex flex-wrap items-center justify-between gap-3 shadow-md z-10">
+                <span className="text-sm text-[#475569]">
+                  {hasChanges ? (
+                    <span className="font-semibold text-[#0088C2]">● Bạn có thay đổi chưa lưu</span>
+                  ) : (
+                    "Chưa có thay đổi nào để lưu"
+                  )}
+                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={!hasChanges || saving}
+                    onClick={handleReset}
+                    className="min-h-[44px] px-5 rounded-xl border border-[#DCE6EE] bg-white text-[#475569] hover:bg-slate-50 text-[15px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
-                    🎓 Xác minh sinh viên (.edu.vn / Thẻ SV)
-                  </Link>
-                )}
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!hasChanges || saving}
+                    className="min-h-[44px] px-6 rounded-xl border border-transparent bg-[#0088C2] hover:bg-[#02457A] text-white text-[15px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Đang lưu...</span>
+                      </>
+                    ) : (
+                      "Lưu thay đổi"
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           </section>
