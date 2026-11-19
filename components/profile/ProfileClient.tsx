@@ -255,7 +255,7 @@ export function ProfileClient() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6">
+    <div className="max-w-[1040px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs font-semibold text-[#02457A]">
         <Link href="/" className="hover:text-[#018ABE]">
@@ -265,13 +265,25 @@ export function ProfileClient() {
         <span className="text-[#001B48] font-bold">Hồ sơ &amp; Cài đặt</span>
       </nav>
 
-      {/* 1. Profile Header Card */}
-      <div className="bg-white rounded-3xl border border-[#D6E8EE] shadow-xs overflow-hidden">
-        <div className="h-24 sm:h-28 bg-gradient-to-r from-[#001B48] via-[#02457A] to-[#018ABE]" />
-        <div className="px-6 sm:px-8 pb-6 sm:pb-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 sm:-mt-12">
-            <div className="flex items-end gap-4">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-4 border-white bg-[#D6E8EE] shadow-md overflow-hidden shrink-0 flex items-center justify-center">
+      {/* 1. Header Hồ Sơ (Chuẩn thiết kế ui-profile) */}
+      <section className="bg-white border border-[#DCE6EE] rounded-[24px] overflow-hidden shadow-xs">
+        {/* Banner 96px */}
+        <div className="h-24 bg-gradient-to-r from-[#0B1F4B] via-[#0A4A82] to-[#0088C2] flex justify-end items-start p-4 box-border">
+          <label className="inline-flex items-center gap-2 min-h-[44px] px-3.5 rounded-xl border border-white/35 bg-[#0B1F4B]/55 hover:bg-[#0B1F4B]/75 text-white text-[13px] font-semibold cursor-pointer transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+            <span>Đổi ảnh bìa</span>
+            <input type="file" accept="image/*" onChange={handleAvatarUpload} className="sr-only" />
+          </label>
+        </div>
+
+        <div className="p-6 pt-0 flex flex-col gap-6">
+          <div className="flex flex-wrap items-start gap-3 sm:gap-6">
+            {/* Avatar 112px đè lên banner (-52px) */}
+            <div className="relative -mt-[52px] w-28 h-28 shrink-0">
+              <div className="w-28 h-28 box-border border-4 border-white rounded-[28px] overflow-hidden bg-gradient-to-br from-[#0B1F4B] to-[#0088C2] text-white flex items-center justify-center text-[38px] font-bold tracking-wide shadow-sm">
                 {profile.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -280,106 +292,183 @@ export function ProfileClient() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-2xl font-black text-[#001B48]">
-                    {profile.displayName.charAt(0).toUpperCase()}
+                  <span>
+                    {profile.displayName
+                      .split(" ")
+                      .map((w) => w[0])
+                      .slice(-2)
+                      .join("")
+                      .toUpperCase() || "UN"}
                   </span>
                 )}
               </div>
+              <label
+                aria-label="Đổi ảnh đại diện"
+                className="absolute -right-2.5 -bottom-2.5 w-11 h-11 rounded-full border border-[#DCE6EE] bg-white text-[#0B1F4B] hover:bg-slate-50 flex items-center justify-center cursor-pointer shadow-xs transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" />
+                  <circle cx="12" cy="13" r="3" />
+                </svg>
+                <input type="file" accept="image/*" onChange={handleAvatarUpload} className="sr-only" />
+              </label>
+            </div>
 
-              <div className="pt-2 space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl font-black text-[#001B48]">
-                    {profile.displayName}
-                  </h1>
-                  {profile.isStudentVerified ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold">
-                      <span>✓</span>
-                      <span>Sinh viên đã xác minh</span>
-                    </span>
-                  ) : profile.hasPendingCard ? (
-                    <Link
-                      href="/verify-student"
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold hover:bg-amber-100"
-                    >
-                      <span>⏳ Chờ duyệt thẻ SV</span>
-                    </Link>
-                  ) : (
-                    <Link
-                      href="/verify-student"
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D6E8EE] text-[#02457A] text-[11px] font-bold hover:bg-[#97CADB]/50"
-                    >
-                      <span>🎓 Xác minh SV ngay &rarr;</span>
-                    </Link>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
-                  <span>{profile.email}</span>
-                  <span>•</span>
-                  <span className="font-semibold text-[#02457A]">
-                    {reviews.length === 0 ? "Chưa có đánh giá" : `⭐ ${profile.reputationScore.toFixed(1)} uy tín`}
+            {/* Thông tin bên cạnh avatar */}
+            <div className="flex-1 min-w-[280px] sm:min-w-[320px] flex flex-col gap-2.5 pt-4">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <h1 className="text-2xl sm:text-[28px] leading-tight font-bold text-[#0B1F4B] tracking-tight">
+                  {profile.displayName}
+                </h1>
+                {profile.isStudentVerified ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E6F6EE] border border-[#B7E4CB] text-[#0B6B3A] text-[13px] font-semibold">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m5 12 5 5L20 7" />
+                    </svg>
+                    <span>Sinh viên đã xác minh</span>
                   </span>
-                  {(profile.school?.shortName || profile.dorm) && (
-                    <>
-                      <span>•</span>
-                      <span className="inline-flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5 text-[#018ABE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span>{profile.dorm || profile.school?.shortName}</span>
-                      </span>
-                    </>
-                  )}
-                </div>
+                ) : profile.hasPendingCard ? (
+                  <Link
+                    href="/verify-student"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[13px] font-semibold hover:bg-amber-100"
+                  >
+                    <span>⏳ Chờ duyệt thẻ SV</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/verify-student"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[13px] font-semibold hover:bg-slate-200"
+                  >
+                    <span>Chưa xác minh SV &rarr;</span>
+                  </Link>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-[#475569]">
+                <span className="inline-flex items-center gap-1.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  <span>{reviews.length === 0 ? "Chưa có đánh giá" : `${profile.reputationScore.toFixed(1)} uy tín`}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <span>{profile.dorm || profile.school?.shortName || profile.school?.name || "KTX ĐHQG"}</span>
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-[#475569]">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span>{profile.email}{profile.dorm ? ` · ${profile.dorm}` : ""}</span>
+                <span className="px-2 py-0.5 rounded-full bg-[#EEF2F6] text-[#475569] text-xs font-semibold">
+                  Chỉ mình bạn thấy
+                </span>
               </div>
             </div>
 
-            <Link
-              href={`/users/${profile.id}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] hover:bg-[#D6E8EE]/50 text-[#001B48] text-xs font-bold transition-colors self-start sm:self-end"
-            >
-              <span>Xem hồ sơ công khai</span>
-              <span>↗</span>
-            </Link>
+            {/* Nút Xem hồ sơ công khai */}
+            <div className="pt-2 sm:pt-4 self-start sm:self-auto shrink-0">
+              <Link
+                href={`/users/${profile.id}`}
+                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4.5 rounded-xl border border-[#C9D7E3] bg-white hover:bg-slate-50 text-[#0B1F4B] text-[15px] font-semibold transition-colors"
+              >
+                <span>Xem hồ sơ công khai</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M15 3h6v6" />
+                  <path d="M10 14 21 3" />
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                </svg>
+              </Link>
+            </div>
           </div>
 
-          {/* Stats Grid + Quick Links */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 pt-5 border-t border-slate-100">
+          <div className="h-px bg-[#E6EDF3]" />
+
+          {/* 3 Thẻ Stats Card */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Link
               href="/my-items"
-              className="p-3.5 rounded-2xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/50 border border-[#D6E8EE] transition-colors"
+              className="flex items-center gap-3.5 p-4 bg-[#F7FAFC] hover:bg-slate-100/70 border border-[#DCE6EE] rounded-2xl transition-colors text-inherit group"
             >
-              <div className="text-lg sm:text-xl font-black text-[#001B48]">
-                {stats.listingsCount}
+              <div className="w-11 h-11 rounded-xl bg-[#E3F1F9] text-[#0088C2] flex items-center justify-center shrink-0">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m7.5 4.27 9 5.15" />
+                  <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                  <path d="m3.3 7 8.7 5 8.7-5" />
+                  <path d="M12 22V12" />
+                </svg>
               </div>
-              <div className="text-[11px] font-semibold text-[#02457A]">Đồ của tôi &rarr;</div>
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="text-[26px] leading-tight font-bold text-[#0B1F4B]">{stats.listingsCount}</span>
+                <span className="text-sm text-[#475569]">Đồ của tôi</span>
+              </div>
+              <svg className="ml-auto text-[#475569] group-hover:translate-x-0.5 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
             </Link>
+
             <Link
               href="/orders"
-              className="p-3.5 rounded-2xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/50 border border-[#D6E8EE] transition-colors"
+              className="flex items-center gap-3.5 p-4 bg-[#F7FAFC] hover:bg-slate-100/70 border border-[#DCE6EE] rounded-2xl transition-colors text-inherit group"
             >
-              <div className="text-lg sm:text-xl font-black text-[#001B48]">
-                {stats.completedOrdersCount}
+              <div className="w-11 h-11 rounded-xl bg-[#E3F1F9] text-[#0088C2] flex items-center justify-center shrink-0">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
               </div>
-              <div className="text-[11px] font-semibold text-[#02457A]">
-                Giao dịch hoàn tất &rarr;
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="text-[26px] leading-tight font-bold text-[#0B1F4B]">{stats.completedOrdersCount}</span>
+                <span className="text-sm text-[#475569]">Giao dịch hoàn tất</span>
               </div>
+              <svg className="ml-auto text-[#475569] group-hover:translate-x-0.5 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
             </Link>
+
             <Link
               href="/verify-student"
-              className="p-3.5 rounded-2xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/50 border border-[#D6E8EE] transition-colors"
+              className={`flex items-center gap-3.5 p-4 border rounded-2xl transition-colors text-inherit group ${
+                profile.isStudentVerified
+                  ? "bg-[#F2FAF6] border-[#CBE8D8] hover:bg-[#E6F6EE]"
+                  : "bg-[#F7FAFC] border-[#DCE6EE] hover:bg-slate-100/70"
+              }`}
             >
-              <div className="text-lg sm:text-xl font-black text-[#018ABE]">
-                {profile.isStudentVerified ? "Đã duyệt" : "Chưa duyệt"}
+              <div
+                className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                  profile.isStudentVerified
+                    ? "bg-[#E6F6EE] text-[#0B6B3A]"
+                    : "bg-[#E3F1F9] text-[#0088C2]"
+                }`}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
               </div>
-              <div className="text-[11px] font-semibold text-[#02457A]">
-                Xác minh sinh viên &rarr;
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span
+                  className={`text-[20px] leading-snug font-bold ${
+                    profile.isStudentVerified ? "text-[#0B6B3A]" : "text-[#0B1F4B]"
+                  }`}
+                >
+                  {profile.isStudentVerified ? "Đã duyệt" : "Chưa duyệt"}
+                </span>
+                <span className="text-sm text-[#475569]">Xác minh sinh viên</span>
               </div>
+              <svg className="ml-auto text-[#475569] group-hover:translate-x-0.5 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* 2. Tabs Container */}
       <div className="bg-white rounded-3xl border border-[#D6E8EE] shadow-xs overflow-hidden">
