@@ -97,6 +97,9 @@ function LoginContent() {
             </Link>
 
             <div className="pt-2">
+              <span className="inline-block px-3 py-1 rounded-full bg-white/15 border border-white/20 text-[11px] font-bold text-[#D6E8EE] mb-3">
+                Dành riêng cho sinh viên
+              </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight text-white">
                 Chào mừng bạn trở lại!
               </h1>
@@ -104,26 +107,45 @@ function LoginContent() {
                 Tiếp tục hành trình mua bán và trao đổi đồ cũ cùng cộng đồng sinh viên.
               </p>
             </div>
+
+            {/* Các điểm nổi bật kèm icon sinh động tương tự trang đăng ký */}
+            <div className="pt-5 space-y-3.5 border-t border-white/15">
+              <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
+                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                </svg>
+                <span>Xác minh sinh viên chính chủ</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
+                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.861-.861 5.972 5.972 0 011.057-3.035C4.604 15.69 4 13.93 4 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                </svg>
+                <span>Kết nối trực tiếp với người bán</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
+                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Lịch sử giao dịch minh bạch</span>
+              </div>
+            </div>
           </div>
 
-          <div className="pt-8 space-y-3.5 relative z-10 border-t border-white/15 mt-8">
-            <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
-              <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-              </svg>
-              <span>Xác minh sinh viên chính chủ</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
-              <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.861-.861 5.972 5.972 0 011.057-3.035C4.604 15.69 4 13.93 4 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-              </svg>
-              <span>Kết nối trực tiếp với người bán</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-[#D6E8EE]">
-              <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Lịch sử giao dịch minh bạch</span>
+          <div className="pt-6 relative z-10 mt-6">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15">
+              <div className="flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                <div>
+                  <p className="text-xs font-bold text-white mb-1">
+                    Thông tin của bạn luôn được bảo vệ
+                  </p>
+                  <p className="text-[11px] text-[#D6E8EE] leading-relaxed">
+                    Số điện thoại được bảo vệ khi giao dịch. Lịch sử trao đổi trên Product Passport được mặc định ẩn danh.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
