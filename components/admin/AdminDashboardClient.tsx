@@ -9,6 +9,7 @@ import type {
 import { AdminOverviewSection } from "./AdminOverviewSection";
 import { AdminListingsSection } from "./AdminListingsSection";
 import { AdminUsersSection } from "./AdminUsersSection";
+import { AdminModerationSection } from "./AdminModerationSection";
 
 export interface AdminDashboardClientProps {
   currentAdminId: string;
@@ -151,68 +152,6 @@ function AdminSkeleton() {
             <div className="h-60 rounded-2xl bg-white border border-slate-200/80" />
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function SectionPreviewCard({
-  stats,
-  onBackToOverview,
-}: {
-  stats: AdminOverviewStats;
-  onBackToOverview: () => void;
-}) {
-  const config = {
-    title: "Kiểm duyệt & Khiếu nại",
-    description:
-      "Khu vực xử lý báo cáo vi phạm, phân xử đơn hàng tranh chấp và theo dõi đồng bộ hệ thống sẽ được kích hoạt ở bước tiếp theo.",
-    metrics: [
-      { label: "Đơn tranh chấp cần xử lý", value: stats.disputedOrdersCount },
-      { label: "Báo cáo vi phạm mới", value: stats.pendingReportsCount },
-      { label: "Bản ghi chờ đồng bộ", value: stats.pendingChainTxsCount },
-    ],
-  };
-
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-[0_1px_2px_rgba(0,27,72,0.04)] space-y-6">
-      <div className="space-y-1.5">
-        <h2 className="text-lg font-bold text-[#001B48]">{config.title}</h2>
-        <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">{config.description}</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {config.metrics.map((metric) => (
-          <div
-            key={metric.label}
-            className="rounded-xl border border-slate-200/80 bg-slate-50/70 px-4 py-3.5"
-          >
-            <div className="text-2xl font-bold text-[#001B48] tabular-nums">
-              {metric.value.toLocaleString("vi-VN")}
-            </div>
-            <div className="text-xs font-medium text-slate-500 mt-1">{metric.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div>
-        <button
-          type="button"
-          onClick={onBackToOverview}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-        >
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            aria-hidden="true"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-          </svg>
-          <span>Quay lại Tổng quan</span>
-        </button>
       </div>
     </div>
   );
@@ -582,9 +521,12 @@ export function AdminDashboardClient({
               onRunAction={runAdminAction}
             />
           ) : (
-            <SectionPreviewCard
-              stats={stats}
-              onBackToOverview={() => setActiveSection("overview")}
+            <AdminModerationSection
+              disputedOrders={payload.disputedOrders}
+              reports={payload.reports}
+              chainTxs={payload.chainTxs}
+              serverNow={payload.serverNow}
+              onRunAction={runAdminAction}
             />
           )}
         </section>
