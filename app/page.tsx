@@ -8,7 +8,10 @@ import { HomeProductFeed } from "@/components/home/HomeProductFeed";
 import { PassportBanner } from "@/components/home/PassportBanner";
 import { TrustStrip } from "@/components/home/TrustStrip";
 import { CircularStorySection } from "@/components/home/CircularStorySection";
+import { HowItWorksSection } from "@/components/home/HowItWorksSection";
+import { StudentTestimonialsSection } from "@/components/home/StudentTestimonialsSection";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import ScrollToTopButton from "@/components/ui/ScrollToTopButton";
 import {
   FALLBACK_PRODUCTS,
   FALLBACK_CATEGORIES,
@@ -266,8 +269,17 @@ export default function Home() {
         <LiveMarketplaceFeed />
       </Suspense>
 
-      {/* 3. Banner Giới Thiệu Đặc Quyền: Digital Product Passport (off-chain & Fuji ready) */}
+      {/* 5. Quy trình giao dịch 3 bước an toàn tại cổng trường & KTX */}
+      <HowItWorksSection />
+
+      {/* 6. Đánh giá & Chia sẻ từ cộng đồng sinh viên Làng ĐH */}
+      <StudentTestimonialsSection />
+
+      {/* 7. Banner Giới Thiệu Đặc Quyền: Digital Product Passport (off-chain & Fuji ready) */}
       <PassportBanner />
+
+      {/* Nút cuộn nhanh lên đầu trang */}
+      <ScrollToTopButton />
     </div>
   );
 }

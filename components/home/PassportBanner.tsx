@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ScrollReveal from "@/components/ui/ScrollReveal";
 
 export function PassportBanner() {
   const router = useRouter();
@@ -16,19 +17,22 @@ export function PassportBanner() {
   };
 
   return (
-    <section className="py-12 sm:py-16 bg-linear-to-br from-[#001B48] via-[#02457A] to-[#018ABE] text-white relative overflow-hidden">
+    <section
+      id="passport-lookup"
+      className="py-12 sm:py-16 bg-linear-to-br from-[#001B48] via-[#02457A] to-[#018ABE] text-white relative overflow-hidden"
+    >
       {/* Họa tiết nền mờ & ánh sáng tuần hoàn */}
       <div className="absolute inset-0 pointer-events-none opacity-15">
-        <div className="absolute top-1/4 left-10 w-96 h-96 rounded-full bg-[#97CADB] filter blur-3xl animate-pulse" />
+        <div className="absolute top-1/4 left-10 w-96 h-96 rounded-full bg-[#97CADB] filter blur-3xl motion-safe:animate-pulse" />
         <div className="absolute bottom-10 right-10 w-80 h-80 rounded-full bg-[#018ABE] filter blur-3xl" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Cột trái (7/12 cột): Giới thiệu Hộ Chiếu Đồ Vật Product Passport */}
-          <div className="lg:col-span-7">
+          <ScrollReveal variant="fade-left" className="lg:col-span-7">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-[#018ABE]/40 border border-[#97CADB]/40 text-[#D6E8EE] mb-4">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400 motion-safe:animate-ping" />
               <span>Độc Quyền Tại UniCycle · Vòng Đời Đồ Vật Tuần Hoàn</span>
             </div>
 
@@ -98,10 +102,10 @@ export function PassportBanner() {
                 Tra cứu ngay
               </button>
             </form>
-          </div>
+          </ScrollReveal>
 
           {/* Cột phải (5/12 cột): Thẻ Hộ Chiếu Mẫu Sinh Động */}
-          <div className="lg:col-span-5">
+          <ScrollReveal variant="fade-right" className="lg:col-span-5">
             <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 sm:p-7 border border-white/20 shadow-2xl relative">
               <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/15">
                 <div className="flex items-center gap-2.5">
@@ -134,7 +138,7 @@ export function PassportBanner() {
                 </div>
 
                 <div className="relative">
-                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 motion-safe:animate-ping" />
                   <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400" />
                   <p className="text-xs font-bold text-white">Đời chủ #2: Nguyễn Hoàng Nam (Bách Khoa)</p>
                   <p className="text-[11px] text-emerald-300">Chủ sở hữu hiện tại · Sẵn sàng chuyển nhượng</p>
@@ -153,7 +157,7 @@ export function PassportBanner() {
                 </Link>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </div>
     </section>
