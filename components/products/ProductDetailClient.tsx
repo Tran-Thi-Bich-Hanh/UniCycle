@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -63,6 +63,55 @@ export interface ProductDetailData {
 interface ProductDetailClientProps {
   product: ProductDetailData;
   relatedProducts?: ProductDetailData[];
+}
+
+/**
+ * Hiệu ứng cuộn: Kéo tới đâu hiện tới đó (kích hoạt lặp lại nhiều lần khi cuộn vào/ra tầm nhìn)
+ */
+function TimelineItemReveal({
+  children,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Cập nhật trạng thái hiển thị nhiều lần khi cuộn vào/ra màn hình
+        setIsVisible(entry.isIntersecting);
+      },
+      {
+        threshold: 0.15,
+        rootMargin: "0px 0px -20px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        transitionDelay: isVisible ? `${delay}ms` : "0ms",
+      }}
+      className={`transition-all duration-700 ease-out transform ${
+        isVisible
+          ? "opacity-100 translate-y-0 scale-100 filter-none"
+          : "opacity-0 translate-y-8 scale-[0.96] blur-[1px]"
+      }`}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function ProductDetailClient({
@@ -355,31 +404,38 @@ export function ProductDetailClient({
             </div>
           )}
 
-          {/* KHỐI PRODUCT PASSPORT TIMELINE (UI/UX Section 4.3.C) */}
+          {/* KHỐI PRODUCT PASSPORT TIMELINE (Nền trắng, Loang màu xanh rực rỡ, Hiệu ứng cuộn lặp lại) */}
           {hasPassport && (
-            <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-[#001B48] text-white rounded-3xl p-6 sm:p-7 shadow-lg border border-slate-800 space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/10">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-[#97CADB]">
+            <div className="bg-gradient-to-br from-[#EEF7FC] via-white to-[#E1F3FD] rounded-3xl p-6 sm:p-8 border border-[#7DD3FC]/70 shadow-[0_12px_45px_rgba(0,136,194,0.18)] relative overflow-hidden space-y-6">
+              {/* Hiệu ứng loang nhiều màu xanh rực rỡ & có chiều sâu (Vibrant Multi-layer Blue Glow) */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,136,194,0.28),transparent_60%),radial-gradient(ellipse_at_bottom_left,rgba(2,132,199,0.22),transparent_60%)] pointer-events-none" />
+              <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br from-[#0088C2]/40 via-[#38BDF8]/35 to-transparent blur-3xl pointer-events-none animate-pulse duration-[4000ms]" />
+              <div className="absolute top-1/3 -left-28 w-80 h-80 rounded-full bg-gradient-to-tr from-[#0284C7]/35 via-[#0088C2]/25 to-transparent blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-24 right-4 w-96 h-96 rounded-full bg-gradient-to-tl from-[#38BDF8]/45 via-[#0284C7]/25 to-transparent blur-3xl pointer-events-none" />
+
+              {/* Header */}
+              <div className="relative flex flex-wrap items-center justify-between gap-3 pb-4.5 border-b border-[#BAE6FD]">
+                <div className="flex items-center gap-3">
+                  <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#E3F1F9] to-[#BAE6FD]/70 border border-[#7DD3FC] text-[#0088C2] flex items-center justify-center shrink-0 shadow-[0_0_18px_rgba(0,136,194,0.3)]">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </span>
                   <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-[#0B1F4B] flex items-center gap-2">
                       <span>Lịch Sử Đồ Vật (Product Passport)</span>
                     </h3>
-                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span className="inline-flex items-center gap-1.5 text-xs text-[#0B6B3A] font-semibold mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#0B6B3A] animate-pulse" />
                       Trạng thái: Hợp lệ • Đã đăng ký hệ thống
                     </span>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-[11px] text-slate-400 block font-mono">Mã định danh (bytes32):</span>
+                <div className="text-left sm:text-right">
+                  <span className="text-[11px] text-[#475569] block font-medium">Mã định danh (bytes32):</span>
                   <span
-                    className="inline-block text-xs text-[#D6E8EE] font-mono font-semibold bg-white/10 px-2.5 py-0.5 rounded border border-white/15"
+                    className="inline-block text-xs text-[#0B1F4B] font-mono font-semibold bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-[#7DD3FC] shadow-2xs mt-0.5"
                     title={product.item?.passportId || ""}
                   >
                     {product.item?.passportId
@@ -389,10 +445,10 @@ export function ProductDetailClient({
                 </div>
               </div>
 
-              {/* Chuỗi đời chủ (BR29: Ẩn danh hóa danh tính sinh viên) */}
-              <div className="space-y-4 py-2">
-                <div className="relative pl-6 before:content-[''] before:absolute before:left-2 before:top-3 before:bottom-0 before:w-0.5 before:bg-[#018ABE]/40 space-y-4">
-                  {ownersList.map((owner) => {
+              {/* Chuỗi đời chủ (Timeline hiện đại với hiệu ứng cuộn lặp lại) */}
+              <div className="relative space-y-4 py-1">
+                <div className="relative pl-7 sm:pl-8 space-y-6 before:content-[''] before:absolute before:left-3 before:top-2.5 before:bottom-3 before:w-1 before:rounded-full before:bg-gradient-to-b before:from-[#0088C2] before:via-[#38BDF8] before:to-[#10B981] before:shadow-[0_0_14px_rgba(0,136,194,0.65)]">
+                  {ownersList.map((owner, idx) => {
                     const isFirst = owner.seq === 1;
                     const isCurrent = owner.seq === currentOwnerSeq;
                     const ownerDisplayName = owner.showName
@@ -406,105 +462,134 @@ export function ProductDetailClient({
                       : "Đã chuyển nhượng";
 
                     return (
-                      <div key={owner.seq} className="relative">
-                        <span
-                          className={`absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full ring-4 ring-slate-900 ${
-                            isCurrent ? "bg-[#018ABE]" : "bg-sky-700"
-                          }`}
-                        />
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-bold text-white">
-                              ● Đời chủ #{owner.seq}: {ownerDisplayName}
-                            </span>
+                      <TimelineItemReveal key={owner.seq} delay={idx * 120}>
+                        <div className="relative">
+                          {/* Node marker trên timeline */}
+                          <div
+                            className={`absolute -left-7 sm:-left-8 top-1 w-6 h-6 rounded-full flex items-center justify-center shadow-xs ring-4 ${
+                              isCurrent
+                                ? "bg-[#0088C2] text-white ring-[#BAE6FD] shadow-[0_0_16px_rgba(0,136,194,0.6)]"
+                                : "bg-white border-2 border-[#0088C2] text-[#0088C2] ring-white"
+                            }`}
+                          >
                             <span
-                              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                                isFirst
-                                  ? "text-emerald-400 bg-emerald-950/80 border-emerald-800"
-                                  : isCurrent
-                                  ? "text-sky-300 bg-sky-950/80 border-sky-800"
-                                  : "text-slate-300 bg-slate-800/80 border-slate-700"
+                              className={`w-2 h-2 rounded-full ${
+                                isCurrent ? "bg-white" : "bg-[#0088C2]"
                               }`}
-                            >
-                              {statusBadge}
-                            </span>
+                            />
                           </div>
-                          <p className="text-xs text-slate-300 mt-0.5">
-                            {owner.schoolShortName ||
-                              (isCurrent ? product.school?.name : null) ||
-                              "Khuôn viên Đại học"}
-                            {owner.since
-                              ? ` • Từ ${new Date(owner.since).toLocaleDateString("vi-VN")}`
-                              : ""}
-                            {isFirst
-                              ? " • Đăng ký vào hệ thống UniCycle"
-                              : " • Xác nhận bàn giao kế thừa Passport"}
-                          </p>
-                          {owner.txHash && (
-                            <a
-                              href={`https://testnet.snowtrace.io/tx/${owner.txHash}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-mono font-bold text-[#97CADB] hover:text-white hover:underline"
-                            >
-                              <svg className="w-3 h-3 text-[#97CADB]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                              </svg>
-                              <span>Snowtrace ({owner.txHash.slice(0, 8)}...) ↗</span>
-                            </a>
-                          )}
+
+                          {/* Thẻ nội dung đời chủ */}
+                          <div className="rounded-2xl p-4 sm:p-5 border border-[#BAE6FD] bg-white/90 backdrop-blur-md hover:bg-white hover:border-[#0088C2] hover:shadow-[0_6px_24px_rgba(0,136,194,0.16)] transition-all flex flex-col gap-1.5 group">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-sm font-bold text-[#0B1F4B] group-hover:text-[#0088C2] transition-colors">
+                                Đời chủ #{owner.seq}: {ownerDisplayName}
+                              </span>
+                              <span
+                                className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                                  isFirst
+                                    ? "bg-[#E6F6EE] text-[#0B6B3A] border-[#B7E4CB]"
+                                    : isCurrent
+                                    ? "bg-gradient-to-r from-[#E3F1F9] to-[#BAE6FD]/70 text-[#0088C2] border-[#7DD3FC]"
+                                    : "bg-[#EEF2F6] text-[#475569] border-[#DCE6EE]"
+                                }`}
+                              >
+                                {statusBadge}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-[#475569] leading-relaxed">
+                              {owner.schoolShortName ||
+                                (isCurrent ? product.school?.name : null) ||
+                                "Khuôn viên Đại học"}
+                              {owner.since
+                                ? ` • Từ ${new Date(owner.since).toLocaleDateString("vi-VN")}`
+                                : ""}
+                              {isFirst
+                                ? " • Đăng ký vào hệ thống UniCycle"
+                                : " • Xác nhận bàn giao kế thừa Passport"}
+                            </p>
+
+                            {owner.txHash && (
+                              <div className="pt-0.5">
+                                <a
+                                  href={`https://testnet.snowtrace.io/tx/${owner.txHash}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F0F9FF] border border-[#BAE6FD] text-[11px] font-mono font-semibold text-[#0088C2] hover:bg-[#0088C2] hover:text-white transition-all shadow-2xs"
+                                >
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                  </svg>
+                                  <span>Snowtrace ({owner.txHash.slice(0, 8)}...) ↗</span>
+                                </a>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      </TimelineItemReveal>
                     );
                   })}
 
                   {/* Đời chủ kế tiếp */}
-                  <div className="relative">
-                    <span className="absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-slate-900 animate-pulse" />
-                    <div>
-                      <span className="text-xs font-bold text-emerald-300">
-                        ● Đời chủ #{nextOwnerSeq}: Bạn đang xem món đồ này!
-                      </span>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Kế thừa tiếp nối hồ sơ xuất xứ (từ Đời chủ #{currentOwnerSeq}) khi hoàn tất xác nhận trao tay
-                      </p>
+                  <TimelineItemReveal delay={ownersList.length * 120}>
+                    <div className="relative">
+                      <div className="absolute -left-7 sm:-left-8 top-1 w-6 h-6 rounded-full bg-[#10B981] text-white flex items-center justify-center shadow-xs ring-4 ring-[#E6F6EE] animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-white" />
+                      </div>
+
+                      <div className="rounded-2xl p-4 sm:p-5 border border-[#A7F3D0] bg-white/95 backdrop-blur-md shadow-xs hover:border-[#34D399] transition-all flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-sm font-bold text-[#0B6B3A]">
+                            Đời chủ #{nextOwnerSeq}: Bạn đang xem món đồ này!
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#E6F6EE] text-[#0B6B3A] border border-[#B7E4CB] shadow-2xs">
+                            Kế thừa tiếp theo
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#334155] leading-relaxed">
+                          Kế thừa tiếp nối hồ sơ xuất xứ (từ Đời chủ #{currentOwnerSeq}) khi hoàn tất xác nhận trao tay.
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  </TimelineItemReveal>
                 </div>
               </div>
 
               {/* Nút tra cứu trang Passport & Snowtrace Fuji */}
-              <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                <Link
-                  href={`/passport/${product.item?.passportId || product.item?.id}`}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5 text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span>Tra cứu chi tiết Digital Passport ↗</span>
-                </Link>
-
-                {product.item?.latestTxHash && (
-                  <a
-                    href={`https://testnet.snowtrace.io/tx/${product.item.latestTxHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-xs font-bold transition-colors"
+              <TimelineItemReveal delay={(ownersList.length + 1) * 120}>
+                <div className="relative flex flex-wrap items-center gap-3 pt-1">
+                  <Link
+                    href={`/passport/${product.item?.passportId || product.item?.id}`}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-[#F0F9FF] text-[#0B1F4B] border border-[#7DD3FC] hover:border-[#0088C2] text-xs sm:text-sm font-semibold transition-all shadow-xs hover:shadow-md"
                   >
-                    <svg className="w-3.5 h-3.5 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    <svg className="w-4 h-4 text-[#0088C2]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span>Xem giao dịch trên Snowtrace Fuji ↗</span>
-                  </a>
-                )}
-              </div>
+                    <span>Tra cứu chi tiết Digital Passport ↗</span>
+                  </Link>
+
+                  {product.item?.latestTxHash && (
+                    <a
+                      href={`https://testnet.snowtrace.io/tx/${product.item.latestTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#E6F6EE] hover:bg-[#D7EFE2] text-[#0B6B3A] border border-[#B7E4CB] text-xs sm:text-sm font-semibold transition-all shadow-xs"
+                    >
+                      <svg className="w-4 h-4 text-[#0B6B3A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      <span>Xem giao dịch trên Snowtrace Fuji ↗</span>
+                    </a>
+                  )}
+                </div>
+              </TimelineItemReveal>
 
               {/* Tuyên bố giới hạn bắt buộc (BR30) */}
-              <div className="pt-3 border-t border-white/10 flex items-start gap-2.5 text-[11px] text-slate-400 leading-relaxed">
-                <span className="text-amber-400 shrink-0 text-sm">ℹ️</span>
+              <div className="relative pt-3.5 border-t border-[#BAE6FD]/80 flex items-start gap-2.5 text-xs text-[#475569] leading-relaxed">
+                <span className="text-[#0088C2] shrink-0 mt-0.5 font-bold">ℹ️</span>
                 <span>
-                  <strong>Tuyên bố giới hạn (BR30):</strong> Product Passport ghi nhận chuỗi sự kiện chuyển giao sở hữu giữa sinh viên, không đóng vai trò chứng nhận chất lượng kỹ thuật hay bảo hành thương mại của nhà sản xuất.
+                  <strong className="text-[#0B1F4B]">Tuyên bố giới hạn (BR30):</strong> Product Passport ghi nhận chuỗi sự kiện chuyển giao sở hữu giữa sinh viên, không đóng vai trò chứng nhận chất lượng kỹ thuật hay bảo hành thương mại của nhà sản xuất.
                 </span>
               </div>
             </div>
