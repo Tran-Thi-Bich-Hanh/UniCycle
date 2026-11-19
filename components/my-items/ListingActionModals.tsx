@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import type { MyListingItem } from "./MyListingsTab";
+import type { EditableListingFields } from "@/lib/my-items/types";
 
 export interface EditListingPayload {
   title: string;
@@ -14,9 +14,15 @@ export interface EditListingPayload {
   hidePhone: boolean;
 }
 
+export interface ConfirmableListingSummary {
+  id: string;
+  title: string;
+}
+
 export type ConfirmActionTarget = {
   mode: "delete" | "mark_sold";
-  listing: MyListingItem;
+  listing: ConfirmableListingSummary;
+  hasOwnedItem?: boolean;
 } | null;
 
 export interface ZaloInviteData {
@@ -78,7 +84,7 @@ function useAccessibleModal(
 }
 
 interface EditListingModalProps {
-  listing: MyListingItem | null;
+  listing: EditableListingFields | null;
   saving: boolean;
   error: string | null;
   onClose: () => void;
@@ -92,7 +98,7 @@ function EditListingForm({
   onClose,
   onSubmit,
 }: {
-  listing: MyListingItem;
+  listing: EditableListingFields;
   saving: boolean;
   error: string | null;
   onClose: () => void;
@@ -409,12 +415,31 @@ export function ConfirmListingActionModal({
             </h3>
             <p id="confirm-action-desc" className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               {isDelete ? (
-                <>
-                  Tin đăng <span className="font-semibold text-[#001B48]">&ldquo;{target.listing.title}&rdquo;</span> sẽ bị xóa vĩnh viễn và không thể khôi phục.
-                </>
+                target.hasOwnedItem ? (
+                  <>
+                    Tin đăng{" "}
+                    <span className="font-semibold text-[#001B48]">
+                      &ldquo;{target.listing.title}&rdquo;
+                    </span>{" "}
+                    sẽ bị xóa khỏi sàn giao dịch. Bản ghi sở hữu và hành trình đồ vật của bạn vẫn
+                    được giữ lại ở trạng thái <strong>Đang sử dụng</strong>.
+                  </>
+                ) : (
+                  <>
+                    Tin đăng{" "}
+                    <span className="font-semibold text-[#001B48]">
+                      &ldquo;{target.listing.title}&rdquo;
+                    </span>{" "}
+                    sẽ bị xóa vĩnh viễn và không thể khôi phục.
+                  </>
+                )
               ) : (
                 <>
-                  Tin đăng <span className="font-semibold text-[#001B48]">&ldquo;{target.listing.title}&rdquo;</span> sẽ chuyển sang trạng thái Đã bán và ngừng hiển thị mở bán trên sàn.
+                  Tin đăng{" "}
+                  <span className="font-semibold text-[#001B48]">
+                    &ldquo;{target.listing.title}&rdquo;
+                  </span>{" "}
+                  sẽ chuyển sang trạng thái Đã bán và ngừng hiển thị mở bán trên sàn.
                 </>
               )}
             </p>
@@ -444,7 +469,9 @@ export function ConfirmListingActionModal({
             {submitting
               ? "Đang xử lý..."
               : isDelete
-                ? "Xóa vĩnh viễn"
+                ? target.hasOwnedItem
+                  ? "Xóa tin đăng"
+                  : "Xóa vĩnh viễn"
                 : "Xác nhận đã bán"}
           </button>
         </div>
