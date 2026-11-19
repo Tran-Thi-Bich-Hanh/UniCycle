@@ -181,19 +181,19 @@ export function ProfileClient() {
         setProfile((prev) =>
           prev
             ? {
-                ...prev,
-                displayName: data.user.displayName,
-                schoolId: data.user.schoolId,
-                school: data.user.schoolShortName
-                  ? {
-                      id: data.user.schoolId || "",
-                      name: data.user.schoolShortName,
-                      shortName: data.user.schoolShortName,
-                    }
-                  : prev.school,
-                dorm: data.user.dorm,
-                avatarUrl: data.user.avatarUrl,
-              }
+              ...prev,
+              displayName: data.user.displayName,
+              schoolId: data.user.schoolId,
+              school: data.user.schoolShortName
+                ? {
+                  id: data.user.schoolId || "",
+                  name: data.user.schoolShortName,
+                  shortName: data.user.schoolShortName,
+                }
+                : prev.school,
+              dorm: data.user.dorm,
+              avatarUrl: data.user.avatarUrl,
+            }
             : prev
         );
       }
@@ -262,7 +262,7 @@ export function ProfileClient() {
           Trang chủ
         </Link>
         <span>/</span>
-        <span className="text-[#001B48] font-bold">Hồ sơ cá nhân &amp; Cài đặt</span>
+        <span className="text-[#001B48] font-bold">Hồ sơ &amp; Cài đặt</span>
       </nav>
 
       {/* 1. Profile Header Card */}
@@ -317,7 +317,7 @@ export function ProfileClient() {
                   <span>{profile.email}</span>
                   <span>•</span>
                   <span className="font-semibold text-[#02457A]">
-                    ⭐ {profile.reputationScore.toFixed(1)} uy tín
+                    {reviews.length === 0 ? "Chưa có đánh giá" : `⭐ ${profile.reputationScore.toFixed(1)} uy tín`}
                   </span>
                   {(profile.school?.shortName || profile.dorm) && (
                     <>
@@ -383,33 +383,35 @@ export function ProfileClient() {
 
       {/* 2. Tabs Container */}
       <div className="bg-white rounded-3xl border border-[#D6E8EE] shadow-xs overflow-hidden">
-        <div className="flex overflow-x-auto border-b border-[#D6E8EE] bg-[#F4F9FB]">
+        <div className="w-full flex border-b border-[#D6E8EE] bg-[#F4F9FB]">
           <button
             type="button"
             onClick={() => handleTabChange("info")}
-            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-5 py-3.5 sm:py-4 text-xs sm:text-sm font-bold text-center border-b-2 transition-colors cursor-pointer min-w-0 ${
               activeTab === "info"
                 ? "bg-white text-[#001B48] border-[#018ABE]"
                 : "text-slate-600 border-transparent hover:text-[#02457A]"
             }`}
           >
-            👤 Thông tin &amp; Trường/KTX
+            <span className="shrink-0">👤</span>
+            <span className="truncate">Thông tin</span>
           </button>
           <button
             type="button"
             onClick={() => handleTabChange("reviews")}
-            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-5 py-3.5 sm:py-4 text-xs sm:text-sm font-bold text-center border-b-2 transition-colors cursor-pointer min-w-0 ${
               activeTab === "reviews"
                 ? "bg-white text-[#001B48] border-[#018ABE]"
                 : "text-slate-600 border-transparent hover:text-[#02457A]"
             }`}
           >
-            ⭐ Đánh giá uy tín ({reviews.length})
+            <span className="shrink-0">⭐</span>
+            <span className="truncate">Đánh giá ({reviews.length})</span>
           </button>
           <button
             type="button"
             onClick={() => handleTabChange("privacy")}
-            className={`px-5 py-4 text-xs sm:text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-5 py-3.5 sm:py-4 text-xs sm:text-sm font-bold text-center border-b-2 transition-colors cursor-pointer min-w-0 ${
               activeTab === "privacy"
                 ? "bg-white text-[#001B48] border-[#018ABE]"
                 : "text-slate-600 border-transparent hover:text-[#02457A]"
@@ -418,7 +420,7 @@ export function ProfileClient() {
             <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            <span>Quyền riêng tư &amp; Xóa tài khoản</span>
+            <span className="truncate">Bảo mật &amp; tài khoản</span>
           </button>
         </div>
 
@@ -426,11 +428,10 @@ export function ProfileClient() {
           {feedback && (
             <div
               role="alert"
-              className={`mb-5 p-4 rounded-2xl border text-xs sm:text-sm font-medium flex items-start gap-2.5 ${
-                feedback.type === "success"
+              className={`mb-5 p-4 rounded-2xl border text-xs sm:text-sm font-medium flex items-start gap-2.5 ${feedback.type === "success"
                   ? "bg-emerald-50 border-emerald-200 text-emerald-900"
                   : "bg-rose-50 border-rose-200 text-rose-900"
-              }`}
+                }`}
             >
               <span className="shrink-0 mt-0.5">
                 {feedback.type === "success" ? (
@@ -450,103 +451,109 @@ export function ProfileClient() {
           {/* TAB 1: Thông tin cá nhân */}
           {activeTab === "info" && (
             <form onSubmit={handleSaveProfile} className="space-y-5 max-w-2xl">
-              <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-100 text-xs text-[#02457A] leading-relaxed">
-                Hồ sơ công khai chỉ hiển thị <strong>Tên hiển thị, Trường/KTX, Huy hiệu xác minh, Điểm uy tín</strong> và tin đang bán. Email cá nhân và thông tin riêng tư tuyệt đối không công khai (Mục 6.5).
-              </div>
-
-              <div>
-                <label htmlFor="profile-display-name" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                  Tên hiển thị <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  id="profile-display-name"
-                  type="text"
-                  required
-                  minLength={2}
-                  maxLength={60}
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="profile-school" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                    Trường ĐH / Cụm KTX
-                  </label>
-                  <select
-                    id="profile-school"
-                    value={schoolId}
-                    onChange={(e) => setSchoolId(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
-                  >
-                    <option value="">-- Chọn trường / KTX --</option>
-                    {schools.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-100 text-xs text-[#02457A] leading-relaxed space-y-1">
+                  <div className="font-bold text-[#001B48]">Thông tin hiển thị công khai</div>
+                  <p>
+                    Những thông tin như tên hiển thị, trường/KTX, huy hiệu xác minh, điểm uy tín và tin đăng có thể được người khác xem.
+                  </p>
+                  <p className="text-slate-500">
+                    Email và các thông tin cá nhân khác luôn được giữ riêng tư.
+                  </p>
                 </div>
 
                 <div>
-                  <label htmlFor="profile-dorm" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                    Tòa KTX / Khu vực giao dịch
+                  <label htmlFor="profile-display-name" className="block text-xs font-bold text-[#001B48] mb-1.5">
+                    Tên hiển thị <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    id="profile-dorm"
+                    id="profile-display-name"
                     type="text"
-                    value={dorm}
-                    onChange={(e) => setDorm(e.target.value)}
-                    placeholder="VD: Tòa B4 - KTX Khu B"
+                    required
+                    minLength={2}
+                    maxLength={60}
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
                     className="w-full h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label htmlFor="profile-avatar-url" className="block text-xs font-bold text-[#001B48] mb-1.5">
-                  Ảnh đại diện (URL hoặc tải ảnh lên)
-                </label>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    id="profile-avatar-url"
-                    type="text"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="flex-1 h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
-                  />
-                  <label className="h-11 px-4 rounded-xl border border-[#97CADB] bg-[#D6E8EE]/40 hover:bg-[#D6E8EE] text-[#001B48] text-xs font-bold inline-flex items-center justify-center cursor-pointer shrink-0">
-                    <span>Chọn ảnh từ máy</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="profile-school" className="block text-xs font-bold text-[#001B48] mb-1.5">
+                      Trường đại học
+                    </label>
+                    <select
+                      id="profile-school"
+                      value={schoolId}
+                      onChange={(e) => setSchoolId(e.target.value)}
+                      className="w-full h-11 px-3.5 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
+                    >
+                      <option value="">-- Chọn trường / KTX --</option>
+                      {schools.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="profile-dorm" className="block text-xs font-bold text-[#001B48] mb-1.5">
+                      Khu vực giao dịch
+                    </label>
                     <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      className="sr-only"
+                      id="profile-dorm"
+                      type="text"
+                      value={dorm}
+                      onChange={(e) => setDorm(e.target.value)}
+                      placeholder="VD: Tòa B4 - KTX Khu B"
+                      className="w-full h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
                     />
-                  </label>
+                  </div>
                 </div>
-              </div>
 
-              <div className="pt-2 flex flex-wrap items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-6 h-11 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-sm font-bold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {saving ? "Đang lưu hồ sơ..." : "Lưu thay đổi hồ sơ"}
-                </button>
-                {!profile.isStudentVerified && (
-                  <Link
-                    href="/verify-student"
-                    className="px-5 h-11 rounded-xl border border-[#018ABE] text-[#018ABE] hover:bg-[#D6E8EE]/40 text-xs sm:text-sm font-bold inline-flex items-center justify-center transition-colors"
+                <div>
+                  <label htmlFor="profile-avatar-url" className="block text-xs font-bold text-[#001B48] mb-1.5">
+                    Ảnh đại diện
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      id="profile-avatar-url"
+                      type="text"
+                      value={avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="flex-1 h-11 px-4 rounded-xl border border-[#D6E8EE] bg-[#F8FAFC] focus:bg-white focus:border-[#018ABE] focus:outline-none text-sm text-[#001B48]"
+                    />
+                    <label className="h-11 px-4 rounded-xl border border-[#97CADB] bg-[#D6E8EE]/40 hover:bg-[#D6E8EE] text-[#001B48] text-xs font-bold inline-flex items-center justify-center cursor-pointer shrink-0">
+                      <span>Tải ảnh lên</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="sr-only"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-6 h-11 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-sm font-bold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
                   >
-                    🎓 Xác minh sinh viên (.edu.vn / Thẻ SV)
-                  </Link>
-                )}
-              </div>
+                    {saving ? "Đang lưu thay đổi..." : "Lưu thay đổi"}
+                  </button>
+                  {!profile.isStudentVerified && (
+                    <Link
+                      href="/verify-student"
+                      className="px-5 h-11 rounded-xl border border-[#018ABE] text-[#018ABE] hover:bg-[#D6E8EE]/40 text-xs sm:text-sm font-bold inline-flex items-center justify-center transition-colors"
+                    >
+                      🎓 Xác minh sinh viên (.edu.vn / Thẻ SV)
+                    </Link>
+                  )}
+                </div>
             </form>
           )}
 
@@ -556,23 +563,25 @@ export function ProfileClient() {
               <div className="p-4 rounded-2xl bg-[#F4F9FB] border border-[#D6E8EE] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-extrabold text-[#001B48]">
-                    Điểm uy tín hiện tại: ⭐ {profile.reputationScore.toFixed(1)} / 5.0
+                    {reviews.length === 0
+                      ? "Chưa có đánh giá"
+                      : `Điểm uy tín: ${profile.reputationScore.toFixed(1)}/5.0 ⭐`}
                   </h2>
                   <p className="text-xs text-slate-600 mt-0.5">
-                    Đánh giá áp dụng cơ chế Blind Review 48 giờ (BR14) — chỉ công khai khi cả hai bên cùng nộp hoặc sau 48 giờ để chống trả đũa.
+                    Đánh giá chỉ hiển thị công khai khi cả hai bên đã gửi đánh giá hoặc sau 48 giờ kể từ khi hoàn tất giao dịch.
                   </p>
                 </div>
                 <span className="text-xs font-bold text-[#018ABE] bg-white px-3 py-1.5 rounded-xl border border-[#D6E8EE] shrink-0">
-                  {reviews.length} đánh giá công khai
+                  {reviews.length} đánh giá
                 </span>
               </div>
 
               {reviews.length === 0 ? (
                 <div className="py-10 text-center space-y-2 border border-dashed border-slate-200 rounded-2xl">
                   <div className="text-3xl">⭐</div>
-                  <p className="text-sm font-bold text-[#001B48]">Chưa có đánh giá công khai nào</p>
+                  <p className="text-sm font-bold text-[#001B48]">Chưa có đánh giá nào</p>
                   <p className="text-xs text-slate-500">
-                    Khi hoàn tất đơn giao dịch và hết cửa sổ Blind Review 48 giờ, nhận xét từ đối tác sẽ hiển thị tại đây.
+                    Hoàn tất giao dịch và nhận đánh giá từ người mua hoặc người bán để xây dựng uy tín trên UniCycle.
                   </p>
                 </div>
               ) : (
@@ -628,36 +637,26 @@ export function ProfileClient() {
             </div>
           )}
 
-          {/* TAB 3: Quyền riêng tư & Crypto-shredding BR34 */}
+          {/* TAB 3: Bảo mật & tài khoản */}
           {activeTab === "privacy" && (
             <div className="space-y-6 max-w-2xl">
               <div className="p-5 rounded-2xl bg-[#F4F9FB] border border-[#D6E8EE] space-y-3">
                 <h2 className="text-sm sm:text-base font-extrabold text-[#001B48] flex items-center gap-2">
                   <span>🔐</span>
-                  <span>Cơ chế Xóa Tài Khoản Crypto-Shredding (BR34 &amp; NĐ 13/2023/NĐ-CP)</span>
+                  <span>Bảo vệ dữ liệu cá nhân</span>
                 </h2>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Khi bạn xóa tài khoản, UniCycle sẽ xử lý thông tin cá nhân theo chính sách bảo mật. Một số dữ liệu giao dịch cần được lưu lại để đảm bảo tính minh bạch và lịch sử giao dịch.
+                </p>
                 <ul className="space-y-2 text-xs text-slate-700 leading-relaxed list-disc pl-5">
                   <li>
-                    <strong>Hủy liên kết danh tính trên Passport:</strong> Hệ thống đặt{" "}
-                    <code className="font-mono bg-white px-1 py-0.5 rounded border border-slate-200">
-                      PassportOwner.userId = NULL
-                    </code>{" "}
-                    và{" "}
-                    <code className="font-mono bg-white px-1 py-0.5 rounded border border-slate-200">
-                      showName = false
-                    </code>
-                    , nhưng giữ nguyên <code className="font-mono">ownerHash</code> ngẫu nhiên,{" "}
-                    <code className="font-mono">seq</code> và <code className="font-mono">since</code> để lịch sử vòng đời đồ vật trên PostgreSQL và Avalanche Fuji không bị đứt gãy.
+                    <strong>Gỡ liên kết tài khoản:</strong> Hệ thống hủy liên kết định danh cá nhân trên hồ sơ đồ vật nhưng bảo toàn lịch sử giao dịch ẩn danh.
                   </li>
                   <li>
-                    <strong>Đóng băng món đồ đang sở hữu:</strong> Các món đồ bạn đang làm chủ sở hữu hiện tại sẽ chuyển sang trạng thái{" "}
-                    <code className="font-mono bg-white px-1 py-0.5 rounded border border-slate-200">
-                      ARCHIVED_OWNER_DELETED
-                    </code>{" "}
-                    và không thể đăng bán lại trái phép.
+                    <strong>Ngừng hoạt động tin đăng:</strong> Các món đồ và tin đăng của bạn sẽ ngừng hoạt động, không còn hiển thị công khai trên sàn.
                   </li>
                   <li>
-                    <strong>Xóa sạch PII cá nhân:</strong> Tên, email, SĐT Zalo trên các tin đăng, ảnh đại diện và ảnh thẻ sinh viên bị ẩn danh và xóa vĩnh viễn.
+                    <strong>Xóa thông tin cá nhân:</strong> Tên hiển thị, email, số điện thoại và các dữ liệu nhận diện cá nhân sẽ được xử lý và ẩn danh vĩnh viễn.
                   </li>
                 </ul>
               </div>
@@ -665,11 +664,16 @@ export function ProfileClient() {
               <div className="p-5 rounded-2xl border border-rose-200 bg-rose-50/60 space-y-4">
                 <div>
                   <h3 className="text-sm font-extrabold text-rose-900">
-                    Vùng Nguy Hiểm: Xóa Vĩnh Viễn Tài Khoản
+                    Xóa tài khoản vĩnh viễn
                   </h3>
                   <p className="text-xs text-rose-800/90 mt-1 leading-relaxed">
-                    Thao tác này không thể hoàn tác. Bạn sẽ bị đăng xuất ngay lập tức và không thể đăng nhập lại bằng tài khoản này.
+                    Sau khi xác nhận, bạn sẽ bị đăng xuất và không thể khôi phục tài khoản này.
                   </p>
+                  <ul className="list-disc pl-5 space-y-0.5 text-xs text-rose-800/90 mt-1">
+                    <li>Thông tin cá nhân sẽ được xử lý theo chính sách xóa dữ liệu.</li>
+                    <li>Các tin đăng của bạn sẽ ngừng hoạt động.</li>
+                    <li>Lịch sử giao dịch cần được bảo toàn theo quy định của hệ thống.</li>
+                  </ul>
                 </div>
 
                 {stats.blockingOrdersCount > 0 && (
@@ -678,7 +682,7 @@ export function ProfileClient() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <span>
-                      Bạn đang có {stats.blockingOrdersCount} đơn hẹn ở trạng thái giữ chỗ, chờ xác nhận 48h hoặc khiếu nại. Vui lòng xử lý xong tại trang{" "}
+                      Bạn đang có {stats.blockingOrdersCount} đơn hẹn ở trạng thái giữ chỗ, chờ xác nhận hoặc khiếu nại. Vui lòng xử lý xong tại trang{" "}
                       <Link href="/orders" className="underline font-bold">
                         Quản lý đơn hẹn
                       </Link>{" "}
@@ -696,7 +700,7 @@ export function ProfileClient() {
                     }}
                     className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer"
                   >
-                    Yêu cầu xóa vĩnh viễn tài khoản
+                    Xóa tài khoản
                   </button>
                 ) : (
                   <form onSubmit={handleDeleteAccount} className="space-y-3 pt-2 border-t border-rose-200">
@@ -725,7 +729,7 @@ export function ProfileClient() {
                         disabled={deleting || confirmText.trim().toUpperCase() !== "XOA TAI KHOAN"}
                         className="px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
                       >
-                        {deleting ? "Đang thực thi Crypto-shredding..." : "Xác nhận xóa vĩnh viễn"}
+                        {deleting ? "Đang xử lý..." : "Xác nhận xóa tài khoản"}
                       </button>
                       <button
                         type="button"
