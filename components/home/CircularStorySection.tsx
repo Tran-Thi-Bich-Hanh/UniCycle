@@ -4,10 +4,10 @@ import Link from "next/link";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
 const STORY_HIGHLIGHTS = [
-  "Kế thừa lịch sử sử dụng rõ ràng",
-  "Tiết kiệm 40–70% chi phí đầu học kỳ",
-  "Gặp mặt kiểm tra an toàn tại cổng trường",
-  "Góc cho tặng 0đ lan tỏa giữa các khóa",
+  "Xem rõ lịch sử sử dụng qua từng đời chủ",
+  "Tiết kiệm từ 40% đến 70% chi phí mua sắm đầu kỳ",
+  "Hẹn xem đồ trực tiếp tại cổng trường hoặc KTX",
+  "Nhận hoặc tặng lại đồ miễn phí ở Góc 0đ",
 ];
 
 const LIFECYCLE_STEPS = ["Đời #1", "Đời #2", "Đời #3"];
@@ -27,23 +27,23 @@ export function CircularStorySection() {
           >
             <div>
               <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE] block mb-1.5">
-                Cảm hứng từ vòng đời đồ dùng KTX:
+                Chuyện đồ cũ ở KTX
               </span>
               <h2
                 id="circular-story-heading"
                 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight leading-tight"
               >
-                Để mỗi món đồ cũ tiếp tục hành trình mới
+                Đồ còn dùng tốt thì chuyền tay khóa sau
               </h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-stretch flex-1">
               <div className="sm:col-span-7 flex flex-col justify-between bg-white p-5 rounded-2xl border border-[#D6E8EE]/90 shadow-xs">
                 <p className="text-xs sm:text-sm text-[#02457A] leading-relaxed">
-                  Mỗi mùa tốt nghiệp hay chuyển phòng KTX, hàng ngàn cuốn giáo
-                  trình, bàn học gấp, quạt máy và đồ điện tử vẫn còn rất tốt.
-                  UniCycle kết nối trực tiếp các khóa sinh viên để món đồ được
-                  trao tận tay người cần tiếp theo.
+                  Mỗi đợt ra trường hay chuyển phòng KTX, rất nhiều giáo trình,
+                  bàn học gấp, quạt máy và đồ điện tử còn dùng tốt bị bỏ lại.
+                  UniCycle giúp bạn tìm người cần ngay trong khu đại học để
+                  sang tay trực tiếp.
                 </p>
 
                 <ul className="mt-4 space-y-2.5 pt-3 border-t border-[#D6E8EE]/60">
@@ -82,7 +82,7 @@ export function CircularStorySection() {
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#001B48]/85 via-[#001B48]/40 to-transparent p-3.5 pt-10">
                   <p className="text-[11px] font-bold text-white leading-snug">
-                    Góc học tập KTX · Bền bỉ qua nhiều thế hệ
+                    Đồ học tập KTX dùng tiếp qua nhiều khóa
                   </p>
                 </div>
               </div>
@@ -113,7 +113,7 @@ export function CircularStorySection() {
                     className="w-1.5 h-1.5 rounded-full bg-[#018ABE]"
                     aria-hidden="true"
                   />
-                  Hành trình xác thực
+                  Chuỗi đời chủ
                 </span>
 
                 <div className="absolute bottom-3 inset-x-3 z-10 flex items-center gap-1.5 flex-wrap">
@@ -140,26 +140,26 @@ export function CircularStorySection() {
                   UniCycle
                 </p>
                 <p className="text-sm sm:text-base font-extrabold text-[#018ABE] mt-1">
-                  từ KTX TP.HCM
+                  tại KTX TP.HCM
                 </p>
                 <p className="text-xs text-[#02457A]/80 mt-2 leading-relaxed">
-                  Mạng lưới tuần hoàn đồ dùng học tập &amp; sinh hoạt dành riêng
-                  cho sinh viên.
+                  Chỗ trao đổi đồ học tập và vật dụng phòng trọ dành riêng cho
+                  sinh viên.
                 </p>
               </div>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-[#D6E8EE]/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <p className="text-xs sm:text-sm text-[#02457A] leading-relaxed max-w-md">
-                Mỗi món đồ gắn Hộ chiếu số đều lưu lại cột mốc bàn giao thực tế
-                giữa các khóa, giúp bạn yên tâm nguồn gốc khi nhận đồ và dễ dàng
-                sang nhượng lại khi ra trường.
+                Mỗi món đồ trên UniCycle có Hộ chiếu số ghi lại các lần bàn giao
+                giữa sinh viên. Người mua biết rõ đồ đã qua tay ai, còn người bán
+                dễ nhượng lại hơn khi dọn phòng.
               </p>
               <Link
                 href="/products"
                 className="h-10 px-5 rounded-xl bg-[#001B48] hover:bg-[#018ABE] text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shrink-0 transition-colors"
               >
-                <span>Khám phá đồ có Hộ chiếu</span>
+                <span>Xem danh sách đồ</span>
                 <span aria-hidden="true">→</span>
               </Link>
             </div>

@@ -13,17 +13,17 @@ interface StudentReview {
 
 const STUDENT_REVIEWS: StudentReview[] = [
   {
-    headline: "Săn được bàn học & quạt đúng chuẩn!",
+    headline: "Mua được bàn gấp với quạt ngay sảnh KTX",
     comment:
-      "Mình nhận lại quạt đứng và bàn gấp từ một anh khóa trên ngay sảnh KTX Khu B. Đồ còn mới như mô tả, quét QR Hộ chiếu số thấy rõ lịch sử dùng kỹ nên cực kỳ yên tâm.",
+      "Mình mua lại cái quạt đứng với bàn học gấp từ anh khóa trên ngay sảnh KTX Khu B. Ra xem thấy đồ giống y hình, mở Hộ chiếu số thấy trước đó mới qua một chủ nên lấy luôn.",
     rating: "4.9",
     name: "Trần Thảo Vy",
     school: "Sinh viên năm 2 · KTX Khu B ĐHQG",
   },
   {
-    headline: "Nhượng đồ nhanh gọn trước kỳ thực tập!",
+    headline: "Dọn phòng trước kỳ thực tập, bán gọn trong ngày",
     comment:
-      "Cuối kỳ dọn phòng mình đăng bộ giáo trình Giải tích và máy tính Casio fx-580VNX. Chưa đầy một buổi đã có bạn nhắn Zalo hẹn lấy ngay cổng Bách Khoa, không mất đồng phí trung gian nào.",
+      "Đợt dọn phòng đi thực tập mình đăng bộ giáo trình Giải tích với máy Casio fx-580VNX. Đăng tầm vài tiếng là có bạn nhắn Zalo hẹn lấy ở cổng Bách Khoa, gặp đưa thẳng khỏi qua trung gian.",
     rating: "4.9",
     name: "Nguyễn Minh Khôi",
     school: "Sinh viên năm 4 · ĐH Bách Khoa TP.HCM",
@@ -43,17 +43,16 @@ export function StudentTestimonialsSection() {
         >
           <div>
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE] block mb-1.5">
-              Cộng đồng sinh viên Làng ĐH
+              Phản hồi từ sinh viên
             </span>
             <h2
               id="student-testimonials-heading"
               className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight"
             >
-              Sinh viên nói gì về UniCycle
+              Trải nghiệm mua bán trên UniCycle
             </h2>
             <p className="text-xs sm:text-sm text-[#02457A] mt-1.5 max-w-xl">
-              Những chia sẻ thực tế từ các bạn sinh viên đã trao tay giáo trình
-              và đồ trọ qua các học kỳ.
+              Một vài nhận xét từ các bạn đã mua và sang lại đồ ở khu Làng ĐH.
             </p>
           </div>
           <Link
@@ -136,10 +135,10 @@ export function StudentTestimonialsSection() {
               />
               <div className="absolute inset-x-0 bottom-0 p-5 text-white z-10">
                 <span className="inline-block px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-[10px] font-bold uppercase tracking-wider text-[#D6E8EE] mb-2">
-                  Kinh tế tuần hoàn học đường
+                  Mùa chuyển phòng
                 </span>
                 <p className="text-sm sm:text-base font-extrabold leading-snug">
-                  Cùng tái sử dụng — Giảm lãng phí đồ dùng mỗi mùa chuyển phòng
+                  Bớt lãng phí đồ phòng trọ mỗi đợt chuyển phòng cuối kỳ
                 </p>
               </div>
             </div>

@@ -11,21 +11,21 @@ interface WorkflowStep {
 const WORKFLOW_STEPS: WorkflowStep[] = [
   {
     step: "Bước 1",
-    title: "Tìm món đồ quanh trường & KTX",
+    title: "Tìm đồ gần trường hoặc KTX của bạn",
     description:
-      "Lọc nhanh theo cơ sở trường học, hạng tình trạng A/B/C và xem trước Hộ chiếu số để biết lịch sử các đời chủ.",
+      "Lọc theo trường, tình trạng A/B/C và mở Hộ chiếu số để xem món đồ đã qua mấy đời chủ.",
   },
   {
     step: "Bước 2",
-    title: "Nhắn Zalo & Đặt hẹn giữ chỗ",
+    title: "Nhắn Zalo và đặt lịch giữ chỗ",
     description:
-      "Thống nhất thời gian, điểm hẹn tại cổng trường hoặc KTX; người bán bấm giữ chỗ để bạn không lo món đồ bị bán mất.",
+      "Chốt giờ và chỗ gặp ở cổng trường hoặc sảnh KTX. Khi người bán xác nhận giữ chỗ, tin sẽ tạm khóa để không bán cho người khác.",
   },
   {
     step: "Bước 3",
-    title: "Kiểm tra trực tiếp & Nhận Hộ chiếu số",
+    title: "Xem đồ tận tay và nhận Hộ chiếu số",
     description:
-      "Kiểm tra thực tế hài lòng mới thanh toán, xác nhận bàn giao và kế thừa hồ sơ món đồ để dễ bán lại khi ra trường.",
+      "Gặp nhau kiểm tra đồ xong mới thanh toán, rồi quét mã QR xác nhận nhận hàng để Hộ chiếu số chuyển sang tên bạn.",
   },
 ];
 
@@ -42,18 +42,18 @@ export function HowItWorksSection() {
         >
           <div>
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#018ABE] block mb-1.5">
-              Quy trình giao dịch
+              Cách mua bán
             </span>
             <h2
               id="how-it-works-heading"
               className="text-2xl sm:text-3xl font-extrabold text-[#001B48] tracking-tight"
             >
-              Nhận đồ cũ an toàn chỉ với ba bước
+              Ba bước để mua và nhận đồ trực tiếp
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-[#02457A] max-w-md leading-relaxed">
-            Chọn món ưng ý quanh trường, hẹn giờ qua Zalo để người bán giữ chỗ và
-            kiểm tra tận tay trước khi nhận.
+            Mọi giao dịch đều hẹn gặp mặt quanh trường, xem kỹ đồ rồi mới trả
+            tiền.
           </p>
         </ScrollReveal>
 
@@ -78,11 +78,11 @@ export function HowItWorksSection() {
                     className="w-1.5 h-1.5 rounded-full bg-emerald-500"
                     aria-hidden="true"
                   />
-                  Cam kết an toàn KTX
+                  Nguyên tắc gặp mặt
                 </span>
                 <p className="text-sm sm:text-base font-bold text-white leading-snug">
-                  Không đặt cọc trước · Kiểm tra đồ tận tay tại cổng trường hoặc
-                  sảnh KTX
+                  Không chuyển cọc trước, kiểm tra đồ trực tiếp tại cổng trường
+                  hoặc sảnh KTX
                 </p>
               </div>
             </div>

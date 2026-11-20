@@ -11,9 +11,9 @@ interface TrustItem {
 const TRUST_ITEMS: TrustItem[] = [
   {
     id: "verified-student",
-    title: "Xác minh sinh viên chính chủ",
+    title: "Xác minh thẻ sinh viên",
     description:
-      "Xác thực qua thẻ sinh viên hoặc email .edu.vn trước khi cấp huy hiệu uy tín.",
+      "Người dùng xác thực bằng thẻ sinh viên hoặc email .edu.vn để nhận huy hiệu trên hồ sơ.",
     icon: (
       <svg
         className="w-5 h-5"
@@ -33,9 +33,9 @@ const TRUST_ITEMS: TrustItem[] = [
   },
   {
     id: "campus-meetup",
-    title: "Hẹn trao tay cổng trường & KTX",
+    title: "Gặp trực tiếp tại cổng trường, KTX",
     description:
-      "Xem và kiểm tra đồ trực tiếp tại Làng ĐH, không lo rủi ro chuyển khoản cọc trước.",
+      "Kiểm tra món đồ tận tay ở Làng ĐH hoặc cổng trường, không cần chuyển cọc trước.",
     icon: (
       <svg
         className="w-5 h-5"
@@ -61,9 +61,9 @@ const TRUST_ITEMS: TrustItem[] = [
   },
   {
     id: "digital-passport",
-    title: "Hộ chiếu số minh bạch",
+    title: "Lưu lịch sử bằng Hộ chiếu số",
     description:
-      "Theo dõi chuỗi đời chủ minh bạch và xác nhận bàn giao trực tiếp bằng mã QR.",
+      "Xem món đồ đã qua mấy đời chủ và quét mã QR để xác nhận lúc bàn giao.",
     icon: (
       <svg
         className="w-5 h-5"
@@ -89,9 +89,9 @@ const TRUST_ITEMS: TrustItem[] = [
   },
   {
     id: "free-corner",
-    title: "Góc 0đ Cho Tặng khóa trước",
+    title: "Góc 0đ từ khóa trước",
     description:
-      "Chia sẻ miễn phí giáo trình, tài liệu và vật dụng KTX cho tân sinh viên.",
+      "Nhận miễn phí giáo trình, tài liệu và đồ dùng KTX mà anh chị khóa trên để lại.",
     icon: (
       <svg
         className="w-5 h-5"

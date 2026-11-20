@@ -119,7 +119,7 @@ export function HomeProductFeed({
                 Sản phẩm mới đăng
               </h2>
               <p className="text-xs sm:text-sm text-[#02457A] mt-1">
-                Chọn danh mục bên dưới để tìm đồ quanh trường, liên hệ người bán và hẹn gặp trực tiếp để giao dịch.
+                Chọn danh mục bên dưới để lọc đồ quanh trường rồi nhắn trực tiếp cho người bán.
               </p>
             </div>
             <Link
@@ -276,9 +276,9 @@ export function HomeProductFeed({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-[#001B48] mb-1">Không tìm thấy sản phẩm nào phù hợp</h3>
+              <h3 className="text-lg font-bold text-[#001B48] mb-1">Chưa có món đồ nào khớp bộ lọc này</h3>
               <p className="text-xs sm:text-sm text-[#02457A] mb-4">
-                Hãy thử chọn &quot;Tất cả khu vực&quot; hoặc bỏ bớt các tiêu chí lọc để xem thêm sản phẩm khác.
+                Thử đổi về &quot;Tất cả khu vực&quot; hoặc bỏ bớt bộ lọc để xem thêm tin đăng khác.
               </p>
               <button
                 type="button"

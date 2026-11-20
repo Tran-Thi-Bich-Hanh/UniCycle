@@ -40,11 +40,11 @@ export default function Home() {
             <ScrollReveal variant="fade-left" className="lg:col-span-6 space-y-5">
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[11px] sm:text-xs font-semibold tracking-wide text-[#D6E8EE]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#97CADB]" aria-hidden="true" />
-                Tuần hoàn đồ dùng sinh viên · KTX &amp; Làng Đại học TP.HCM
+                Chợ đồ cũ sinh viên KTX &amp; Làng Đại học TP.HCM
               </span>
 
               <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.15] text-white">
-                Mua bán đồ cũ sinh viên tiết kiệm &amp; trao tay tận cổng trường
+                Mua đồ cũ giá sinh viên, hẹn trao tay ngay cổng trường
               </h1>
 
               <div className="flex items-start gap-4 sm:gap-5 pt-1">
@@ -52,7 +52,7 @@ export default function Home() {
                   001
                 </span>
                 <p className="text-sm sm:text-base text-[#D6E8EE] leading-relaxed max-w-xl font-normal border-l-2 border-[#018ABE]/60 pl-4">
-                  Tái sử dụng giáo trình, bàn học gấp, quạt đứng hay đồ dùng ký túc xá qua các thế hệ sinh viên. Kết nối nhanh qua Zalo, đặt hẹn giữ chỗ và kiểm tra chuỗi đời chủ qua Digital Product Passport.
+                  Tìm giáo trình, bàn học gấp, quạt máy hay đồ phòng trọ từ các anh chị khóa trước. Nhắn Zalo hẹn giờ gặp, giữ chỗ món đồ bạn chọn và xem lại lịch sử qua các đời chủ bằng Digital Product Passport.
                 </p>
               </div>
 
@@ -61,7 +61,7 @@ export default function Home() {
                   href="#live-feed"
                   className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-white text-[#001B48] hover:bg-[#D6E8EE] font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md transition-colors cursor-pointer"
                 >
-                  <span>Khám phá đồ</span>
+                  <span>Xem đồ đang bán</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
                   </svg>
@@ -81,7 +81,7 @@ export default function Home() {
               <div className="pt-4 grid grid-cols-3 gap-4 border-t border-white/15 max-w-lg tabular-nums">
                 <div>
                   <p className="text-xl sm:text-2xl font-black text-white">7+</p>
-                  <p className="text-xs text-[#97CADB] mt-0.5">Trường &amp; KTX liên kết</p>
+                  <p className="text-xs text-[#97CADB] mt-0.5">Trường và KTX tham gia</p>
                 </div>
                 <div>
                   <p className="text-xl sm:text-2xl font-black text-white">0đ</p>
@@ -89,7 +89,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-xl sm:text-2xl font-black text-white">100%</p>
-                  <p className="text-xs text-[#97CADB] mt-0.5">Product Passport số</p>
+                  <p className="text-xs text-[#97CADB] mt-0.5">Tin có Product Passport</p>
                 </div>
               </div>
             </ScrollReveal>
@@ -118,13 +118,13 @@ export default function Home() {
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm font-extrabold text-[#001B48] leading-snug mt-1">
-                  Săn combo đồ trọ &amp; giáo trình Góc 0đ từ khóa trước
+                  Nhận lại đồ phòng trọ và giáo trình miễn phí từ sinh viên khóa trước
                 </p>
                 <Link
                   href="/products?category=goc-0d-cho-tang"
                   className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-[#018ABE] hover:text-[#001B48] transition-colors"
                 >
-                  <span>Xem Góc 0đ ngay</span>
+                  <span>Vào Góc 0đ</span>
                   <span aria-hidden="true">→</span>
                 </Link>
               </div>
@@ -165,20 +165,20 @@ export default function Home() {
           className="max-w-3xl mx-auto px-4 sm:px-6 text-center"
         >
           <span className="inline-flex items-center px-3.5 py-1 rounded-full border border-[#D6E8EE] bg-[#F8FAFC] text-[11px] font-bold uppercase tracking-wider text-[#02457A]">
-            Tuần hoàn đồ dùng sinh viên
+            Đồ cũ quanh trường
           </span>
           <h2 className="mt-4 text-2xl sm:text-4xl font-extrabold text-[#001B48] tracking-tight leading-tight">
-            Trao tay món đồ cũ, tiết kiệm chi phí cho học kỳ mới
+            Nhượng lại đồ không dùng nữa, tiết kiệm cho học kỳ mới
           </h2>
           <p className="mt-3 text-sm sm:text-base text-[#02457A] leading-relaxed">
-            Giáo trình, bàn ghế, quạt máy và đồ dùng ký túc xá luôn sẵn sàng tìm chủ mới ngay tại cổng trường.
+            Nếu bạn đang cần giáo trình, bàn ghế, quạt máy hay muốn sang lại đồ phòng trọ trước khi chuyển đi, đăng tin hoặc tìm ngay gần trường mình.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <a
               href="#live-feed"
               className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-[#001B48] text-white hover:bg-[#02457A] font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md transition-colors cursor-pointer"
             >
-              <span>Khám phá đồ</span>
+              <span>Xem đồ đang bán</span>
             </a>
             <Link
               href="/sell"
