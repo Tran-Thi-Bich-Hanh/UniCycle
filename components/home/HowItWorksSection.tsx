@@ -35,7 +35,7 @@ export function HowItWorksSection() {
       aria-labelledby="how-it-works-heading"
       className="py-10 sm:py-14 bg-[#F8FAFC] border-t border-b border-[#D6E8EE]/70"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal
           variant="fade-up"
           className="mb-8 sm:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4"
@@ -51,7 +51,7 @@ export function HowItWorksSection() {
               Ba bước để mua và nhận đồ trực tiếp
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-[#02457A] max-w-md leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#02457A] max-w-lg leading-relaxed">
             Mọi giao dịch đều hẹn gặp mặt quanh trường, xem kỹ đồ rồi mới trả
             tiền.
           </p>

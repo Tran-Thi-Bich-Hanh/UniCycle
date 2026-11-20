@@ -36,7 +36,7 @@ export function StudentTestimonialsSection() {
       aria-labelledby="student-testimonials-heading"
       className="py-10 sm:py-14 bg-white"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal
           variant="fade-up"
           className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10"
@@ -51,7 +51,7 @@ export function StudentTestimonialsSection() {
             >
               Trải nghiệm mua bán trên UniCycle
             </h2>
-            <p className="text-xs sm:text-sm text-[#02457A] mt-1.5 max-w-xl">
+            <p className="text-xs sm:text-sm text-[#02457A] mt-1.5 max-w-2xl">
               Một vài nhận xét từ các bạn đã mua và sang lại đồ ở khu Làng ĐH.
             </p>
           </div>

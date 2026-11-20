@@ -34,7 +34,7 @@ export default function Home() {
     <div className="flex flex-col flex-1 overflow-x-clip">
       {/* 1. Khối Hero Editorial Gradient Bleed: 001 + Thẻ nổi Góc 0đ & Hình ảnh cân đối */}
       <section className="hero-gradient-bleed text-white pt-6 pb-8 sm:pt-8 sm:pb-10 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
             {/* Cột trái (6/12 cột): Tiêu đề, hàng Editorial 001, CTA & Số liệu */}
             <ScrollReveal variant="fade-left" className="lg:col-span-6 space-y-5">
@@ -51,7 +51,7 @@ export default function Home() {
                 <span className="text-3xl sm:text-4xl font-black tracking-tight text-[#97CADB] tabular-nums leading-none select-none shrink-0 pt-0.5">
                   001
                 </span>
-                <p className="text-sm sm:text-base text-[#D6E8EE] leading-relaxed max-w-xl font-normal border-l-2 border-[#018ABE]/60 pl-4">
+                <p className="text-sm sm:text-base text-[#D6E8EE] leading-relaxed max-w-2xl font-normal border-l-2 border-[#018ABE]/60 pl-4">
                   Tìm giáo trình, bàn học gấp, quạt máy hay đồ phòng trọ từ các anh chị khóa trước. Nhắn Zalo hẹn giờ gặp, giữ chỗ món đồ bạn chọn và xem lại lịch sử qua các đời chủ bằng Digital Product Passport.
                 </p>
               </div>
@@ -78,7 +78,7 @@ export default function Home() {
               </div>
 
               {/* Thống kê nhanh nổi bật */}
-              <div className="pt-4 grid grid-cols-3 gap-4 border-t border-white/15 max-w-lg tabular-nums">
+              <div className="pt-4 grid grid-cols-3 gap-4 border-t border-white/15 max-w-xl tabular-nums">
                 <div>
                   <p className="text-xl sm:text-2xl font-black text-white">7+</p>
                   <p className="text-xs text-[#97CADB] mt-0.5">Trường và KTX tham gia</p>
@@ -96,7 +96,7 @@ export default function Home() {
 
             {/* Cột phải (6/12 cột): Ảnh 3D Vòng đời tái chế & Thẻ nổi Góc 0đ */}
             <ScrollReveal variant="fade-right" className="lg:col-span-6 flex flex-col justify-center items-center relative">
-              <div className="relative w-full max-w-[540px] lg:max-w-[580px] aspect-[4/3.5] flex items-center justify-center">
+              <div className="relative w-full max-w-[540px] lg:max-w-[640px] aspect-[4/3.5] flex items-center justify-center">
                 {/* Vầng sáng phía sau ảnh */}
                 <div className="absolute inset-4 bg-[#018ABE]/30 rounded-full blur-3xl scale-105" aria-hidden="true" />
                 <Image
@@ -158,36 +158,60 @@ export default function Home() {
         <LiveMarketplaceFeed />
       </Suspense>
 
-      {/* 7. Khối CTA cuối trang: lặp lại 2 nút đồng bộ với Hero */}
-      <section className="py-14 sm:py-20 bg-white border-t border-[#D6E8EE]/70">
-        <ScrollReveal
-          variant="fade-up"
-          className="max-w-3xl mx-auto px-4 sm:px-6 text-center"
-        >
-          <span className="inline-flex items-center px-3.5 py-1 rounded-full border border-[#D6E8EE] bg-[#F8FAFC] text-[11px] font-bold uppercase tracking-wider text-[#02457A]">
-            Đồ cũ quanh trường
-          </span>
-          <h2 className="mt-4 text-2xl sm:text-4xl font-extrabold text-[#001B48] tracking-tight leading-tight">
-            Nhượng lại đồ không dùng nữa, tiết kiệm cho học kỳ mới
-          </h2>
-          <p className="mt-3 text-sm sm:text-base text-[#02457A] leading-relaxed">
-            Nếu bạn đang cần giáo trình, bàn ghế, quạt máy hay muốn sang lại đồ phòng trọ trước khi chuyển đi, đăng tin hoặc tìm ngay gần trường mình.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="#live-feed"
-              className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-[#001B48] text-white hover:bg-[#02457A] font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md transition-colors cursor-pointer"
-            >
-              <span>Xem đồ đang bán</span>
-            </a>
-            <Link
-              href="/sell"
-              className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-sm transition-colors"
-            >
-              <span>Đăng bán</span>
-            </Link>
-          </div>
-        </ScrollReveal>
+      {/* 7. Khối CTA cuối trang: thẻ rộng loang xanh nhạt + hiệu ứng nổi */}
+      <section className="py-10 sm:py-16 bg-[#F8FAFC] border-t border-[#D6E8EE]/70">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal variant="fade-up">
+            <div className="group relative overflow-hidden rounded-3xl border border-[#97CADB]/60 cta-soft-blue-mesh px-6 py-12 sm:px-12 sm:py-16 text-center shadow-[0_16px_44px_rgba(1,138,190,0.10)] hover:shadow-[0_20px_52px_rgba(1,138,190,0.16)] hover:border-[#018ABE]/50 transition-all duration-500">
+              {/* Đốm loang màu xanh nhạt chuyển động êm nhẹ */}
+              <div
+                className="cta-blob-a absolute -top-24 -left-20 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-[#97CADB]/45 blur-3xl pointer-events-none"
+                aria-hidden="true"
+              />
+              <div
+                className="cta-blob-b absolute -bottom-28 -right-20 w-72 h-72 sm:w-[420px] sm:h-[420px] rounded-full bg-[#018ABE]/20 blur-3xl pointer-events-none"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-36 rounded-full bg-[#BAE6FD]/35 blur-3xl pointer-events-none motion-safe:animate-pulse"
+                aria-hidden="true"
+              />
+
+              <div className="relative z-10 max-w-3xl mx-auto">
+                <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[#97CADB]/70 bg-white/80 backdrop-blur-xs text-[11px] font-bold uppercase tracking-wider text-[#02457A] shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#018ABE] motion-safe:animate-pulse" aria-hidden="true" />
+                  Đồ cũ quanh trường
+                </span>
+                <h2 className="mt-4 text-2xl sm:text-4xl font-extrabold text-[#001B48] tracking-tight leading-tight">
+                  Nhượng lại đồ không dùng nữa, tiết kiệm cho học kỳ mới
+                </h2>
+                <p className="mt-3 text-sm sm:text-base text-[#02457A] leading-relaxed">
+                  Nếu bạn đang cần giáo trình, bàn ghế, quạt máy hay muốn sang lại đồ phòng trọ trước khi chuyển đi, đăng tin hoặc tìm ngay gần trường mình.
+                </p>
+                <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                  <a
+                    href="#live-feed"
+                    className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-[#001B48] text-white hover:bg-[#02457A] hover:-translate-y-0.5 font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                  >
+                    <span>Xem đồ đang bán</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                    </svg>
+                  </a>
+                  <Link
+                    href="/sell"
+                    className="h-11 sm:h-12 px-6 sm:px-7 rounded-xl bg-[#018ABE] hover:bg-[#02457A] hover:-translate-y-0.5 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    <span>Đăng bán</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
       </section>
 
       {/* Nút cuộn nhanh lên đầu trang */}

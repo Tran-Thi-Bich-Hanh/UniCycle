@@ -117,7 +117,7 @@ export function TrustStrip() {
       aria-label="Cam kết giao dịch an toàn"
       className="bg-white border-b border-[#D6E8EE]/80 py-6 sm:py-8"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal variant="fade-in">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {TRUST_ITEMS.map((item) => (

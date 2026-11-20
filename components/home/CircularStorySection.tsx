@@ -18,7 +18,7 @@ export function CircularStorySection() {
       aria-labelledby="circular-story-heading"
       className="py-10 sm:py-14 bg-[#F8FAFC] border-b border-[#D6E8EE]/70"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
           {/* Cột trái: Tiêu đề 2 tầng + 4 điểm nhấn + Ảnh dọc không gian KTX */}
           <ScrollReveal
@@ -150,7 +150,7 @@ export function CircularStorySection() {
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-[#D6E8EE]/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <p className="text-xs sm:text-sm text-[#02457A] leading-relaxed max-w-md">
+              <p className="text-xs sm:text-sm text-[#02457A] leading-relaxed max-w-xl">
                 Mỗi món đồ trên UniCycle có Hộ chiếu số ghi lại các lần bàn giao
                 giữa sinh viên. Người mua biết rõ đồ đã qua tay ai, còn người bán
                 dễ nhượng lại hơn khi dọn phòng.

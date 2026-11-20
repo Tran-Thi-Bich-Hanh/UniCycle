@@ -53,3 +53,46 @@ input {
 .no-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
+
+/* Nền loang màu xanh nhạt + chuyển động chậm cho khối CTA cuối trang */
+.cta-soft-blue-mesh {
+  background:
+    radial-gradient(circle at 12% 20%, rgba(186, 230, 253, 0.55) 0%, transparent 52%),
+    radial-gradient(circle at 88% 82%, rgba(151, 202, 219, 0.45) 0%, transparent 54%),
+    linear-gradient(135deg, #f0f9ff 0%, #ffffff 48%, #e4f3fa 82%, #d6e8ee 100%);
+}
+
+@keyframes cta-blob-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(26px, 16px, 0) scale(1.08);
+  }
+}
+
+@keyframes cta-blob-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-28px, -18px, 0) scale(1.06);
+  }
+}
+
+.cta-blob-a {
+  animation: cta-blob-drift-a 10s ease-in-out infinite;
+}
+
+.cta-blob-b {
+  animation: cta-blob-drift-b 12s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-blob-a,
+  .cta-blob-b {
+    animation: none;
+  }
+}

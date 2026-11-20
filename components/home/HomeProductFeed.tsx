@@ -110,7 +110,7 @@ export function HomeProductFeed({
       className="py-10 sm:py-14 bg-[#F8FAFC] border-t border-[#D6E8EE]/70"
       id="live-feed"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal variant="fade-up">
           {/* Tiêu đề mục gộp: Danh mục & Sản phẩm mới đăng */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
