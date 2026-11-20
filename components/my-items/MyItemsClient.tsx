@@ -18,13 +18,7 @@ import {
   ZaloInviteModal,
 } from "./ListingActionModals";
 
-type UnifiedStatusFilter =
-  | "all"
-  | "AVAILABLE"
-  | "RESERVED"
-  | "OWNED"
-  | "HIDDEN_EXPIRED"
-  | "SOLD";
+type UnifiedStatusFilter = "all" | "SELLING" | "OWNED" | "ARCHIVED";
 
 const STATUS_BADGE_MAP: Record<
   UnifiedItemStatus,
@@ -41,9 +35,9 @@ const STATUS_BADGE_MAP: Record<
     dotClass: "bg-amber-500",
   },
   OWNED: {
-    label: "Đang sử dụng",
-    badgeClass: "bg-slate-100 text-slate-700 border-slate-200",
-    dotClass: "bg-slate-400",
+    label: "Đồ đã mua",
+    badgeClass: "bg-[#E3F1F9] text-[#02457A] border-[#BAE6FD]",
+    dotClass: "bg-[#018ABE]",
   },
   HIDDEN: {
     label: "Đang tạm ẩn",
@@ -250,20 +244,19 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
   const counts = useMemo(() => {
     const summary = {
       all: records.length,
-      AVAILABLE: 0,
-      RESERVED: 0,
+      SELLING: 0,
       OWNED: 0,
-      HIDDEN_EXPIRED: 0,
-      SOLD: 0,
+      ARCHIVED: 0,
     };
 
     for (const record of records) {
-      if (record.unifiedStatus === "AVAILABLE") summary.AVAILABLE += 1;
-      else if (record.unifiedStatus === "RESERVED") summary.RESERVED += 1;
-      else if (record.unifiedStatus === "OWNED") summary.OWNED += 1;
-      else if (record.unifiedStatus === "HIDDEN" || record.unifiedStatus === "EXPIRED") {
-        summary.HIDDEN_EXPIRED += 1;
-      } else if (record.unifiedStatus === "SOLD") summary.SOLD += 1;
+      if (record.unifiedStatus === "AVAILABLE" || record.unifiedStatus === "RESERVED") {
+        summary.SELLING += 1;
+      } else if (record.unifiedStatus === "OWNED") {
+        summary.OWNED += 1;
+      } else {
+        summary.ARCHIVED += 1;
+      }
     }
 
     return summary;
@@ -273,12 +266,22 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
     const keyword = searchQuery.trim().toLowerCase();
 
     return records.filter((record) => {
-      if (statusFilter === "HIDDEN_EXPIRED") {
-        if (record.unifiedStatus !== "HIDDEN" && record.unifiedStatus !== "EXPIRED") {
+      if (statusFilter === "SELLING") {
+        if (record.unifiedStatus !== "AVAILABLE" && record.unifiedStatus !== "RESERVED") {
           return false;
         }
-      } else if (statusFilter !== "all" && record.unifiedStatus !== statusFilter) {
-        return false;
+      } else if (statusFilter === "OWNED") {
+        if (record.unifiedStatus !== "OWNED") {
+          return false;
+        }
+      } else if (statusFilter === "ARCHIVED") {
+        if (
+          record.unifiedStatus !== "HIDDEN" &&
+          record.unifiedStatus !== "EXPIRED" &&
+          record.unifiedStatus !== "SOLD"
+        ) {
+          return false;
+        }
       }
 
       if (!keyword) return true;
@@ -314,12 +317,12 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
         prev.map((record) =>
           record.ownedItem?.id === itemId
             ? {
-                ...record,
-                ownedItem: {
-                  ...record.ownedItem,
-                  showNameOnPassport: nextShowName,
-                },
-              }
+              ...record,
+              ownedItem: {
+                ...record.ownedItem,
+                showNameOnPassport: nextShowName,
+              },
+            }
             : record
         )
       );
@@ -370,17 +373,18 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
         prev.map((item) =>
           item.listing?.id === listing.id
             ? {
-                ...item,
-                unifiedStatus: nextStatus,
-                listing: {
-                  ...item.listing,
-                  status: nextStatus,
-                },
-              }
+              ...item,
+              unifiedStatus: nextStatus,
+              listing: {
+                ...item.listing,
+                status: nextStatus,
+              },
+            }
             : item
         )
       );
 
+      window.dispatchEvent(new Event("unicycle-listings-change"));
       showToast("success", data.message || "Đã cập nhật trạng thái tin đăng.");
     } catch {
       showToast("error", "Lỗi kết nối khi cập nhật trạng thái tin đăng.");
@@ -417,19 +421,20 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
         prev.map((item) =>
           item.listing?.id === listing.id
             ? {
-                ...item,
-                unifiedStatus: "AVAILABLE",
-                listing: {
-                  ...item.listing,
-                  status: "AVAILABLE",
-                  expiresAt: data.expiresAt || item.listing.expiresAt,
-                  daysRemaining: "Còn 30 ngày",
-                },
-              }
+              ...item,
+              unifiedStatus: "AVAILABLE",
+              listing: {
+                ...item.listing,
+                status: "AVAILABLE",
+                expiresAt: data.expiresAt || item.listing.expiresAt,
+                daysRemaining: "Còn 30 ngày",
+              },
+            }
             : item
         )
       );
 
+      window.dispatchEvent(new Event("unicycle-listings-change"));
       showToast("success", data.message || "Đã gia hạn tin đăng thêm 30 ngày.");
     } catch {
       showToast("error", "Lỗi kết nối khi gia hạn tin đăng.");
@@ -479,19 +484,19 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
         prev.map((item) =>
           item.listing?.id === targetListingId
             ? {
-                ...item,
+              ...item,
+              title: payload.title,
+              listing: {
+                ...item.listing,
                 title: payload.title,
-                listing: {
-                  ...item.listing,
-                  title: payload.title,
-                  price: payload.price,
-                  isFree: payload.isFree,
-                  condition: payload.condition,
-                  description: payload.description,
-                  zaloPhone: payload.zaloPhone,
-                  hidePhone: payload.hidePhone,
-                },
-              }
+                price: payload.price,
+                isFree: payload.isFree,
+                condition: payload.condition,
+                description: payload.description,
+                zaloPhone: payload.zaloPhone,
+                hidePhone: payload.hidePhone,
+              },
+            }
             : item
         )
       );
@@ -551,16 +556,17 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
           prev.map((record) =>
             record.listing?.id === listing.id
               ? {
-                  ...record,
-                  unifiedStatus: "SOLD",
-                  listing: {
-                    ...record.listing,
-                    status: "SOLD",
-                  },
-                }
+                ...record,
+                unifiedStatus: "SOLD",
+                listing: {
+                  ...record.listing,
+                  status: "SOLD",
+                },
+              }
               : record
           )
         );
+        window.dispatchEvent(new Event("unicycle-listings-change"));
         setConfirmTarget(null);
         showToast("success", data.message || "Đã đánh dấu món đồ là Đã bán.");
         return;
@@ -596,11 +602,12 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
       );
 
       window.dispatchEvent(new Event("unicycle-auth-change"));
+      window.dispatchEvent(new Event("unicycle-listings-change"));
       setConfirmTarget(null);
       showToast(
         "success",
         hasOwnedItem
-          ? "Đã xóa tin đăng. Món đồ đã chuyển về trạng thái Đang sử dụng."
+          ? "Đã xóa tin đăng. Món đồ vẫn được lưu trong mục Đồ đã mua."
           : data.message || "Đã xóa tin đăng thành công."
       );
     } catch {
@@ -643,11 +650,9 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
 
   const filterChips: Array<{ key: UnifiedStatusFilter; label: string; count: number }> = [
     { key: "all", label: "Tất cả", count: counts.all },
-    { key: "AVAILABLE", label: "Đang mở bán", count: counts.AVAILABLE },
-    { key: "RESERVED", label: "Đang giữ chỗ", count: counts.RESERVED },
-    { key: "OWNED", label: "Đang sử dụng", count: counts.OWNED },
-    { key: "HIDDEN_EXPIRED", label: "Tạm ẩn / Hết hạn", count: counts.HIDDEN_EXPIRED },
-    { key: "SOLD", label: "Đã bán", count: counts.SOLD },
+    { key: "SELLING", label: "Đang bán", count: counts.SELLING },
+    { key: "OWNED", label: "Đồ đã mua", count: counts.OWNED },
+    { key: "ARCHIVED", label: "Ẩn / Đã bán", count: counts.ARCHIVED },
   ];
 
   return (
@@ -703,15 +708,14 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
                     type="button"
                     aria-pressed={isActive}
                     onClick={() => setStatusFilter(chip.key)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-1 ${
-                      isActive
-                        ? "bg-[#001B48] text-white"
-                        : "bg-[#F4F9FB] text-[#02457A] hover:bg-[#D6E8EE]/70"
-                    }`}
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-1 ${isActive
+                      ? "bg-[#001B48] text-white"
+                      : "bg-[#F4F9FB] text-[#02457A] hover:bg-[#D6E8EE]/70"
+                      }`}
                   >
                     <span>{chip.label}</span>
                     <span
-                      className={`px-1.5 py-0.5 leading-none rounded-full text-[11px] font-bold ${
+                      className={`px-1.5 py-0.5 leading-none rounded-full text-[11px] font-bold tabular-nums ${
                         isActive ? "bg-white/20 text-white" : "bg-white text-[#02457A]"
                       }`}
                     >
@@ -813,42 +817,84 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
             </div>
           </div>
         ) : filteredRecords.length === 0 ? (
-          <div className="bg-white rounded-3xl p-10 sm:p-12 text-center border border-[#D6E8EE] space-y-3.5">
-            <div className="w-14 h-14 mx-auto rounded-full bg-[#F4F9FB] text-[#02457A] flex items-center justify-center">
-              <svg
-                className="w-7 h-7"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                />
-              </svg>
+          statusFilter === "OWNED" && !searchQuery.trim() ? (
+            <div className="bg-white rounded-3xl p-10 sm:p-12 text-center border border-[#D6E8EE] space-y-3.5">
+              <div className="w-14 h-14 mx-auto rounded-full bg-[#E3F1F9] text-[#018ABE] flex items-center justify-center">
+                <svg
+                  className="w-7 h-7"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-base sm:text-lg font-extrabold text-[#001B48]">
+                Bạn chưa có đồ đã mua nào
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                Món đồ bạn mua thành công trên UniCycle sẽ tự động lưu tại đây kèm Hộ chiếu số để dễ đăng bán lại khi không còn dùng.
+              </p>
+              <div className="pt-1 flex flex-wrap items-center justify-center gap-2.5">
+                <Link
+                  href="/products"
+                  className="px-4 py-2 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2"
+                >
+                  Khám phá đồ cũ
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("all")}
+                  className="px-4 py-2 rounded-xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#02457A] text-xs sm:text-sm font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                >
+                  Xem tất cả
+                </button>
+              </div>
             </div>
-            <h2 className="text-base sm:text-lg font-extrabold text-[#001B48]">
-              Không tìm thấy món đồ phù hợp
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
-              Không có món đồ nào khớp với bộ lọc hoặc từ khóa bạn đang chọn.
-            </p>
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setStatusFilter("all");
-                  setSearchQuery("");
-                }}
-                className="px-4 py-2 rounded-xl bg-[#E3F1F9] hover:bg-[#BAE6FD]/60 text-[#02457A] text-xs sm:text-sm font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-              >
-                Xóa bộ lọc
-              </button>
+          ) : (
+            <div className="bg-white rounded-3xl p-10 sm:p-12 text-center border border-[#D6E8EE] space-y-3.5">
+              <div className="w-14 h-14 mx-auto rounded-full bg-[#F4F9FB] text-[#02457A] flex items-center justify-center">
+                <svg
+                  className="w-7 h-7"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-base sm:text-lg font-extrabold text-[#001B48]">
+                Không tìm thấy món đồ phù hợp
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
+                Không có món đồ nào khớp với bộ lọc hoặc từ khóa bạn đang chọn.
+              </p>
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter("all");
+                    setSearchQuery("");
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#E3F1F9] hover:bg-[#BAE6FD]/60 text-[#02457A] text-xs sm:text-sm font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                >
+                  Xóa bộ lọc
+                </button>
+              </div>
             </div>
-          </div>
+          )
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredRecords.map((record) => (
@@ -886,11 +932,10 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-5 right-5 left-5 sm:left-auto z-50 sm:max-w-sm rounded-2xl p-3.5 shadow-lg border flex items-start gap-2.5 text-xs sm:text-sm ${
-            message.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-              : "bg-rose-50 border-rose-200 text-rose-900"
-          }`}
+          className={`fixed bottom-5 right-5 left-5 sm:left-auto z-50 sm:max-w-sm rounded-2xl p-3.5 shadow-lg border flex items-start gap-2.5 text-xs sm:text-sm ${message.type === "success"
+            ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+            : "bg-rose-50 border-rose-200 text-rose-900"
+            }`}
         >
           {message.type === "success" ? (
             <svg
@@ -1049,9 +1094,8 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
                   alt={`Mã QR hành trình của ${activeQrTarget.title}`}
                   fill
                   sizes="256px"
-                  className={`object-contain p-3 transition-opacity duration-200 motion-reduce:transition-none ${
-                    qrLoadState === "loaded" ? "opacity-100" : "opacity-0"
-                  }`}
+                  className={`object-contain p-3 transition-opacity duration-200 motion-reduce:transition-none ${qrLoadState === "loaded" ? "opacity-100" : "opacity-0"
+                    }`}
                   unoptimized
                   onLoad={() => setQrLoadState("loaded")}
                   onError={() => setQrLoadState("error")}
@@ -1068,11 +1112,10 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
               <button
                 type="button"
                 onClick={handleCopyPassportLink}
-                className={`flex-1 h-10 px-3.5 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
-                  copiedQrLink
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                    : "bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border-[#D6E8EE]"
-                }`}
+                className={`flex-1 h-10 px-3.5 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${copiedQrLink
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  : "bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border-[#D6E8EE]"
+                  }`}
               >
                 {copiedQrLink ? (
                   <>
@@ -1233,13 +1276,11 @@ function UnifiedItemCard({
 
   return (
     <article
-      className={`relative bg-white rounded-2xl p-5 border shadow-2xs hover:shadow-md transition-all flex flex-col justify-between gap-4 group ${
-        isMenuOpen ? "z-20" : ""
-      } ${
-        isReserved
+      className={`relative bg-white rounded-2xl p-5 border shadow-2xs hover:shadow-md transition-all flex flex-col justify-between gap-4 group ${isMenuOpen ? "z-20" : ""
+        } ${isReserved
           ? "border-amber-200"
           : "border-[#D6E8EE] hover:border-[#018ABE]/60"
-      }`}
+        }`}
     >
       {/* Vùng 1: Thông tin sản phẩm */}
       <div className="space-y-3.5">
@@ -1371,6 +1412,29 @@ function UnifiedItemCard({
           </Link>
         )}
 
+        {listing && (isReserved || listing.hasActiveOrder) && (
+          <Link
+            href={listing.activeOrderId ? `/orders/${listing.activeOrderId}` : "/orders"}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 text-amber-900 border border-amber-200 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+          >
+            <svg
+              className="w-4 h-4 text-amber-700 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>Đang giữ chỗ cho người mua — Xem lịch hẹn &amp; bàn giao →</span>
+          </Link>
+        )}
+
         {/* Vùng 2: Hành trình & Quyền riêng tư (chỉ hiển thị khi đang sở hữu món đồ) */}
         {ownedItem && (
           <div className="rounded-xl bg-[#F8FAFC] border border-[#E2EEF3] divide-y divide-[#E2EEF3]">
@@ -1441,14 +1505,12 @@ function UnifiedItemCard({
                 aria-label={`Hiển thị tên của bạn trên hành trình của ${record.title}`}
                 disabled={isUpdatingPrivacy}
                 onClick={() => onToggleShowName(ownedItem.id, ownedItem.showNameOnPassport)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2 disabled:opacity-60 ${
-                  ownedItem.showNameOnPassport ? "bg-[#018ABE]" : "bg-slate-300"
-                }`}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2 disabled:opacity-60 ${ownedItem.showNameOnPassport ? "bg-[#018ABE]" : "bg-slate-300"
+                  }`}
               >
                 <span
-                  className={`pointer-events-none h-5 w-5 rounded-full bg-white shadow-sm flex items-center justify-center transition-transform duration-200 motion-reduce:transition-none ${
-                    ownedItem.showNameOnPassport ? "translate-x-5" : "translate-x-0"
-                  }`}
+                  className={`pointer-events-none h-5 w-5 rounded-full bg-white shadow-sm flex items-center justify-center transition-transform duration-200 motion-reduce:transition-none ${ownedItem.showNameOnPassport ? "translate-x-5" : "translate-x-0"
+                    }`}
                 >
                   {isUpdatingPrivacy && (
                     <span
@@ -1534,7 +1596,17 @@ function UnifiedItemCard({
               className="h-9 px-3.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2"
             >
               <RefreshCycleIcon className="w-4 h-4 shrink-0" />
-              <span>Bán lại</span>
+              <span>Đăng bán lại</span>
+            </Link>
+          )}
+
+          {isReserved && listing && (
+            <Link
+              href={listing.activeOrderId ? `/orders/${listing.activeOrderId}` : "/orders"}
+              className="h-9 px-3.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+            >
+              <span>Xem lịch hẹn</span>
+              <span aria-hidden="true">→</span>
             </Link>
           )}
 

@@ -53,6 +53,7 @@ export interface UnifiedListingData extends EditableListingFields {
   school: UnifiedSchool | null;
   pendingOrdersCount: number;
   hasActiveOrder: boolean;
+  activeOrderId: string | null;
   passportEnabled: boolean;
   passportId: string | null;
   ownershipTransferred: boolean;
@@ -120,6 +121,7 @@ export interface RawUserListingInput {
     passportId: string | null;
   } | null;
   orders: Array<{
+    id?: string;
     status: string;
   }>;
 }
@@ -188,6 +190,14 @@ function mapRawListingToUnified(
     raw.item && raw.item.currentOwnerId !== resolvedUserId
   );
 
+  const activeOrder =
+    raw.orders.find(
+      (o) =>
+        o.status === "ACCEPTED" ||
+        o.status === "WAITING_CONFIRMATION" ||
+        o.status === "DISPUTED"
+    ) || null;
+
   return {
     id: raw.id,
     itemId: raw.itemId,
@@ -204,9 +214,8 @@ function mapRawListingToUnified(
     hidePhone: raw.hidePhone,
     school: raw.school,
     pendingOrdersCount: raw.orders.filter((o) => o.status === "PENDING").length,
-    hasActiveOrder: raw.orders.some(
-      (o) => o.status === "ACCEPTED" || o.status === "WAITING_CONFIRMATION"
-    ),
+    hasActiveOrder: Boolean(activeOrder),
+    activeOrderId: activeOrder?.id ?? null,
     passportEnabled: Boolean(raw.item?.passportEnabled),
     passportId: raw.item?.passportId ?? null,
     ownershipTransferred,

@@ -91,6 +91,7 @@ function buildFallbackUnifiedItems(): UnifiedMyItem[] {
               : null,
             pendingOrdersCount: idx === 1 ? 1 : 0,
             hasActiveOrder: idx === 1,
+            activeOrderId: idx === 1 ? "demo-order-1" : null,
             passportEnabled: true,
             passportId,
             ownershipTransferred: false,
@@ -185,7 +186,11 @@ export async function loadUnifiedMyItems(resolvedUserId: string): Promise<Unifie
           },
           orders: {
             select: {
+              id: true,
               status: true,
+            },
+            orderBy: {
+              createdAt: "desc",
             },
           },
         },

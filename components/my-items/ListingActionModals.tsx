@@ -422,7 +422,7 @@ export function ConfirmListingActionModal({
                       &ldquo;{target.listing.title}&rdquo;
                     </span>{" "}
                     sẽ bị xóa khỏi sàn giao dịch. Bản ghi sở hữu và hành trình đồ vật của bạn vẫn
-                    được giữ lại ở trạng thái <strong>Đang sử dụng</strong>.
+                    được giữ lại trong mục <strong>Đồ đã mua</strong>.
                   </>
                 ) : (
                   <>
