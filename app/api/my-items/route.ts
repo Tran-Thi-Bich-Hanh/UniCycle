@@ -102,10 +102,6 @@ export async function GET(request: NextRequest) {
         ? `${protocol}://${host}/passport/${item.passportId}`
         : null;
 
-      const qrUrl = passportUrl
-        ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(passportUrl)}`
-        : null;
-
       const latestChainTx =
         item.chainTxs.length > 0 ? item.chainTxs[item.chainTxs.length - 1] : null;
       const registerTx = item.chainTxs.find(
@@ -133,7 +129,6 @@ export async function GET(request: NextRequest) {
         latestListingId: latestListing?.id || null,
         latestListingStatus: latestListing?.status || null,
         passportUrl,
-        qrUrl,
         chainTx: latestChainTx
           ? {
               id: latestChainTx.id,

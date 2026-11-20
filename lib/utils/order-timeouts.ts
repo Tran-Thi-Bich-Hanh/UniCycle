@@ -82,19 +82,6 @@ export async function reconcileExpiredOrders(): Promise<void> {
       }
     }
 
-    // 3. Quy tắc BR38: Lời mời chốt bán Zalo hết hạn sau 24 giờ
-    await prisma.orderInvite.updateMany({
-      where: {
-        status: "PENDING",
-        expiresAt: {
-          lt: now,
-        },
-      },
-      data: {
-        status: "EXPIRED",
-      },
-    });
-
     // 4. Quy tắc BR13 & BR31: Đơn WAITING_CONFIRMATION quá 48 giờ mà đối tác im lặng (không khiếu nại)
     // Tự động chuyển AUTO_COMPLETED, Listing thành SOLD (BR10) và chuyển giao Passport mức ONE_SIDE
     const autoCompletableOrders = await prisma.order.findMany({

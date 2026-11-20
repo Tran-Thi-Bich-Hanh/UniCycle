@@ -154,7 +154,6 @@ export async function GET(
     const host = request.headers.get("host") || "unicycle.vn";
     const protocol = host.includes("localhost") ? "http" : "https";
     const passportUrl = `${protocol}://${host}/passport/${item.passportId}`;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(passportUrl)}`;
 
     return NextResponse.json({
       passport: {
@@ -169,7 +168,6 @@ export async function GET(
         category: item.category,
         currentOwnerSeq: item.owners.length,
         isFlagged: item.passportStatus === "FLAGGED",
-        qrUrl,
         passportUrl,
       },
       owners: sanitizedOwners,

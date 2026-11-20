@@ -59,7 +59,6 @@ export interface PassportPayload {
     category?: { name: string; slug: string } | null;
     currentOwnerSeq: number;
     isFlagged: boolean;
-    qrUrl?: string;
     passportUrl: string;
   };
   owners: PassportOwnerData[];

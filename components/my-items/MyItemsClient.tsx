@@ -13,8 +13,6 @@ import {
   ConfirmListingActionModal,
   EditListingModal,
   EditListingPayload,
-  ZaloInviteData,
-  ZaloInviteModal,
 } from "./ListingActionModals";
 import { normalizeConditionValue } from "@/lib/utils/condition";
 
@@ -86,7 +84,6 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
 
   const [updatingPrivacyItemId, setUpdatingPrivacyItemId] = useState<string | null>(null);
   const [busyListingId, setBusyListingId] = useState<string | null>(null);
-  const [generatingInviteId, setGeneratingInviteId] = useState<string | null>(null);
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
 
   const [editingListing, setEditingListing] = useState<UnifiedMyItem["listing"]>(null);
@@ -95,8 +92,6 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
 
   const [confirmTarget, setConfirmTarget] = useState<ConfirmActionTarget>(null);
   const [confirmingAction, setConfirmingAction] = useState(false);
-
-  const [inviteModalData, setInviteModalData] = useState<ZaloInviteData | null>(null);
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -525,36 +520,6 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
     }
   };
 
-  const handleCreateInvite = async (title: string, listingId: string) => {
-    setOpenMenuKey(null);
-    setGeneratingInviteId(listingId);
-
-    try {
-      const res = await fetch("/api/invites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listingId }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        showToast("error", data.error || "Không thể tạo link chốt bán cho khách Zalo.");
-        return;
-      }
-
-      setInviteModalData({
-        listingTitle: data.listingTitle || title,
-        inviteUrl: data.inviteUrl,
-        fullInviteUrl: data.fullInviteUrl,
-        qrUrl: data.qrUrl,
-      });
-    } catch {
-      showToast("error", "Lỗi kết nối khi tạo link chốt bán Zalo.");
-    } finally {
-      setGeneratingInviteId(null);
-    }
-  };
-
   const filterChips: Array<{ key: UnifiedStatusFilter; label: string; count: number }> = [
     { key: "all", label: "Tất cả", count: counts.all },
     { key: "SELLING", label: "Đang bán", count: counts.SELLING },
@@ -814,15 +779,11 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
                   Boolean(record.ownedItem && updatingPrivacyItemId === record.ownedItem.id)
                 }
                 isBusyListing={Boolean(record.listing && busyListingId === record.listing.id)}
-                isGeneratingInvite={
-                  Boolean(record.listing && generatingInviteId === record.listing.id)
-                }
                 onToggleMenu={() =>
                   setOpenMenuKey((prev) => (prev === record.key ? null : record.key))
                 }
                 onCloseMenu={() => setOpenMenuKey(null)}
                 onToggleShowName={handleToggleShowName}
-                onCreateInvite={handleCreateInvite}
                 onToggleVisibility={handleToggleVisibility}
                 onRenew={handleRenew}
                 onOpenEdit={handleOpenEdit}
@@ -920,12 +881,6 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
         }}
         onConfirm={handleConfirmAction}
       />
-
-      <ZaloInviteModal
-        invite={inviteModalData}
-        onClose={() => setInviteModalData(null)}
-        onCopyError={(msg) => showToast("error", msg)}
-      />
     </div>
   );
 }
@@ -936,11 +891,9 @@ interface UnifiedItemCardProps {
   menuContainerRef: React.RefObject<HTMLDivElement | null>;
   isUpdatingPrivacy: boolean;
   isBusyListing: boolean;
-  isGeneratingInvite: boolean;
   onToggleMenu: () => void;
   onCloseMenu: () => void;
   onToggleShowName: (itemId: string, currentShowName: boolean) => void;
-  onCreateInvite: (title: string, listingId: string) => void;
   onToggleVisibility: (record: UnifiedMyItem) => void;
   onRenew: (record: UnifiedMyItem) => void;
   onOpenEdit: (record: UnifiedMyItem) => void;
@@ -953,11 +906,9 @@ function UnifiedItemCard({
   menuContainerRef,
   isUpdatingPrivacy,
   isBusyListing,
-  isGeneratingInvite,
   onToggleMenu,
   onCloseMenu,
   onToggleShowName,
-  onCreateInvite,
   onToggleVisibility,
   onRenew,
   onOpenEdit,
@@ -966,7 +917,6 @@ function UnifiedItemCard({
   const { unifiedStatus, ownedItem, listing } = record;
   const statusBadge = STATUS_BADGE_MAP[unifiedStatus];
 
-  const isAvailable = unifiedStatus === "AVAILABLE";
   const isReserved = unifiedStatus === "RESERVED";
   const isOwned = unifiedStatus === "OWNED";
   const isHidden = unifiedStatus === "HIDDEN";
@@ -1316,31 +1266,6 @@ function UnifiedItemCard({
               <span>Xem lịch hẹn</span>
               <span aria-hidden="true">→</span>
             </Link>
-          )}
-
-          {isAvailable && listing && (
-            <button
-              type="button"
-              disabled={isGeneratingInvite || isBusyListing}
-              onClick={() => onCreateInvite(record.title, listing.id)}
-              className="h-9 px-3 rounded-xl bg-[#0068FF]/10 hover:bg-[#0068FF]/15 text-[#0052CC] border border-[#0068FF]/25 text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-            >
-              <svg
-                className="w-4 h-4 shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.861-.861 5.972 5.972 0 011.057-3.035C4.604 15.69 4 13.93 4 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
-                />
-              </svg>
-              <span>{isGeneratingInvite ? "Đang tạo..." : "Chốt bán Zalo"}</span>
-            </button>
           )}
 
           {isHidden && listing && (
