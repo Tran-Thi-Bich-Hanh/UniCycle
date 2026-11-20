@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { DisputeModal } from "@/components/orders/DisputeModal";
 import { ReviewModal } from "@/components/orders/ReviewModal";
 import { OrderReview } from "@/components/orders/OrdersManager";
+import { formatReputationSummary } from "@/lib/utils/reputation-display";
 
 interface OrderDetailPayload {
   id: string;
@@ -70,6 +71,7 @@ interface OrderDetailPayload {
     avatarUrl?: string | null;
     isStudentVerified?: boolean;
     reputationScore?: number;
+    reviewCount?: number;
     dorm?: string | null;
   };
   seller: {
@@ -78,6 +80,7 @@ interface OrderDetailPayload {
     avatarUrl?: string | null;
     isStudentVerified?: boolean;
     reputationScore?: number;
+    reviewCount?: number;
     dorm?: string | null;
   };
   reviews?: OrderReview[];
@@ -528,9 +531,34 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-[#02457A]">
-                  {partner.dorm || order.listing.school?.shortName || "Sinh viên KTX"} • ⭐{" "}
-                  {partner.reputationScore?.toFixed(1) || "5.0"}
+                <p className="text-xs text-[#02457A] flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                  <span>{partner.dorm || order.listing.school?.shortName || "Sinh viên KTX"}</span>
+                  <span aria-hidden="true">•</span>
+                  {(() => {
+                    const partnerReputation = formatReputationSummary(
+                      partner.reputationScore,
+                      partner.reviewCount
+                    );
+                    if (!partnerReputation.hasReviews) {
+                      return (
+                        <span className="text-slate-500 font-medium">
+                          {partnerReputation.label}
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className="inline-flex items-center gap-1 font-semibold text-[#001B48]">
+                        <svg
+                          className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                          viewBox="0 0 20 20"
+                          aria-hidden="true"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span>{partnerReputation.label}</span>
+                      </span>
+                    );
+                  })()}
                 </p>
               </div>
             </div>

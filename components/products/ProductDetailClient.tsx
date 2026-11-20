@@ -10,6 +10,10 @@ import {
   ItemJourneyTimeline,
   JourneyOwnerStep,
 } from "@/components/passport/ItemJourneyTimeline";
+import {
+  formatCompletedOrdersLabel,
+  formatReputationSummary,
+} from "@/lib/utils/reputation-display";
 
 export interface ProductDetailData {
   id: string;
@@ -38,6 +42,8 @@ export interface ProductDetailData {
     avatarUrl?: string | null;
     isStudentVerified?: boolean;
     reputationScore?: number;
+    reviewCount?: number;
+    completedOrdersCount?: number;
     dorm?: string | null;
   };
   item?: {
@@ -723,20 +729,39 @@ export function ProductDetailClient({
                   {product.seller.dorm || product.school?.shortName || "Sinh viên KTX"}
                 </p>
 
-                <div className="flex items-center gap-3 text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-1">
-                    <svg
-                      className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    <span>{product.seller.reputationScore?.toFixed(1) || "5.0"} uy tín</span>
-                  </span>
-                  <span aria-hidden="true">•</span>
-                  <span className="text-emerald-700 font-medium">Phản hồi &lt; 15 phút</span>
-                </div>
+                {(() => {
+                  const sellerReputation = formatReputationSummary(
+                    product.seller.reputationScore,
+                    product.seller.reviewCount
+                  );
+                  const sellerActivityLabel = formatCompletedOrdersLabel(
+                    product.seller.completedOrdersCount
+                  );
+                  return (
+                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500">
+                      {sellerReputation.hasReviews ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-[#001B48]">
+                          <svg
+                            className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                            viewBox="0 0 20 20"
+                            aria-hidden="true"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span>{sellerReputation.label}</span>
+                        </span>
+                      ) : (
+                        <span className="font-medium text-slate-500">
+                          {sellerReputation.label}
+                        </span>
+                      )}
+                      <span aria-hidden="true">•</span>
+                      <span className="text-[#02457A] font-medium">
+                        {sellerActivityLabel}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             </Link>
           </div>
