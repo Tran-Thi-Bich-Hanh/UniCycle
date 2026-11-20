@@ -14,6 +14,7 @@ import {
   formatCompletedOrdersLabel,
   formatReputationSummary,
 } from "@/lib/utils/reputation-display";
+import { normalizeConditionValue } from "@/lib/utils/condition";
 
 export interface ProductDetailData {
   id: string;
@@ -545,7 +546,7 @@ export function ProductDetailClient({
                 </Link>
               )}
               <span className="px-3 py-1 rounded-full text-xs font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200">
-                {product.condition}
+                {normalizeConditionValue(product.condition)}
               </span>
             </div>
 

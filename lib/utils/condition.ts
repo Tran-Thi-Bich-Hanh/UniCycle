@@ -6,6 +6,7 @@ export interface ConditionGradeOption {
   grade: ConditionGrade;
   label: string;
   shortDesc: string;
+  value: string;
   description: string;
 }
 
@@ -14,18 +15,21 @@ export const CONDITION_GRADE_OPTIONS: ConditionGradeOption[] = [
     grade: "A",
     label: "Hạng A",
     shortDesc: "Như mới",
-    description: "Như mới 95–99%, ít hoặc chưa qua sử dụng",
+    value: "Hạng A - Như mới",
+    description: "Mới 95-99%, ít hoặc chưa qua sử dụng",
   },
   {
     grade: "B",
     label: "Hạng B",
     shortDesc: "Còn tốt",
+    value: "Hạng B - Còn tốt",
     description: "Hoạt động ổn định, ngoại hình còn đẹp",
   },
   {
     grade: "C",
     label: "Hạng C",
     shortDesc: "Đã dùng",
+    value: "Hạng C - Đã dùng",
     description: "Đã qua sử dụng, có dấu hiệu hao mòn nhẹ",
   },
 ];
@@ -88,4 +92,11 @@ export function formatConditionGradeLabel(condition?: string | null): string {
   if (!condition) return "";
   const grade = getConditionGrade(condition);
   return grade ? `Hạng ${grade}` : condition;
+}
+
+export function normalizeConditionValue(condition?: string | null): string {
+  const grade = getConditionGrade(condition);
+  const matched = CONDITION_GRADE_OPTIONS.find((opt) => opt.grade === grade);
+  if (matched) return matched.value;
+  return condition || CONDITION_GRADE_OPTIONS[1].value;
 }

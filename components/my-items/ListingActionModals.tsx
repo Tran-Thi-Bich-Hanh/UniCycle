@@ -3,6 +3,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import type { EditableListingFields } from "@/lib/my-items/types";
+import {
+  CONDITION_GRADE_OPTIONS,
+  normalizeConditionValue,
+} from "@/lib/utils/condition";
 
 export interface EditListingPayload {
   title: string;
@@ -31,8 +35,6 @@ export interface ZaloInviteData {
   fullInviteUrl: string;
   qrUrl: string;
 }
-
-const STANDARD_CONDITIONS = ["Mới 99%", "Mới 98%", "Còn rất tốt", "Đã sử dụng"];
 
 function useAccessibleModal(
   isOpen: boolean,
@@ -107,7 +109,7 @@ function EditListingForm({
   const [title, setTitle] = useState(listing.title);
   const [price, setPrice] = useState(String(listing.price));
   const [isFree, setIsFree] = useState(listing.isFree);
-  const [condition, setCondition] = useState(listing.condition);
+  const [condition, setCondition] = useState(() => normalizeConditionValue(listing.condition));
   const [description, setDescription] = useState(listing.description);
   const [zaloPhone, setZaloPhone] = useState(listing.zaloPhone);
   const [hidePhone, setHidePhone] = useState(listing.hidePhone);
@@ -115,10 +117,6 @@ function EditListingForm({
 
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
   useAccessibleModal(true, onClose, closeBtnRef, saving);
-
-  const conditionOptions = STANDARD_CONDITIONS.includes(listing.condition)
-    ? STANDARD_CONDITIONS
-    : [listing.condition, ...STANDARD_CONDITIONS];
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -227,9 +225,9 @@ function EditListingForm({
                 onChange={(e) => setCondition(e.target.value)}
                 className="w-full h-10 px-3 rounded-xl border border-[#D6E8EE] bg-white text-xs sm:text-sm font-medium text-[#001B48] focus:outline-none focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20"
               >
-                {conditionOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+                {CONDITION_GRADE_OPTIONS.map((opt) => (
+                  <option key={opt.grade} value={opt.value}>
+                    {opt.value} ({opt.description})
                   </option>
                 ))}
               </select>

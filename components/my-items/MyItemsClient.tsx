@@ -16,6 +16,7 @@ import {
   ZaloInviteData,
   ZaloInviteModal,
 } from "./ListingActionModals";
+import { normalizeConditionValue } from "@/lib/utils/condition";
 
 type UnifiedStatusFilter = "all" | "SELLING" | "OWNED" | "ARCHIVED";
 
@@ -1061,7 +1062,7 @@ function UnifiedItemCard({
             <p className="text-xs text-slate-500 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
               {listing ? (
                 <>
-                  <span>{listing.condition}</span>
+                  <span>{normalizeConditionValue(listing.condition)}</span>
                   <span aria-hidden="true">·</span>
                   <span className="inline-flex items-center gap-1">
                     <svg

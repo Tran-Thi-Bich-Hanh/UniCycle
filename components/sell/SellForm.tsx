@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { compressImage, CompressedImageResult } from "@/lib/utils/image-compress";
 import { checkProhibitedContent } from "@/lib/utils/prohibited-words";
+import { CONDITION_GRADE_OPTIONS } from "@/lib/utils/condition";
 import {
   ItemJourneyTimeline,
   JourneyNextStep,
@@ -59,7 +60,7 @@ const DEMO_PRESETS = [
     label: "Giáo trình Giải tích 1",
     title: "Giáo trình Giải tích 1 - ĐHQG TP.HCM (Kèm tập đề cương thi)",
     categorySlug: "giao-trinh-sach",
-    condition: "Còn rất tốt",
+    condition: "Hạng B - Còn tốt",
     price: 35000,
     isFree: false,
     description: "Sách mới 95%, không rách, có ghi chú bút chì các dạng bài trọng tâm giữa kỳ và cuối kỳ. Tặng kèm tập photo đề thi có lời giải chi tiết cho bạn nào cần.",
@@ -69,7 +70,7 @@ const DEMO_PRESETS = [
     label: "Máy tính Casio fx-580",
     title: "Máy tính Casio fx-580VNX chính hãng Bitex (Nguyên tem, màn sáng đẹp)",
     categorySlug: "do-dien-tu-phu-kien",
-    condition: "Mới 98%",
+    condition: "Hạng A - Như mới",
     price: 380000,
     isFree: false,
     description: "Máy tính mua từ năm nhất dùng thi đại học và toán cao cấp. Màn hình sắc nét, phím bấm êm, còn nắp đậy và nguyên tem bảo hành Bitex chính hãng.",
@@ -79,7 +80,7 @@ const DEMO_PRESETS = [
     label: "Quạt lỡ Senko",
     title: "Quạt bàn Senko B3 chạy êm ru, gió mạnh cho phòng KTX",
     categorySlug: "do-gia-dung-quat",
-    condition: "Còn rất tốt",
+    condition: "Hạng B - Còn tốt",
     price: 120000,
     isFree: false,
     description: "Quạt chuyển phòng nên nhượng lại, 3 cấp tốc độ gió mát rượi, mô tơ êm không ồn ào lúc ngủ. Lồng quạt đã được tháo rửa sạch sẽ.",
@@ -89,7 +90,7 @@ const DEMO_PRESETS = [
     label: "Bàn học gấp KTX (0đ)",
     title: "Tặng bàn học gấp chân chữ U cho bạn sinh viên tân khóa",
     categorySlug: "goc-0d-cho-tang",
-    condition: "Đã sử dụng",
+    condition: "Hạng C - Đã dùng",
     price: 0,
     isFree: true,
     description: "Mình sắp ra trường nên tặng lại bạn nào cần bàn học trên giường KTX. Chân bàn bằng thép sơn tĩnh điện vẫn cứng cáp, chỉ có vài vết trầy nhẹ ở mép.",
@@ -163,7 +164,7 @@ export function SellForm() {
   // Form states
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState("giao-trinh-sach");
-  const [condition, setCondition] = useState("Còn rất tốt");
+  const [condition, setCondition] = useState("Hạng B - Còn tốt");
   const [price, setPrice] = useState<string>("50000");
   const [isFree, setIsFree] = useState(false);
   const [description, setDescription] = useState("");
@@ -854,10 +855,11 @@ export function SellForm() {
                 onChange={(e) => setCondition(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-xl border border-[#D6E8EE] bg-white text-sm font-semibold text-[#001B48] focus:border-[#018ABE] focus:ring-2 focus:ring-[#018ABE]/20 outline-none cursor-pointer"
               >
-                <option value="Mới 99%">Mới 99% (Nguyên hộp, chưa qua sử dụng nhiều)</option>
-                <option value="Mới 98%">Mới 98% (Rất ít dùng, giữ gìn cẩn thận)</option>
-                <option value="Còn rất tốt">Còn rất tốt (Hoạt động hoàn hảo, trơn tru)</option>
-                <option value="Đã sử dụng">Đã sử dụng (Có trầy xước nhẹ theo thời gian)</option>
+                {CONDITION_GRADE_OPTIONS.map((opt) => (
+                  <option key={opt.grade} value={opt.value}>
+                    {opt.value} ({opt.description})
+                  </option>
+                ))}
               </select>
             </div>
           </div>

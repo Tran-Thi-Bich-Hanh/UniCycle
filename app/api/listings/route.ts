@@ -267,7 +267,7 @@ export async function POST(req: NextRequest) {
 
     if (!condition || typeof condition !== "string") {
       return NextResponse.json(
-        { error: "Vui lòng chọn tình trạng món đồ (ví dụ: Mới 99%, Còn rất tốt...)." },
+        { error: "Vui lòng chọn tình trạng món đồ (Hạng A, Hạng B hoặc Hạng C)." },
         { status: 400 }
       );
     }
