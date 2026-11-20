@@ -545,12 +545,9 @@ export function Header() {
                               d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
                             />
                           </svg>
-                          {currentUser && userCounts.ordersCount > 0 && (
-                            <span
-                              className={`absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 min-w-[16px] h-[16px] px-1 rounded-full text-white text-[9px] font-bold flex items-center justify-center leading-none border-2 border-white shadow-xs ${userCounts.activeOrdersCount > 0 ? "bg-[#EF4444]" : "bg-[#02457A]"
-                                }`}
-                            >
-                              {userCounts.ordersCount}
+                          {currentUser && userCounts.activeOrdersCount > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#EF4444] text-white text-[9px] font-bold flex items-center justify-center leading-none border-2 border-white shadow-xs">
+                              {userCounts.activeOrdersCount}
                             </span>
                           )}
                         </Link>
@@ -679,7 +676,7 @@ export function Header() {
                                         <span>Đơn hẹn xem hàng</span>
                                       </div>
                                       <span className="text-[#02457A] font-bold text-xs bg-[#D6E8EE]/50 px-2 py-0.5 rounded-full">
-                                        {userCounts.ordersCount > 0 ? `${userCounts.ordersCount} đơn` : "0 đơn"}
+                                        {userCounts.activeOrdersCount > 0 ? `${userCounts.activeOrdersCount} đơn` : "0 đơn"}
                                       </span>
                                     </Link>
 
@@ -928,9 +925,9 @@ export function Header() {
                               className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#F4F9FB] text-[#001B48] font-medium"
                             >
                               <span>Đơn hẹn xem hàng</span>
-                              {currentUser && userCounts.ordersCount > 0 && (
+                              {currentUser && userCounts.activeOrdersCount > 0 && (
                                 <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-[#018ABE] text-white">
-                                  {userCounts.ordersCount} đơn
+                                  {userCounts.activeOrdersCount} đơn
                                 </span>
                               )}
                             </Link>

@@ -60,7 +60,7 @@ export async function GET() {
     return NextResponse.json({
       itemsCount: unifiedItemsCount,
       productsCount: unifiedItemsCount,
-      ordersCount: totalOrdersCount,
+      ordersCount: activeOrdersCount,
       activeOrdersCount,
       totalOrdersCount,
     });

@@ -214,6 +214,7 @@ export function OrdersManager() {
 
       setActionMessage({ type: "success", text: data.message });
       await loadOrders();
+      window.dispatchEvent(new Event("unicycle-listings-change"));
     } catch {
       setActionMessage({ type: "error", text: "Đã xảy ra lỗi kết nối khi cập nhật đơn hẹn." });
     } finally {
@@ -243,6 +244,7 @@ export function OrdersManager() {
       setDisputeTarget(null);
       setActionMessage({ type: "success", text: data.message });
       await loadOrders();
+      window.dispatchEvent(new Event("unicycle-listings-change"));
     } catch {
       setDisputeError("Lỗi kết nối khi gửi khiếu nại.");
     } finally {
@@ -253,6 +255,14 @@ export function OrdersManager() {
   // Phân loại đơn theo tab Người Bán / Người Mua
   const sellerOrders = orders.filter((o) => o.sellerId === currentUserId);
   const buyerOrders = orders.filter((o) => o.buyerId === currentUserId);
+
+  const ACTIVE_ORDER_STATUSES = ["PENDING", "ACCEPTED", "WAITING_CONFIRMATION", "DISPUTED"];
+  const activeSellerOrdersCount = sellerOrders.filter((o) =>
+    ACTIVE_ORDER_STATUSES.includes(o.status)
+  ).length;
+  const activeBuyerOrdersCount = buyerOrders.filter((o) =>
+    ACTIVE_ORDER_STATUSES.includes(o.status)
+  ).length;
 
   const pendingSellerCount = sellerOrders.filter((o) => o.status === "PENDING").length;
 
@@ -367,7 +377,7 @@ export function OrdersManager() {
             )}
           </div>
           <span className="text-2xl sm:text-3xl font-extrabold text-[#001B48] leading-tight">
-            {sellerOrders.length}
+            {activeSellerOrdersCount}
           </span>
           <span className="text-[11px] text-slate-500 mt-0.5">
             Đơn người khác đặt mua đồ của bạn
@@ -394,7 +404,7 @@ export function OrdersManager() {
             <span className="text-xs font-bold text-amber-800">Lịch hẹn của tôi</span>
           </div>
           <span className="text-2xl sm:text-3xl font-extrabold text-[#001B48] leading-tight">
-            {buyerOrders.length}
+            {activeBuyerOrdersCount}
           </span>
           <span className="text-[11px] text-slate-500 mt-0.5">
             Lịch hẹn bạn đã gửi cho người bán khác
