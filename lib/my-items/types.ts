@@ -280,11 +280,9 @@ export function mergeOwnedItemsAndListings(
 
     const passportUrl =
       item.passportEnabled && item.passportId
-        ? `https://unicycle.vn/passport/${item.passportId}`
+        ? `/passport/${item.passportId}`
         : null;
-    const qrUrl = passportUrl
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(passportUrl)}`
-      : null;
+    const qrUrl = null;
 
     const latestPreviewListing = item.listings[0] || null;
 

@@ -59,7 +59,7 @@ export interface PassportPayload {
     category?: { name: string; slug: string } | null;
     currentOwnerSeq: number;
     isFlagged: boolean;
-    qrUrl: string;
+    qrUrl?: string;
     passportUrl: string;
   };
   owners: PassportOwnerData[];
@@ -212,9 +212,6 @@ export function PassportClient({ initialData }: PassportClientProps) {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; alt: string } | null>(null);
-  const [qrModalOpen, setQrModalOpen] = useState(false);
-  const [qrLoadState, setQrLoadState] = useState<"loading" | "loaded" | "error">("loading");
-  const [qrRetryKey, setQrRetryKey] = useState(0);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [showTechDetails, setShowTechDetails] = useState(false);
 
@@ -233,7 +230,6 @@ export function PassportClient({ initialData }: PassportClientProps) {
   const copyIdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyLinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const closeQrBtnRef = useRef<HTMLButtonElement | null>(null);
   const closePhotoBtnRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -241,21 +237,6 @@ export function PassportClient({ initialData }: PassportClientProps) {
       if (copyIdTimerRef.current) clearTimeout(copyIdTimerRef.current);
       if (copyLinkTimerRef.current) clearTimeout(copyLinkTimerRef.current);
     };
-  }, []);
-
-  const openQrModal = () => {
-    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
-      previousFocusRef.current = document.activeElement;
-    }
-    setCopiedLink(false);
-    setQrLoadState("loading");
-    setQrRetryKey(0);
-    setQrModalOpen(true);
-  };
-
-  const closeQrModal = useCallback(() => {
-    setCopiedLink(false);
-    setQrModalOpen(false);
   }, []);
 
   const openPhotoModal = (url: string, alt: string) => {
@@ -270,28 +251,20 @@ export function PassportClient({ initialData }: PassportClientProps) {
   }, []);
 
   useEffect(() => {
-    if (!qrModalOpen && !selectedPhoto) return;
+    if (!selectedPhoto) return;
 
     const previousOverflow = document.body.style.overflow;
     const openerElement = previousFocusRef.current;
     document.body.style.overflow = "hidden";
 
     const frameId = requestAnimationFrame(() => {
-      if (selectedPhoto) {
-        closePhotoBtnRef.current?.focus();
-      } else if (qrModalOpen) {
-        closeQrBtnRef.current?.focus();
-      }
+      closePhotoBtnRef.current?.focus();
     });
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        if (selectedPhoto) {
-          closePhotoModal();
-        } else if (qrModalOpen) {
-          closeQrModal();
-        }
+        closePhotoModal();
       }
     };
 
@@ -302,7 +275,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
       document.removeEventListener("keydown", handleKeyDown);
       openerElement?.focus();
     };
-  }, [qrModalOpen, selectedPhoto, closeQrModal, closePhotoModal]);
+  }, [selectedPhoto, closePhotoModal]);
 
   const handleCopyId = async () => {
     if (!passport.passportId) return;
@@ -688,37 +661,51 @@ export function PassportClient({ initialData }: PassportClientProps) {
                     <span>Chờ đồng bộ on-chain</span>
                   </span>
                 )}
-              </div>
-            </div>
 
-            {/* Cột phải: Khung Mã QR (luôn nằm gọn bên trong thẻ Hero) */}
-            <div className="shrink-0 self-center md:self-auto w-44 sm:w-48 p-4 rounded-2xl bg-white text-slate-800 shadow-lg text-center">
-              <button
-                type="button"
-                onClick={openQrModal}
-                aria-label="Phóng to mã QR hộ chiếu toàn màn hình"
-                className="w-full flex flex-col items-center cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] rounded-xl"
-              >
-                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
-                  <Image
-                    src={passport.qrUrl}
-                    alt="Mã QR Digital Product Passport"
-                    fill
-                    sizes="128px"
-                    className="object-contain p-1.5"
-                    unoptimized
-                  />
-                  <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[11px] font-bold transition-opacity rounded-xl">
-                    Phóng to
-                  </div>
-                </div>
-                <span className="text-[10px] font-extrabold text-[#018ABE] uppercase tracking-wider mt-2.5">
-                  Quét đối chiếu KTX
-                </span>
-                <span className="text-[11px] text-[#02457A] group-hover:underline font-bold mt-0.5">
-                  Mở QR toàn màn hình
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={handleCopyPassportLink}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 ${
+                    copiedLink
+                      ? "bg-emerald-500/25 border-emerald-300/50 text-emerald-100"
+                      : "bg-white/15 hover:bg-white/25 border-white/25 text-white"
+                  }`}
+                >
+                  {copiedLink ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 text-emerald-300 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span>Đã sao chép liên kết</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
+                        />
+                      </svg>
+                      <span>Sao chép liên kết</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1331,118 +1318,6 @@ export function PassportClient({ initialData }: PassportClientProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal QR Code Toàn Màn Hình (Chuẩn A11y) */}
-      {qrModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="passport-qr-title"
-          aria-describedby="passport-qr-desc"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in"
-          onClick={closeQrModal}
-        >
-          <div
-            className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 shadow-2xl border border-slate-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h3 id="passport-qr-title" className="font-black text-[#001B48] text-base">
-                Mã QR Hành trình đồ vật
-              </h3>
-              <button
-                ref={closeQrBtnRef}
-                type="button"
-                onClick={closeQrModal}
-                aria-label="Đóng hộp thoại mã QR"
-                className="w-9 h-9 -mr-1.5 rounded-xl text-slate-500 hover:text-[#001B48] hover:bg-slate-100 inline-flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto border border-[#BAE6FD] bg-[#F8FAFC] p-3 rounded-2xl flex items-center justify-center overflow-hidden">
-              {qrLoadState === "loading" && (
-                <div
-                  className="absolute inset-3 rounded-xl bg-slate-200/70 motion-safe:animate-pulse"
-                  aria-hidden="true"
-                />
-              )}
-
-              {qrLoadState === "error" ? (
-                <div className="text-center space-y-2.5 px-3">
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Không tải được mã QR. Bạn vẫn có thể sao chép liên kết bên dưới.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQrLoadState("loading");
-                      setQrRetryKey((k) => k + 1);
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-[#E3F1F9] hover:bg-[#BAE6FD]/70 text-[#02457A] text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-                  >
-                    Thử tải lại
-                  </button>
-                </div>
-              ) : (
-                <Image
-                  key={`${passport.passportId}-${qrRetryKey}`}
-                  src={
-                    qrRetryKey > 0
-                      ? `${passport.qrUrl}${passport.qrUrl.includes("?") ? "&" : "?"}retry=${qrRetryKey}`
-                      : passport.qrUrl
-                  }
-                  alt="Mã QR Digital Product Passport toàn màn hình"
-                  fill
-                  sizes="256px"
-                  className={`object-contain p-3 transition-opacity duration-200 motion-reduce:transition-none ${
-                    qrLoadState === "loaded" ? "opacity-100" : "opacity-0"
-                  }`}
-                  unoptimized
-                  onLoad={() => setQrLoadState("loaded")}
-                  onError={() => setQrLoadState("error")}
-                />
-              )}
-            </div>
-
-            <p id="passport-qr-desc" className="text-xs text-slate-600 leading-relaxed">
-              Mở màn hình điện thoại này cho người mua quét trực tiếp để mở trang Digital Passport
-              và đối chiếu lịch sử trao tay tại chỗ.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
-                onClick={handleCopyPassportLink}
-                className={`flex-1 h-10 px-3.5 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
-                  copiedLink
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                    : "bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border-[#D6E8EE]"
-                }`}
-              >
-                {copiedLink ? "Đã sao chép" : "Sao chép link"}
-              </button>
-              <button
-                type="button"
-                onClick={closeQrModal}
-                className="flex-1 h-10 px-3.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2"
-              >
-                Đóng lại
-              </button>
-            </div>
           </div>
         </div>
       )}

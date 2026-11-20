@@ -27,8 +27,8 @@ function buildFallbackUnifiedItems(): UnifiedMyItem[] {
     const itemId = product.item?.id || `demo-item-${idx + 1}`;
     const passportId =
       product.item?.passportId || `0x${(idx + 1).toString(16).padStart(64, "0")}`;
-    const passportUrl = `https://unicycle.vn/passport/${passportId}`;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(passportUrl)}`;
+    const passportUrl = `/passport/${passportId}`;
+    const qrUrl = null;
     const ownedSince = FALLBACK_OWNED_DATES[idx] || "2026-10-01T08:00:00.000Z";
     const createdAt = FALLBACK_LISTING_CREATED_DATES[idx] || ownedSince;
 

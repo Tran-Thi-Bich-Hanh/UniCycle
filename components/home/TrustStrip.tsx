@@ -63,7 +63,7 @@ const TRUST_ITEMS: TrustItem[] = [
     id: "digital-passport",
     title: "Hộ chiếu số minh bạch",
     description:
-      "Quét mã QR theo dõi chuỗi đời chủ và lịch sử bảo quản qua từng học kỳ.",
+      "Theo dõi chuỗi đời chủ minh bạch và xác nhận bàn giao trực tiếp bằng mã QR.",
     icon: (
       <svg
         className="w-5 h-5"

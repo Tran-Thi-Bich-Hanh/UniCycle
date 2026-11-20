@@ -202,8 +202,7 @@ export default async function PassportPage({ params }: PageProps) {
     })),
   }));
 
-  const passportUrl = `https://unicycle.vn/passport/${item.passportId}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(passportUrl)}`;
+  const passportUrl = `/passport/${item.passportId}`;
 
   const payload: PassportPayload = {
     passport: {
@@ -218,7 +217,6 @@ export default async function PassportPage({ params }: PageProps) {
       category: item.category,
       currentOwnerSeq: item.owners.length,
       isFlagged: item.passportStatus === "FLAGGED",
-      qrUrl,
       passportUrl,
     },
     owners: sanitizedOwners,

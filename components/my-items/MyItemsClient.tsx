@@ -7,7 +7,6 @@ import {
   UnifiedItemStatus,
   UnifiedListingStatus,
   UnifiedMyItem,
-  UnifiedOwnedItem,
 } from "@/lib/my-items/types";
 import {
   ConfirmActionTarget,
@@ -75,11 +74,6 @@ function formatDate(dateStr: string): string {
   }
 }
 
-interface ActiveQrTarget {
-  title: string;
-  ownedItem: UnifiedOwnedItem;
-}
-
 interface MyItemsClientProps {
   initialItems: UnifiedMyItem[];
 }
@@ -94,11 +88,6 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
   const [generatingInviteId, setGeneratingInviteId] = useState<string | null>(null);
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
 
-  const [activeQrTarget, setActiveQrTarget] = useState<ActiveQrTarget | null>(null);
-  const [qrLoadState, setQrLoadState] = useState<"loading" | "loaded" | "error">("loading");
-  const [qrRetryKey, setQrRetryKey] = useState(0);
-  const [copiedQrLink, setCopiedQrLink] = useState(false);
-
   const [editingListing, setEditingListing] = useState<UnifiedMyItem["listing"]>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -111,15 +100,11 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
-  const closeQrBtnRef = useRef<HTMLButtonElement | null>(null);
   const menuContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
   }, []);
 
@@ -161,85 +146,6 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [openMenuKey]);
-
-  const openQrModal = (title: string, ownedItem: UnifiedOwnedItem) => {
-    setOpenMenuKey(null);
-    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
-      previousFocusRef.current = document.activeElement;
-    }
-    if (copyTimerRef.current) {
-      clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = null;
-    }
-    setCopiedQrLink(false);
-    setQrLoadState("loading");
-    setQrRetryKey(0);
-    setActiveQrTarget({ title, ownedItem });
-  };
-
-  const closeQrModal = useCallback(() => {
-    if (copyTimerRef.current) {
-      clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = null;
-    }
-    setCopiedQrLink(false);
-    setActiveQrTarget(null);
-  }, []);
-
-  useEffect(() => {
-    if (!activeQrTarget) return;
-
-    const previousOverflow = document.body.style.overflow;
-    const openerElement = previousFocusRef.current;
-    document.body.style.overflow = "hidden";
-
-    const frameId = requestAnimationFrame(() => {
-      closeQrBtnRef.current?.focus();
-    });
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeQrModal();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleKeyDown);
-      openerElement?.focus();
-    };
-  }, [activeQrTarget, closeQrModal]);
-
-  const handleCopyPassportLink = async () => {
-    if (!activeQrTarget) return;
-
-    const { passportId, passportUrl } = activeQrTarget.ownedItem;
-    const shareUrl =
-      passportId && typeof window !== "undefined"
-        ? `${window.location.origin}/passport/${passportId}`
-        : passportUrl || "";
-
-    if (!shareUrl) {
-      showToast("error", "Không tìm thấy liên kết hành trình để sao chép.");
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopiedQrLink(true);
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = setTimeout(() => {
-        setCopiedQrLink(false);
-        copyTimerRef.current = null;
-      }, 2000);
-    } catch {
-      showToast("error", "Không thể sao chép liên kết. Vui lòng thử lại.");
-    }
-  };
 
   const counts = useMemo(() => {
     const summary = {
@@ -670,7 +576,7 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-[#475569] mt-1">
-              Quản lý tất cả đồ dùng đang sở hữu, tin đăng bán và mã QR hành trình tại một nơi.
+              Quản lý tất cả đồ dùng đang sở hữu, tin đăng bán và hành trình Passport tại một nơi.
             </p>
           </div>
 
@@ -914,7 +820,6 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
                   setOpenMenuKey((prev) => (prev === record.key ? null : record.key))
                 }
                 onCloseMenu={() => setOpenMenuKey(null)}
-                onOpenQr={openQrModal}
                 onToggleShowName={handleToggleShowName}
                 onCreateInvite={handleCreateInvite}
                 onToggleVisibility={handleToggleVisibility}
@@ -995,191 +900,6 @@ export function MyItemsClient({ initialItems }: MyItemsClientProps) {
         </div>
       )}
 
-      {/* Modal QR Code hành trình đồ vật (WCAG 2.2) */}
-      {activeQrTarget && activeQrTarget.ownedItem.qrUrl && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs"
-          onClick={closeQrModal}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="qr-modal-title"
-            aria-describedby="qr-modal-desc"
-            className="bg-white rounded-3xl p-5 sm:p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#D6E8EE] space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
-              <h3 id="qr-modal-title" className="font-extrabold text-[#001B48] text-base text-left">
-                Mã QR hành trình đồ vật
-              </h3>
-              <button
-                ref={closeQrBtnRef}
-                type="button"
-                onClick={closeQrModal}
-                aria-label="Đóng hộp thoại mã QR"
-                className="w-10 h-10 -mr-1.5 rounded-xl text-slate-500 hover:text-[#001B48] hover:bg-slate-100 inline-flex items-center justify-center transition-colors shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="text-center space-y-0.5">
-              <p className="text-sm font-bold text-[#001B48] line-clamp-2">
-                {activeQrTarget.title}
-              </p>
-              <p className="text-xs text-slate-500">
-                Đời chủ #{activeQrTarget.ownedItem.myOwnerSeq}/
-                {activeQrTarget.ownedItem.totalOwners}
-              </p>
-            </div>
-
-            <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto rounded-2xl bg-[#F8FAFC] border border-[#D6E8EE] p-3 flex items-center justify-center overflow-hidden">
-              {qrLoadState === "loading" && (
-                <div
-                  className="absolute inset-3 rounded-xl bg-slate-200/70 animate-pulse motion-reduce:animate-none flex items-center justify-center"
-                  aria-hidden="true"
-                >
-                  <QrGridIcon className="w-10 h-10 text-slate-400" strokeWidth={1.6} />
-                </div>
-              )}
-
-              {qrLoadState === "error" ? (
-                <div className="text-center space-y-2.5 px-3">
-                  <svg
-                    className="w-8 h-8 text-amber-600 mx-auto"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.8}
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-                    />
-                  </svg>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Không tải được mã QR. Bạn vẫn có thể sao chép liên kết bên dưới.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQrLoadState("loading");
-                      setQrRetryKey((k) => k + 1);
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-[#E3F1F9] hover:bg-[#BAE6FD]/70 text-[#02457A] text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-                  >
-                    Thử tải lại
-                  </button>
-                </div>
-              ) : (
-                <Image
-                  key={`${activeQrTarget.ownedItem.id}-${qrRetryKey}`}
-                  src={
-                    qrRetryKey > 0
-                      ? `${activeQrTarget.ownedItem.qrUrl}${activeQrTarget.ownedItem.qrUrl.includes("?") ? "&" : "?"}retry=${qrRetryKey}`
-                      : activeQrTarget.ownedItem.qrUrl
-                  }
-                  alt={`Mã QR hành trình của ${activeQrTarget.title}`}
-                  fill
-                  sizes="256px"
-                  className={`object-contain p-3 transition-opacity duration-200 motion-reduce:transition-none ${qrLoadState === "loaded" ? "opacity-100" : "opacity-0"
-                    }`}
-                  unoptimized
-                  onLoad={() => setQrLoadState("loaded")}
-                  onError={() => setQrLoadState("error")}
-                />
-              )}
-            </div>
-
-            <p id="qr-modal-desc" className="text-xs text-slate-600 text-center leading-relaxed">
-              Đưa mã này cho người mua quét trực tiếp khi gặp mặt để kiểm tra toàn bộ lịch sử đời
-              chủ của món đồ.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={handleCopyPassportLink}
-                className={`flex-1 h-10 px-3.5 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${copiedQrLink
-                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                  : "bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border-[#D6E8EE]"
-                  }`}
-              >
-                {copiedQrLink ? (
-                  <>
-                    <svg
-                      className="w-4 h-4 text-emerald-600 shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                    <span>Đã sao chép</span>
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-4 h-4 shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={1.8}
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
-                      />
-                    </svg>
-                    <span>Sao chép link</span>
-                  </>
-                )}
-              </button>
-
-              {activeQrTarget.ownedItem.passportId && (
-                <Link
-                  href={`/passport/${activeQrTarget.ownedItem.passportId}`}
-                  onClick={closeQrModal}
-                  className="flex-1 h-10 px-3.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2"
-                >
-                  <span>Xem hành trình</span>
-                  <svg
-                    className="w-3.5 h-3.5 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.8}
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
-                    />
-                  </svg>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Các modal thao tác tin đăng */}
       <EditListingModal
         listing={editingListing}
@@ -1218,7 +938,6 @@ interface UnifiedItemCardProps {
   isGeneratingInvite: boolean;
   onToggleMenu: () => void;
   onCloseMenu: () => void;
-  onOpenQr: (title: string, ownedItem: UnifiedOwnedItem) => void;
   onToggleShowName: (itemId: string, currentShowName: boolean) => void;
   onCreateInvite: (title: string, listingId: string) => void;
   onToggleVisibility: (record: UnifiedMyItem) => void;
@@ -1236,7 +955,6 @@ function UnifiedItemCard({
   isGeneratingInvite,
   onToggleMenu,
   onCloseMenu,
-  onOpenQr,
   onToggleShowName,
   onCreateInvite,
   onToggleVisibility,
@@ -1528,17 +1246,6 @@ function UnifiedItemCard({
       {/* Vùng 3: Hành động chân thẻ */}
       <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          {ownedItem?.qrUrl && (
-            <button
-              type="button"
-              onClick={() => onOpenQr(record.title, ownedItem)}
-              className="h-9 px-3 rounded-xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border border-[#D6E8EE] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
-            >
-              <QrGridIcon className="w-4 h-4 shrink-0" strokeWidth={1.8} />
-              <span>Mã QR</span>
-            </button>
-          )}
-
           {passportId && (
             <Link
               href={`/passport/${passportId}`}
@@ -1562,7 +1269,7 @@ function UnifiedItemCard({
             </Link>
           )}
 
-          {listing && !ownedItem?.qrUrl && (
+          {listing && (
             <Link
               href={`/products/${listing.id}`}
               className="h-9 px-3 rounded-xl bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border border-[#D6E8EE] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
@@ -1804,36 +1511,6 @@ function UnifiedItemCard({
         </div>
       </div>
     </article>
-  );
-}
-
-function QrGridIcon({
-  className,
-  strokeWidth,
-}: {
-  className: string;
-  strokeWidth: number;
-}) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"
-      />
-    </svg>
   );
 }
 
