@@ -9,6 +9,7 @@ import { reconcileExpiredOrders } from "@/lib/utils/order-timeouts";
 import { FALLBACK_PRODUCTS } from "@/lib/data/mock-fallback";
 import { processItemChainQueue } from "@/lib/blockchain/relayer";
 import { SNOWTRACE_BASE_URL } from "@/lib/blockchain/abi";
+import { getPublicReviewCountsByUserIds } from "@/lib/utils/reputation";
 
 const SCHOOL_CODE_TO_SHORTNAME: Record<string, string> = {
   "ktx-b": "KTX Khu B",
@@ -146,6 +147,10 @@ export async function GET(req: NextRequest) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
+    const reviewCounts = await getPublicReviewCountsByUserIds(
+      listings.map((l) => l.seller.id)
+    );
+
     // Định dạng dữ liệu an toàn (BR01, BR36: Ẩn SĐT công khai nếu người bán chọn hidePhone)
     const formatted = listings.map((l) => ({
       id: l.id,
@@ -178,6 +183,7 @@ export async function GET(req: NextRequest) {
         avatarUrl: l.seller.avatarUrl,
         isStudentVerified: l.seller.isStudentVerified,
         reputationScore: l.seller.reputationScore,
+        reviewCount: reviewCounts.get(l.seller.id) ?? 0,
         dorm: l.seller.dorm,
       },
       item: l.item

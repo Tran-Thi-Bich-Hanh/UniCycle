@@ -91,6 +91,8 @@ export const FALLBACK_PRODUCTS: ProductCardData[] = [
       avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
       isStudentVerified: true,
       reputationScore: 4.95,
+      reviewCount: 6,
+      completedOrdersCount: 8,
       dorm: "Tòa B4 - KTX Khu B",
     },
     item: {
@@ -132,6 +134,8 @@ export const FALLBACK_PRODUCTS: ProductCardData[] = [
       avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
       isStudentVerified: true,
       reputationScore: 4.95,
+      reviewCount: 6,
+      completedOrdersCount: 8,
       dorm: "Tòa B4 - KTX Khu B",
     },
     item: {
@@ -170,6 +174,8 @@ export const FALLBACK_PRODUCTS: ProductCardData[] = [
       avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150",
       isStudentVerified: true,
       reputationScore: 5.0,
+      reviewCount: 0,
+      completedOrdersCount: 0,
       dorm: "Tòa BA1 - KTX Khu B",
     },
     item: null,

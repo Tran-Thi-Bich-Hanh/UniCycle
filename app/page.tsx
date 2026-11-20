@@ -11,6 +11,7 @@ import { HowItWorksSection } from "@/components/home/HowItWorksSection";
 import { StudentTestimonialsSection } from "@/components/home/StudentTestimonialsSection";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ScrollToTopButton from "@/components/ui/ScrollToTopButton";
+import { getPublicReviewCountsByUserIds } from "@/lib/utils/reputation";
 import {
   FALLBACK_PRODUCTS,
   FALLBACK_CATEGORIES,
@@ -53,6 +54,9 @@ async function LiveMarketplaceFeed() {
     ]);
 
     if (dbListings && dbListings.length > 0) {
+      const reviewCounts = await getPublicReviewCountsByUserIds(
+        dbListings.map((l) => l.seller.id)
+      );
       products = dbListings.map((l) => ({
         id: l.id,
         title: l.title,
@@ -82,6 +86,7 @@ async function LiveMarketplaceFeed() {
           avatarUrl: l.seller.avatarUrl,
           isStudentVerified: l.seller.isStudentVerified,
           reputationScore: l.seller.reputationScore,
+          reviewCount: reviewCounts.get(l.seller.id) ?? 0,
           dorm: l.seller.dorm,
         },
         item: l.item

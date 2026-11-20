@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { reconcileExpiredOrders } from "@/lib/utils/order-timeouts";
+import { getPublicReviewCountsByUserIds } from "@/lib/utils/reputation";
 
 export async function GET(req: NextRequest) {
   try {
@@ -76,8 +77,20 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
       });
 
+      const reviewCounts = await getPublicReviewCountsByUserIds(
+        orders.flatMap((order) => [order.buyerId, order.sellerId])
+      );
+
       const sanitizedOrders = orders.map((order) => ({
         ...order,
+        buyer: {
+          ...order.buyer,
+          reviewCount: reviewCounts.get(order.buyer.id) ?? 0,
+        },
+        seller: {
+          ...order.seller,
+          reviewCount: reviewCounts.get(order.seller.id) ?? 0,
+        },
         reviews: (order.reviews || []).map((rev) => {
           const isPublic = Boolean(rev.visibleAt);
           const isAuthor = rev.reviewerId === user.id;
@@ -144,6 +157,7 @@ export async function GET(req: NextRequest) {
             avatarUrl: user.avatarUrl,
             isStudentVerified: user.isStudentVerified,
             reputationScore: user.reputationScore,
+            reviewCount: 0,
             dorm: user.dorm,
           },
           seller: {
@@ -152,6 +166,7 @@ export async function GET(req: NextRequest) {
             avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
             isStudentVerified: true,
             reputationScore: 4.95,
+            reviewCount: 6,
             dorm: "Tòa B4 - KTX Khu B",
           },
         },

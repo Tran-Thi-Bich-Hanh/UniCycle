@@ -130,3 +130,61 @@ export async function reconcileBlindReviews48h(orderId?: string): Promise<void> 
   }
 }
 
+/**
+ * Đếm theo lô số lượng đánh giá công khai (visibleAt <= now) cho danh sách userId.
+ */
+export async function getPublicReviewCountsByUserIds(
+  userIds: string[]
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
+  if (uniqueIds.length === 0) {
+    return counts;
+  }
+
+  try {
+    const rows = await prisma.review.groupBy({
+      by: ["revieweeId"],
+      where: {
+        revieweeId: { in: uniqueIds },
+        visibleAt: {
+          not: null,
+          lte: new Date(),
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    });
+
+    for (const row of rows) {
+      counts.set(row.revieweeId, row._count._all);
+    }
+  } catch (error) {
+    console.warn("⚠️ Lỗi đếm đánh giá công khai theo userIds:", error);
+  }
+
+  return counts;
+}
+
+/**
+ * Đếm số đơn giao dịch đã hoàn tất (COMPLETED / AUTO_COMPLETED) của một người dùng.
+ */
+export async function getCompletedOrdersCountForUser(
+  userId: string
+): Promise<number> {
+  if (!userId) return 0;
+
+  try {
+    return await prisma.order.count({
+      where: {
+        OR: [{ buyerId: userId }, { sellerId: userId }],
+        status: { in: ["COMPLETED", "AUTO_COMPLETED"] },
+      },
+    });
+  } catch (error) {
+    console.warn(`⚠️ Lỗi đếm giao dịch hoàn tất cho user ${userId}:`, error);
+    return 0;
+  }
+}
+

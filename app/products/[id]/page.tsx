@@ -4,6 +4,10 @@ import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { FALLBACK_PRODUCTS } from "@/lib/data/mock-fallback";
 import {
+  getCompletedOrdersCountForUser,
+  getPublicReviewCountsByUserIds,
+} from "@/lib/utils/reputation";
+import {
   ProductDetailClient,
   ProductDetailData,
 } from "@/components/products/ProductDetailClient";
@@ -100,6 +104,39 @@ async function ProductDetailContent({ params }: PageProps) {
     });
 
     if (dbListing) {
+      // Lấy 4 món đồ tương tự cùng số giao dịch hoàn tất và đánh giá thật của người bán
+      const [relatedDb, sellerCompletedOrdersCount] = await Promise.all([
+        prisma.listing.findMany({
+          where: {
+            categoryId: dbListing.categoryId,
+            id: { not: dbListing.id },
+            status: "AVAILABLE",
+          },
+          include: {
+            images: { orderBy: { position: "asc" } },
+            seller: {
+              select: {
+                id: true,
+                displayName: true,
+                avatarUrl: true,
+                isStudentVerified: true,
+                reputationScore: true,
+                dorm: true,
+              },
+            },
+            category: true,
+            school: true,
+          },
+          take: 4,
+        }),
+        getCompletedOrdersCountForUser(dbListing.seller.id),
+      ]);
+
+      const reviewCounts = await getPublicReviewCountsByUserIds([
+        dbListing.seller.id,
+        ...relatedDb.map((l) => l.seller.id),
+      ]);
+
       // BẢO MẬT TUYỆT ĐỐI (BR01, BR36): Tuyệt đối KHÔNG truyền zaloPhone vào HTML của khách
       product = {
         id: dbListing.id,
@@ -113,7 +150,11 @@ async function ProductDetailContent({ params }: PageProps) {
         createdAt: dbListing.createdAt.toISOString(),
         school: dbListing.school,
         category: dbListing.category,
-        seller: dbListing.seller,
+        seller: {
+          ...dbListing.seller,
+          reviewCount: reviewCounts.get(dbListing.seller.id) ?? 0,
+          completedOrdersCount: sellerCompletedOrdersCount,
+        },
         item: dbListing.item
           ? (() => {
               const registerTx = dbListing.item.chainTxs.find(
@@ -152,22 +193,6 @@ async function ProductDetailContent({ params }: PageProps) {
         })),
       };
 
-      // Lấy 4 món đồ tương tự trong cùng danh mục
-      const relatedDb = await prisma.listing.findMany({
-        where: {
-          categoryId: dbListing.categoryId,
-          id: { not: dbListing.id },
-          status: "AVAILABLE",
-        },
-        include: {
-          images: { orderBy: { position: "asc" } },
-          seller: true,
-          category: true,
-          school: true,
-        },
-        take: 4,
-      });
-
       relatedProducts = relatedDb.map((l) => ({
         id: l.id,
         title: l.title,
@@ -178,7 +203,10 @@ async function ProductDetailContent({ params }: PageProps) {
         status: l.status as ProductDetailData["status"],
         school: l.school,
         category: l.category,
-        seller: l.seller,
+        seller: {
+          ...l.seller,
+          reviewCount: reviewCounts.get(l.seller.id) ?? 0,
+        },
         images: l.images,
       }));
     }

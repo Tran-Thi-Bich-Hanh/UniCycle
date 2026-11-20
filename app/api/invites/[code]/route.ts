@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { FALLBACK_PRODUCTS } from "@/lib/data/mock-fallback";
+import { getPublicReviewCountsByUserIds } from "@/lib/utils/reputation";
 
 interface RouteParams {
   params: Promise<{ code: string }>;
@@ -104,7 +105,22 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json({ invite });
+    const reviewCounts = await getPublicReviewCountsByUserIds([
+      invite.listing.seller.id,
+    ]);
+
+    return NextResponse.json({
+      invite: {
+        ...invite,
+        listing: {
+          ...invite.listing,
+          seller: {
+            ...invite.listing.seller,
+            reviewCount: reviewCounts.get(invite.listing.seller.id) ?? 0,
+          },
+        },
+      },
+    });
   } catch (error) {
     console.error("Lỗi GET /api/invites/[code]:", error);
     return NextResponse.json(

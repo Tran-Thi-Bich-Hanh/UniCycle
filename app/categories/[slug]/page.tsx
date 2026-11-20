@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { ProductsExplorer } from "@/components/products/ProductsExplorer";
 import { ProductCardData } from "@/components/products/ProductCard";
 import { CategoryItem } from "@/components/home/CategoryGrid";
+import { getPublicReviewCountsByUserIds } from "@/lib/utils/reputation";
 import {
   FALLBACK_PRODUCTS,
   FALLBACK_CATEGORIES,
@@ -57,6 +58,9 @@ async function CategoryContent({ params }: CategoryPageProps) {
     ]);
 
     if (dbListings && dbListings.length > 0) {
+      const reviewCounts = await getPublicReviewCountsByUserIds(
+        dbListings.map((l) => l.seller.id)
+      );
       products = dbListings.map((l) => ({
         id: l.id,
         title: l.title,
@@ -86,6 +90,7 @@ async function CategoryContent({ params }: CategoryPageProps) {
           avatarUrl: l.seller.avatarUrl,
           isStudentVerified: l.seller.isStudentVerified,
           reputationScore: l.seller.reputationScore,
+          reviewCount: reviewCounts.get(l.seller.id) ?? 0,
           dorm: l.seller.dorm,
         },
         item: l.item

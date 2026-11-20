@@ -5,6 +5,7 @@ import { reconcileExpiredOrders } from "@/lib/utils/order-timeouts";
 import { executeOrderCompletionAndPassportTransfer } from "@/lib/utils/passport-transfer";
 import { processItemChainQueue } from "@/lib/blockchain/relayer";
 import { SNOWTRACE_BASE_URL } from "@/lib/blockchain/abi";
+import { getPublicReviewCountsByUserIds } from "@/lib/utils/reputation";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -110,8 +111,21 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const reviewCounts = await getPublicReviewCountsByUserIds([
+      order.buyerId,
+      order.sellerId,
+    ]);
+
     const sanitizedOrder = {
       ...order,
+      buyer: {
+        ...order.buyer,
+        reviewCount: reviewCounts.get(order.buyer.id) ?? 0,
+      },
+      seller: {
+        ...order.seller,
+        reviewCount: reviewCounts.get(order.seller.id) ?? 0,
+      },
       reviews: (order.reviews || []).map((rev) => {
         const isPublic = Boolean(rev.visibleAt);
         const isAuthor = rev.reviewerId === user.id;

@@ -74,7 +74,12 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
         }
 
         const now = new Date();
-        const [completedOrdersCount, dbListings, dbReviews] = await Promise.all([
+        const [
+          completedOrdersCount,
+          dbListings,
+          dbReviews,
+          totalPublicReviewsCount,
+        ] = await Promise.all([
           prisma.order.count({
             where: {
               OR: [{ buyerId: dbUser.id }, { sellerId: dbUser.id }],
@@ -138,6 +143,12 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
             orderBy: { submittedAt: "desc" },
             take: 20,
           }),
+          prisma.review.count({
+            where: {
+              revieweeId: dbUser.id,
+              visibleAt: { not: null, lte: now },
+            },
+          }),
         ]);
 
         // Định dạng listings KHÔNG bao gồm zaloPhone
@@ -156,6 +167,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
             avatarUrl: dbUser.avatarUrl,
             isStudentVerified: dbUser.isStudentVerified,
             reputationScore: dbUser.reputationScore,
+            reviewCount: totalPublicReviewsCount,
             dorm: dbUser.dorm,
           },
           item: l.item,
@@ -192,6 +204,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
               ? dbUser.studentVerifiedAt.toISOString()
               : null,
             reputationScore: dbUser.reputationScore,
+            reviewCount: totalPublicReviewsCount,
             school: dbUser.school,
             dorm: dbUser.dorm,
             createdAt: dbUser.createdAt.toISOString(),
@@ -225,6 +238,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
           avatarUrl: demoUser.avatarUrl || null,
           isStudentVerified: demoUser.isStudentVerified,
           reputationScore: demoUser.reputationScore,
+          reviewCount: 0,
           school: demoUser.schoolShortName
             ? {
                 id: demoUser.schoolId || "ktx-b",
