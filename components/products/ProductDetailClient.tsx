@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BookingModal } from "@/components/orders/BookingModal";
 import { ReportModal } from "@/components/reports/ReportModal";
+import {
+  ItemJourneyTimeline,
+  JourneyOwnerStep,
+} from "@/components/passport/ItemJourneyTimeline";
 
 export interface ProductDetailData {
   id: string;
@@ -63,55 +67,6 @@ export interface ProductDetailData {
 interface ProductDetailClientProps {
   product: ProductDetailData;
   relatedProducts?: ProductDetailData[];
-}
-
-/**
- * Hiệu ứng cuộn: Kéo tới đâu hiện tới đó (kích hoạt lặp lại nhiều lần khi cuộn vào/ra tầm nhìn)
- */
-function TimelineItemReveal({
-  children,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  delay?: number;
-}) {
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Cập nhật trạng thái hiển thị nhiều lần khi cuộn vào/ra màn hình
-        setIsVisible(entry.isIntersecting);
-      },
-      {
-        threshold: 0.15,
-        rootMargin: "0px 0px -20px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        transitionDelay: isVisible ? `${delay}ms` : "0ms",
-      }}
-      className={`transition-all duration-700 ease-out transform ${
-        isVisible
-          ? "opacity-100 translate-y-0 scale-100 filter-none"
-          : "opacity-0 translate-y-8 scale-[0.96] blur-[1px]"
-      }`}
-    >
-      {children}
-    </div>
-  );
 }
 
 export function ProductDetailClient({
@@ -304,6 +259,40 @@ export function ProductDetailClient({
   const currentOwnerSeq = ownersList[ownersList.length - 1]?.seq || ownersList.length || 1;
   const nextOwnerSeq = currentOwnerSeq + 1;
 
+  const journeySteps: JourneyOwnerStep[] = ownersList.map((owner) => {
+    const isFirst = owner.seq === 1;
+    const isCurrent = owner.seq === currentOwnerSeq;
+    const ownerDisplayName = owner.showName
+      ? owner.user?.displayName ||
+        (isCurrent ? product.seller.displayName : `Sinh viên Đời #${owner.seq}`)
+      : `Sinh viên ẩn danh (${owner.schoolShortName || (isCurrent ? product.school?.shortName : null) || "UniCycle"})`;
+    const schoolLabel =
+      owner.schoolShortName ||
+      (isCurrent ? product.school?.name : null) ||
+      "Khuôn viên Đại học";
+    const datePart = owner.since
+      ? ` • Từ ${new Date(owner.since).toLocaleDateString("vi-VN")}`
+      : "";
+    const eventPart = isFirst
+      ? " • Đăng ký vào hệ thống UniCycle"
+      : " • Xác nhận bàn giao kế thừa Passport";
+
+    return {
+      key: owner.seq,
+      seq: owner.seq,
+      title: `Đời chủ #${owner.seq}: ${ownerDisplayName}`,
+      badgeLabel: isFirst
+        ? "Khởi tạo"
+        : isCurrent
+        ? "Chủ hiện tại (Đang bán lại)"
+        : "Đã chuyển nhượng",
+      badgeTone: isFirst ? "origin" : isCurrent ? "current" : "transferred",
+      isCurrent,
+      metaText: `${schoolLabel}${datePart}${eventPart}`,
+      txHash: owner.txHash,
+    };
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
       {/* 1. Breadcrumbs */}
@@ -350,14 +339,14 @@ export function ProductDetailClient({
             <div className="absolute top-4 left-4 flex flex-wrap gap-2">
               {product.isFree || product.price === 0 ? (
                 <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600 text-white shadow-md">
-                  🎁 Góc 0đ Cho Tặng
+                  Góc 0đ Cho Tặng
                 </span>
               ) : null}
 
               {isReserved && (
                 <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-500 text-white shadow-md flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  Đang giữ chỗ (RESERVED)
+                  <span className="w-2 h-2 rounded-full bg-white motion-safe:animate-pulse" />
+                  Đang giữ chỗ
                 </span>
               )}
 
@@ -368,18 +357,28 @@ export function ProductDetailClient({
               )}
             </div>
 
-            {/* Badge Passport trên ảnh */}
+            {/* Badge Hành trình trên ảnh */}
             {hasPassport && (
-              <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-xs text-white text-xs font-mono px-3 py-1.5 rounded-xl border border-white/10 flex items-center gap-2 shadow-lg">
-                <span className="text-emerald-400 flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-xs text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 shadow-lg">
+                <span className="text-emerald-400 flex items-center gap-1.5">
+                  <svg
+                    className="w-3.5 h-3.5 fill-none stroke-current shrink-0"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
-                  Đời chủ #{currentOwnerSeq}
+                  <span>Đời chủ #{currentOwnerSeq}</span>
                 </span>
-                <span className="text-slate-300">
-                  {product.item?.passportId?.slice(0, 10)}...{product.item?.passportId?.slice(-6)}
+                <span className="text-slate-400" aria-hidden="true">
+                  ·
                 </span>
+                <span className="text-slate-200">Có hành trình</span>
               </div>
             )}
           </div>
@@ -404,151 +403,50 @@ export function ProductDetailClient({
             </div>
           )}
 
-          {/* KHỐI PRODUCT PASSPORT TIMELINE (Nền trắng, Loang màu xanh rực rỡ, Hiệu ứng cuộn lặp lại) */}
+          {/* KHỐI HÀNH TRÌNH ĐỒ VẬT (Component dùng chung) */}
           {hasPassport && (
-            <div className="bg-gradient-to-br from-[#EEF7FC] via-white to-[#E1F3FD] rounded-3xl p-6 sm:p-8 border border-[#7DD3FC]/70 shadow-[0_12px_45px_rgba(0,136,194,0.18)] relative overflow-hidden space-y-6">
-              {/* Hiệu ứng loang nhiều màu xanh rực rỡ & có chiều sâu (Vibrant Multi-layer Blue Glow) */}
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,136,194,0.28),transparent_60%),radial-gradient(ellipse_at_bottom_left,rgba(2,132,199,0.22),transparent_60%)] pointer-events-none" />
-              <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br from-[#0088C2]/40 via-[#38BDF8]/35 to-transparent blur-3xl pointer-events-none animate-pulse duration-[4000ms]" />
-              <div className="absolute top-1/3 -left-28 w-80 h-80 rounded-full bg-gradient-to-tr from-[#0284C7]/35 via-[#0088C2]/25 to-transparent blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-24 right-4 w-96 h-96 rounded-full bg-gradient-to-tl from-[#38BDF8]/45 via-[#0284C7]/25 to-transparent blur-3xl pointer-events-none" />
-
-              {/* Header */}
-              <div className="relative flex items-center justify-between gap-3 pb-4 border-b border-[#BAE6FD]">
-                <div className="flex items-center gap-3">
-                  <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E3F1F9] to-[#BAE6FD]/70 border border-[#7DD3FC] text-[#0088C2] flex items-center justify-center shrink-0 shadow-[0_0_18px_rgba(0,136,194,0.3)]">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </span>
-                  <h3 className="text-base sm:text-lg font-bold text-[#0B1F4B]">
-                    Hành trình đồ vật
-                  </h3>
-                </div>
-              </div>
-
-              {/* Chuỗi đời chủ (Timeline hiện đại với hiệu ứng cuộn lặp lại) */}
-              <div className="relative space-y-4 py-1">
-                <div className="relative pl-7 sm:pl-8 space-y-6 before:content-[''] before:absolute before:left-3 before:top-2.5 before:bottom-3 before:w-1 before:rounded-full before:bg-gradient-to-b before:from-[#0088C2] before:via-[#38BDF8] before:to-[#10B981] before:shadow-[0_0_14px_rgba(0,136,194,0.65)]">
-                  {ownersList.map((owner, idx) => {
-                    const isFirst = owner.seq === 1;
-                    const isCurrent = owner.seq === currentOwnerSeq;
-                    const ownerDisplayName = owner.showName
-                      ? owner.user?.displayName ||
-                        (isCurrent ? product.seller.displayName : `Sinh viên Đời #${owner.seq}`)
-                      : `Sinh viên ẩn danh (${owner.schoolShortName || (isCurrent ? product.school?.shortName : null) || "UniCycle"})`;
-                    const statusBadge = isFirst
-                      ? "Khởi tạo"
-                      : isCurrent
-                      ? "Chủ hiện tại (Đang bán lại)"
-                      : "Đã chuyển nhượng";
-
-                    return (
-                      <TimelineItemReveal key={owner.seq} delay={idx * 120}>
-                        <div className="relative">
-                          {/* Node marker trên timeline */}
-                          <div
-                            className={`absolute -left-7 sm:-left-8 top-1 w-6 h-6 rounded-full flex items-center justify-center shadow-xs ring-4 ${
-                              isCurrent
-                                ? "bg-[#0088C2] text-white ring-[#BAE6FD] shadow-[0_0_16px_rgba(0,136,194,0.6)]"
-                                : "bg-white border-2 border-[#0088C2] text-[#0088C2] ring-white"
-                            }`}
-                          >
-                            <span
-                              className={`w-2 h-2 rounded-full ${
-                                isCurrent ? "bg-white" : "bg-[#0088C2]"
-                              }`}
-                            />
-                          </div>
-
-                          {/* Thẻ nội dung đời chủ */}
-                          <div className="rounded-2xl p-4 sm:p-5 border border-[#BAE6FD] bg-white/90 backdrop-blur-md hover:bg-white hover:border-[#0088C2] hover:shadow-[0_6px_24px_rgba(0,136,194,0.16)] transition-all flex flex-col gap-1.5 group">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="text-sm font-bold text-[#0B1F4B] group-hover:text-[#0088C2] transition-colors">
-                                Đời chủ #{owner.seq}: {ownerDisplayName}
-                              </span>
-                              <span
-                                className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border shadow-2xs ${
-                                  isFirst
-                                    ? "bg-[#E6F6EE] text-[#0B6B3A] border-[#B7E4CB]"
-                                    : isCurrent
-                                    ? "bg-gradient-to-r from-[#E3F1F9] to-[#BAE6FD]/70 text-[#0088C2] border-[#7DD3FC]"
-                                    : "bg-[#EEF2F6] text-[#475569] border-[#DCE6EE]"
-                                }`}
-                              >
-                                {statusBadge}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-[#475569] leading-relaxed">
-                              {owner.schoolShortName ||
-                                (isCurrent ? product.school?.name : null) ||
-                                "Khuôn viên Đại học"}
-                              {owner.since
-                                ? ` • Từ ${new Date(owner.since).toLocaleDateString("vi-VN")}`
-                                : ""}
-                              {isFirst
-                                ? " • Đăng ký vào hệ thống UniCycle"
-                                : " • Xác nhận bàn giao kế thừa Passport"}
-                            </p>
-
-                            {owner.txHash && (
-                              <div className="pt-0.5">
-                                <a
-                                  href={`https://testnet.snowtrace.io/tx/${owner.txHash}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#F0F9FF] border border-[#BAE6FD] text-xs font-semibold text-[#0088C2] hover:bg-[#0088C2] hover:text-white transition-all shadow-2xs"
-                                >
-                                  <span>Tra cứu nhanh</span>
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                  </svg>
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </TimelineItemReveal>
-                    );
-                  })}
-
-                  {/* Đời chủ kế tiếp */}
-                  <TimelineItemReveal delay={ownersList.length * 120}>
-                    <div className="relative">
-                      <div className="absolute -left-7 sm:-left-8 top-1 w-6 h-6 rounded-full bg-[#10B981] text-white flex items-center justify-center shadow-xs ring-4 ring-[#E6F6EE] animate-pulse">
-                        <span className="w-2 h-2 rounded-full bg-white" />
-                      </div>
-
-                      <div className="rounded-2xl p-4 sm:p-5 border border-[#A7F3D0] bg-white/95 backdrop-blur-md shadow-xs hover:border-[#34D399] transition-all flex flex-col gap-1">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-sm font-bold text-[#0B6B3A]">
-                            Đời chủ #{nextOwnerSeq}: Bạn đang xem món đồ này!
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#E6F6EE] text-[#0B6B3A] border border-[#B7E4CB] shadow-2xs">
-                            Kế thừa tiếp theo
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#334155] leading-relaxed">
-                          Kế thừa tiếp nối hồ sơ xuất xứ (từ Đời chủ #{currentOwnerSeq}) khi hoàn tất xác nhận trao tay.
-                        </p>
-                      </div>
-                    </div>
-                  </TimelineItemReveal>
-                </div>
-              </div>
-
-              {/* Nút tra cứu trang Passport & Snowtrace Fuji */}
-              <TimelineItemReveal delay={(ownersList.length + 1) * 120}>
-                <div className="relative flex flex-wrap items-center gap-3 pt-1">
+            <ItemJourneyTimeline
+              steps={journeySteps}
+              nextStep={{
+                title: `Đời chủ #${nextOwnerSeq}: Bạn đang xem món đồ này!`,
+                badgeLabel: "Kế thừa tiếp theo",
+                description: `Kế thừa tiếp nối hồ sơ xuất xứ (từ Đời chủ #${currentOwnerSeq}) khi hoàn tất xác nhận trao tay.`,
+              }}
+              actions={
+                <>
                   <Link
                     href={`/passport/${product.item?.passportId || product.item?.id}`}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-[#F0F9FF] text-[#0B1F4B] border border-[#7DD3FC] hover:border-[#0088C2] text-xs sm:text-sm font-semibold transition-all shadow-xs hover:shadow-md"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-[#F0F9FF] text-[#0B1F4B] border border-[#7DD3FC] hover:border-[#0088C2] text-xs sm:text-sm font-semibold transition-all shadow-xs hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
                   >
-                    <svg className="w-4 h-4 text-[#0088C2]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg
+                      className="w-4 h-4 text-[#0088C2] shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
                     </svg>
-                    <span>Tra cứu chi tiết Digital Passport ↗</span>
+                    <span>Tra cứu chi tiết Digital Passport</span>
+                    <svg
+                      className="w-3.5 h-3.5 text-[#0088C2] shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+                      />
+                    </svg>
                   </Link>
 
                   {product.item?.latestTxHash && (
@@ -556,25 +454,63 @@ export function ProductDetailClient({
                       href={`https://testnet.snowtrace.io/tx/${product.item.latestTxHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#E6F6EE] hover:bg-[#D7EFE2] text-[#0B6B3A] border border-[#B7E4CB] text-xs sm:text-sm font-semibold transition-all shadow-xs"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#E6F6EE] hover:bg-[#D7EFE2] text-[#0B6B3A] border border-[#B7E4CB] text-xs sm:text-sm font-semibold transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
                     >
-                      <svg className="w-4 h-4 text-[#0B6B3A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      <svg
+                        className="w-4 h-4 text-[#0B6B3A] shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                        />
                       </svg>
-                      <span>Xem giao dịch trên Snowtrace Fuji ↗</span>
+                      <span>Xem giao dịch trên Snowtrace Fuji</span>
+                      <svg
+                        className="w-3.5 h-3.5 text-[#0B6B3A] shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+                        />
+                      </svg>
                     </a>
                   )}
+                </>
+              }
+              footer={
+                <div className="flex items-start gap-2.5 text-xs text-[#475569] leading-relaxed">
+                  <svg
+                    className="w-4 h-4 text-[#0088C2] shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                    />
+                  </svg>
+                  <span>
+                    <strong className="text-[#0B1F4B]">Tuyên bố giới hạn:</strong> Product Passport ghi nhận chuỗi sự kiện chuyển giao sở hữu giữa sinh viên, không đóng vai trò chứng nhận chất lượng kỹ thuật hay bảo hành thương mại của nhà sản xuất.
+                  </span>
                 </div>
-              </TimelineItemReveal>
-
-              {/* Tuyên bố giới hạn bắt buộc (BR30) */}
-              <div className="relative pt-3.5 border-t border-[#BAE6FD]/80 flex items-start gap-2.5 text-xs text-[#475569] leading-relaxed">
-                <span className="text-[#0088C2] shrink-0 mt-0.5 font-bold">ℹ️</span>
-                <span>
-                  <strong className="text-[#0B1F4B]">Tuyên bố giới hạn (BR30):</strong> Product Passport ghi nhận chuỗi sự kiện chuyển giao sở hữu giữa sinh viên, không đóng vai trò chứng nhận chất lượng kỹ thuật hay bảo hành thương mại của nhà sản xuất.
-                </span>
-              </div>
-            </div>
+              }
+            />
           )}
 
           {/* Mô tả chi tiết món đồ */}
@@ -657,7 +593,10 @@ export function ProductDetailClient({
                     onClick={handleOpenZalo}
                     className="w-full py-2.5 px-4 rounded-2xl bg-sky-50 hover:bg-sky-100 text-[#0068FF] border border-sky-200 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>💬 Xem thông tin liên hệ Zalo</span>
+                    <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.02l-.95 3.51a.6.6 0 0 0 .78.71l3.9-1.62c.76.22 1.57.38 2.41.38 5.52 0 10-4.03 10-9s-4.48-9-10-9zm5.54 11.23c-.23.63-1.18 1.18-1.65 1.25-.43.06-.99.09-1.6-.11a14.28 14.28 0 0 1-4.45-2.73 13.9 13.9 0 0 1-2.65-4.17c-.22-.61-.22-1.17-.15-1.6.07-.47.62-1.42 1.25-1.65.23-.09.49-.07.69.05.27.16 1.09 1.93 1.19 2.13.06.13.07.28.02.41-.09.23-.39.69-.47.81-.11.16-.2.27-.08.48.24.42.78 1.26 1.48 1.91.7.64 1.55 1.13 1.98 1.34.22.11.33.02.48-.09.12-.08.58-.38.81-.47.13-.05.28-.04.41.02.2.1 1.97.92 2.13 1.19.12.2.14.46.05.69z" />
+                    </svg>
+                    <span>Xem thông tin liên hệ Zalo</span>
                   </button>
                 </div>
               ) : isSold ? (
@@ -668,8 +607,22 @@ export function ProductDetailClient({
                   Món đồ này đã bán thành công
                 </button>
               ) : isFlaggedPassport ? (
-                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold text-center">
-                  🚨 Món đồ này đang bị gắn cờ nghi vấn tranh chấp / vi phạm (BR32, BR39), tạm khóa giao dịch mới.
+                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center justify-center gap-2 text-center">
+                  <svg
+                    className="w-4 h-4 text-rose-600 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                    />
+                  </svg>
+                  <span>Món đồ này đang bị gắn cờ nghi vấn tranh chấp hoặc vi phạm, tạm khóa giao dịch mới.</span>
                 </div>
               ) : isReserved ? (
                 <div className="space-y-2.5">
@@ -677,7 +630,7 @@ export function ProductDetailClient({
                     disabled
                     className="w-full py-3.5 px-4 rounded-2xl bg-amber-100 text-amber-800 border border-amber-300 text-sm font-bold cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-amber-500 motion-safe:animate-pulse" />
                     Đang giữ chỗ cho người mua trước
                   </button>
                   <button
@@ -685,10 +638,13 @@ export function ProductDetailClient({
                     onClick={handleOpenZalo}
                     className="w-full py-3 px-4 rounded-2xl bg-[#0068FF] hover:bg-[#0052cc] text-white text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>💬 Nhắn Zalo người bán</span>
+                    <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.02l-.95 3.51a.6.6 0 0 0 .78.71l3.9-1.62c.76.22 1.57.38 2.41.38 5.52 0 10-4.03 10-9s-4.48-9-10-9zm5.54 11.23c-.23.63-1.18 1.18-1.65 1.25-.43.06-.99.09-1.6-.11a14.28 14.28 0 0 1-4.45-2.73 13.9 13.9 0 0 1-2.65-4.17c-.22-.61-.22-1.17-.15-1.6.07-.47.62-1.42 1.25-1.65.23-.09.49-.07.69.05.27.16 1.09 1.93 1.19 2.13.06.13.07.28.02.41-.09.23-.39.69-.47.81-.11.16-.2.27-.08.48.24.42.78 1.26 1.48 1.91.7.64 1.55 1.13 1.98 1.34.22.11.33.02.48-.09.12-.08.58-.38.81-.47.13-.05.28-.04.41.02.2.1 1.97.92 2.13 1.19.12.2.14.46.05.69z" />
+                    </svg>
+                    <span>Nhắn Zalo người bán</span>
                   </button>
                   <p className="text-[11px] text-center text-slate-500">
-                    Nếu buổi hẹn không diễn ra, món đồ sẽ tự động mở bán lại sau 24h (BR37).
+                    Nếu buổi hẹn không diễn ra, món đồ sẽ tự động mở bán lại sau 24h.
                   </p>
                 </div>
               ) : (
@@ -768,9 +724,18 @@ export function ProductDetailClient({
                 </p>
 
                 <div className="flex items-center gap-3 text-xs text-slate-500">
-                  <span>⭐ {product.seller.reputationScore?.toFixed(1) || "5.0"} uy tín</span>
-                  <span>•</span>
-                  <span className="text-emerald-700 font-medium">⚡ Phản hồi &lt; 15 phút</span>
+                  <span className="inline-flex items-center gap-1">
+                    <svg
+                      className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    <span>{product.seller.reputationScore?.toFixed(1) || "5.0"} uy tín</span>
+                  </span>
+                  <span aria-hidden="true">•</span>
+                  <span className="text-emerald-700 font-medium">Phản hồi &lt; 15 phút</span>
                 </div>
               </div>
             </Link>
@@ -797,7 +762,7 @@ export function ProductDetailClient({
                   <svg className="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                   </svg>
-                  <span>Báo cáo tin đăng vi phạm (BR17)</span>
+                  <span>Báo cáo tin đăng vi phạm</span>
                 </button>
               </div>
             )}
@@ -829,9 +794,19 @@ export function ProductDetailClient({
               <button
                 type="button"
                 onClick={() => setZaloDialogOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold"
+                aria-label="Đóng hộp thoại liên hệ Zalo"
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 flex items-center justify-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
               >
-                ✕
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
@@ -861,13 +836,13 @@ export function ProductDetailClient({
                     Quét mã QR bằng ứng dụng Zalo trên điện thoại
                   </span>
                   <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-bold text-[#001B48]">
-                    <span>📞 SĐT Zalo:</span>
+                    <span>SĐT Zalo:</span>
                     <span className="font-mono text-[#0068FF]">
                       {zaloData.phoneRaw || zaloData.maskedPhone}
                     </span>
                     {zaloData.hidePhone && !zaloData.phoneRaw && (
                       <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full">
-                        Đã che (BR36)
+                        Đã bảo vệ
                       </span>
                     )}
                   </div>
@@ -907,7 +882,7 @@ export function ProductDetailClient({
                     }}
                     className="w-full py-3 px-4 rounded-xl bg-[#0068FF] hover:bg-[#0052cc] text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
                   >
-                    <span>📱 Mở Ứng Dụng Zalo (Đã chép lời nhắn)</span>
+                    <span>Mở ứng dụng Zalo (Đã chép lời nhắn)</span>
                   </a>
 
                   {zaloData.phoneRaw && !zaloData.hidePhone && (
@@ -923,10 +898,10 @@ export function ProductDetailClient({
 
                 {zaloData.hidePhone && (
                   <p className="text-[10px] text-center text-slate-400 flex items-center justify-center gap-1">
-                    <svg className="w-3 h-3 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-3 h-3 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
-                    <span>Người bán đã bật chế độ bảo vệ số điện thoại chống spam (BR36).</span>
+                    <span>Người bán đã bật chế độ bảo vệ số điện thoại chống spam.</span>
                   </p>
                 )}
               </div>
