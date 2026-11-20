@@ -6,6 +6,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { compressImage, CompressedImageResult } from "@/lib/utils/image-compress";
 import { checkProhibitedContent } from "@/lib/utils/prohibited-words";
+import {
+  ItemJourneyTimeline,
+  JourneyNextStep,
+  JourneyOwnerStep,
+} from "@/components/passport/ItemJourneyTimeline";
 
 interface CategoryOption {
   id: string;
@@ -37,10 +42,21 @@ interface UploadedImage {
   ratio: number;
 }
 
+interface ResellOwnerSnapshot {
+  seq: number;
+  isMe?: boolean;
+  showName: boolean;
+  displayName: string;
+  realDisplayName?: string | null;
+  since: string;
+  schoolShortName?: string | null;
+  txHash?: string | null;
+}
+
 // Dữ liệu mẫu demo nhanh để người dùng test trong 1 chạm
 const DEMO_PRESETS = [
   {
-    label: "📚 Giáo trình Giải tích 1",
+    label: "Giáo trình Giải tích 1",
     title: "Giáo trình Giải tích 1 - ĐHQG TP.HCM (Kèm tập đề cương thi)",
     categorySlug: "giao-trinh-sach",
     condition: "Còn rất tốt",
@@ -50,7 +66,7 @@ const DEMO_PRESETS = [
     imageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800",
   },
   {
-    label: "⚡ Máy tính Casio fx-580",
+    label: "Máy tính Casio fx-580",
     title: "Máy tính Casio fx-580VNX chính hãng Bitex (Nguyên tem, màn sáng đẹp)",
     categorySlug: "do-dien-tu-phu-kien",
     condition: "Mới 98%",
@@ -60,7 +76,7 @@ const DEMO_PRESETS = [
     imageUrl: "https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?w=800",
   },
   {
-    label: "🌬️ Quạt lỡ Senko",
+    label: "Quạt lỡ Senko",
     title: "Quạt bàn Senko B3 chạy êm ru, gió mạnh cho phòng KTX",
     categorySlug: "do-gia-dung-quat",
     condition: "Còn rất tốt",
@@ -70,7 +86,7 @@ const DEMO_PRESETS = [
     imageUrl: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800",
   },
   {
-    label: "🎁 Bàn học gấp KTX (0đ)",
+    label: "Bàn học gấp KTX (0đ)",
     title: "Tặng bàn học gấp chân chữ U cho bạn sinh viên tân khóa",
     categorySlug: "goc-0d-cho-tang",
     condition: "Đã sử dụng",
@@ -125,6 +141,7 @@ export function SellForm() {
     myOwnerSeq: number;
     totalOwners: number;
     txHash?: string | null;
+    owners: ResellOwnerSnapshot[];
   } | null>(null);
   const [availableResellItems, setAvailableResellItems] = useState<Array<{
     id: string;
@@ -136,6 +153,7 @@ export function SellForm() {
     showNameOnPassport: boolean;
     txHash?: string | null;
     isCurrentlyListed: boolean;
+    owners: ResellOwnerSnapshot[];
   }>>([]);
 
   // Danh mục và Trường học
@@ -220,6 +238,7 @@ export function SellForm() {
                 showNameOnPassport?: boolean;
                 chainTx?: { txHash?: string | null } | null;
                 isCurrentlyListed?: boolean;
+                owners?: ResellOwnerSnapshot[];
               }) => ({
                 id: i.id,
                 title: i.title,
@@ -230,6 +249,7 @@ export function SellForm() {
                 showNameOnPassport: Boolean(i.showNameOnPassport),
                 txHash: i.chainTx?.txHash || null,
                 isCurrentlyListed: Boolean(i.isCurrentlyListed),
+                owners: Array.isArray(i.owners) ? i.owners : [],
               })
             );
 
@@ -249,6 +269,7 @@ export function SellForm() {
                   myOwnerSeq: found.myOwnerSeq,
                   totalOwners: found.totalOwners,
                   txHash: found.txHash,
+                  owners: found.owners,
                 });
                 setTitle(found.title);
                 const matchingCat = categories.find((c) => c.slug === found.categorySlug);
@@ -279,6 +300,7 @@ export function SellForm() {
       myOwnerSeq: item.myOwnerSeq,
       totalOwners: item.totalOwners,
       txHash: item.txHash || null,
+      owners: item.owners,
     });
     setTitle(item.title);
     const matchingCat = categories.find((c) => c.slug === item.categorySlug);
@@ -301,7 +323,7 @@ export function SellForm() {
     if (!files || files.length === 0) return;
 
     if (images.length + files.length > 5) {
-      setFormError("Tối đa 5 hình ảnh cho mỗi tin đăng (BR16).");
+      setFormError("Tối đa 5 hình ảnh cho mỗi tin đăng.");
       return;
     }
 
@@ -412,7 +434,7 @@ export function SellForm() {
     // Kiểm tra hàng cấm phía client
     const prohibited = checkProhibitedContent(`${title} ${description}`);
     if (prohibited) {
-      setFormError(`Nội dung chứa từ khóa bị cấm: "${prohibited}". UniCycle không cho phép giao dịch chất kích thích, cồn, vũ khí trong môi trường học đường (BR17).`);
+      setFormError(`Nội dung chứa từ khóa bị cấm: "${prohibited}". UniCycle không cho phép giao dịch chất kích thích, cồn, vũ khí trong môi trường học đường.`);
       return;
     }
 
@@ -477,19 +499,117 @@ export function SellForm() {
     );
   }
 
+  const selectedSchool = schools.find((s) => s.id === schoolId) || schools[0];
+  const isResellMode = Boolean(resellItemData || resellItemId);
+  const effectivePassportEnabled = isResellMode || passportEnabled;
+
+  let journeySteps: JourneyOwnerStep[] = [];
+  let journeyNextStep: JourneyNextStep | null = null;
+
+  if (effectivePassportEnabled) {
+    if (resellItemData) {
+      const rawOwners: ResellOwnerSnapshot[] =
+        resellItemData.owners.length > 0
+          ? resellItemData.owners
+          : [
+              {
+                seq: resellItemData.myOwnerSeq,
+                isMe: true,
+                showName: showNameOnPassport,
+                displayName: showNameOnPassport
+                  ? currentUser?.displayName || "Bạn"
+                  : `Sinh viên ẩn danh (${selectedSchool?.shortName || "UniCycle"})`,
+                realDisplayName: currentUser?.displayName || null,
+                since: "",
+                schoolShortName: selectedSchool?.shortName || null,
+                txHash: resellItemData.txHash || null,
+              },
+            ];
+
+      journeySteps = rawOwners.map((owner) => {
+        const isFirst = owner.seq === 1;
+        const isCurrent = Boolean(owner.isMe) || owner.seq === resellItemData.myOwnerSeq;
+        const schoolShort =
+          (isCurrent ? selectedSchool?.shortName : null) ||
+          owner.schoolShortName ||
+          "UniCycle";
+        const ownerDisplayName = isCurrent
+          ? showNameOnPassport
+            ? owner.realDisplayName || currentUser?.displayName || "Bạn"
+            : `Sinh viên ẩn danh (${schoolShort})`
+          : owner.displayName;
+        const schoolMeta =
+          (isCurrent ? selectedSchool?.shortName : null) ||
+          owner.schoolShortName ||
+          "Khuôn viên Đại học";
+        const datePart = owner.since
+          ? ` • Từ ${new Date(owner.since).toLocaleDateString("vi-VN")}`
+          : "";
+        const eventPart = isFirst
+          ? " • Đăng ký vào hệ thống UniCycle"
+          : " • Xác nhận bàn giao kế thừa Passport";
+
+        return {
+          key: owner.seq,
+          seq: owner.seq,
+          title: `Đời chủ #${owner.seq}: ${ownerDisplayName}`,
+          badgeLabel: isFirst
+            ? "Khởi tạo"
+            : isCurrent
+            ? "Chủ hiện tại (Đang bán lại)"
+            : "Đã chuyển nhượng",
+          badgeTone: isFirst ? "origin" : isCurrent ? "current" : "transferred",
+          isCurrent,
+          metaText: `${schoolMeta}${datePart}${eventPart}`,
+          txHash: owner.txHash || null,
+        };
+      });
+
+      journeyNextStep = {
+        title: `Đời chủ #${resellItemData.totalOwners + 1}: Người mua tiếp theo`,
+        badgeLabel: "Kế thừa tiếp theo",
+        description: `Tự động kế thừa tiếp nối hồ sơ xuất xứ (từ Đời chủ #${resellItemData.myOwnerSeq}) khi hoàn tất xác nhận trao tay.`,
+      };
+    } else {
+      const schoolShort = selectedSchool?.shortName || "UniCycle";
+      const ownerDisplayName = showNameOnPassport
+        ? currentUser?.displayName || "Bạn"
+        : `Sinh viên ẩn danh (${schoolShort})`;
+
+      journeySteps = [
+        {
+          key: 1,
+          seq: 1,
+          title: `Đời chủ #1: ${ownerDisplayName}`,
+          badgeLabel: "Khởi tạo",
+          badgeTone: "origin",
+          isCurrent: true,
+          metaText: `${selectedSchool?.shortName || "Khuôn viên Đại học"} • Hôm nay • Đăng ký vào hệ thống UniCycle`,
+        },
+      ];
+
+      journeyNextStep = {
+        title: "Đời chủ #2: Người mua tiếp theo",
+        badgeLabel: "Kế thừa tiếp theo",
+        description:
+          "Tự động kế thừa tiếp nối hồ sơ xuất xứ (từ Đời chủ #1) khi hoàn tất xác nhận trao tay.",
+      };
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       {/* 1. Header Đăng Tin & Thông điệp < 60s */}
       <div className="mb-8">
         <div className="flex flex-wrap items-center gap-2 mb-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-[#D6E8EE] text-[#001B48]">
-            ⚡ Đăng tin siêu tốc &lt; 60 giây
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-[#D6E8EE] text-[#001B48]">
+            Đăng tin dưới 60 giây
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            🔒 Bảo vệ SĐT sinh viên (BR36)
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            Bảo vệ số điện thoại
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-[#018ABE] border border-blue-200">
-            📜 Tự động tạo Digital Passport
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-[#018ABE] border border-blue-200">
+            Tự động tạo hành trình đồ vật
           </span>
         </div>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#001B48] tracking-tight">
@@ -499,40 +619,58 @@ export function SellForm() {
           Tiếp nối vòng đời đồ dùng học tập, kết nối trao tay an toàn tại cổng KTX và trường học.
         </p>
 
-        {/* Banner Bán lại kế thừa Passport nếu có resellItemData (BR24, BR25, BR33) */}
+        {/* Banner Bán lại kế thừa Hành trình */}
         {resellItemData && (
-          <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs sm:text-sm flex items-start justify-between gap-3 shadow-xs">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl shrink-0">🔄</span>
-              <div className="space-y-1">
+          <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-start justify-between gap-3 shadow-xs">
+            <div className="flex items-start gap-3 min-w-0">
+              <span
+                className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0"
+                aria-hidden="true"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </span>
+              <div className="space-y-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <strong className="text-emerald-900 font-extrabold uppercase tracking-wider text-xs">
-                    Bán Lại 1-Chạm Kế Thừa Digital Product Passport (BR24, BR25, BR33)
+                  <strong className="text-emerald-900 font-extrabold text-xs sm:text-sm">
+                    Bán lại 1 chạm · Kế thừa hành trình đồ vật
                   </strong>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white">
-                    Đời chủ #{resellItemData.myOwnerSeq} ➔ #{resellItemData.totalOwners + 1}
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-600 text-white whitespace-nowrap shrink-0">
+                    Đời chủ #{resellItemData.myOwnerSeq} → #{resellItemData.totalOwners + 1}
                   </span>
                 </div>
                 <p className="text-emerald-900/90 leading-relaxed text-xs sm:text-[13px]">
-                  Bạn đang đăng bán lại món đồ <strong>{resellItemData.title}</strong> với tư cách <strong>Đời chủ #{resellItemData.myOwnerSeq}</strong>. Món đồ kế thừa nguyên vẹn mã <strong>Passport ID: {resellItemData.passportId}</strong> và chuỗi đời chủ trên hệ thống. <strong>Quy tắc BR24:</strong> Bạn bắt buộc phải chụp và tải lên bộ ảnh mới phản ánh trung thực tình trạng hiện tại để người mua sau đối chiếu trực quan.
+                  Bạn đang đăng bán lại món đồ <strong>{resellItemData.title}</strong> với tư cách <strong>Đời chủ #{resellItemData.myOwnerSeq}</strong>. Hồ sơ hành trình trước đó sẽ được kế thừa tự động. Vui lòng chụp và tải lên ảnh mới phản ánh đúng tình trạng hiện tại để người mua dễ đối chiếu.
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={handleClearResellItem}
-              className="shrink-0 text-xs font-bold text-emerald-800 hover:text-emerald-950 px-2.5 py-1.5 rounded-lg bg-white border border-emerald-200 hover:bg-emerald-100/60 transition-colors cursor-pointer"
+              className="shrink-0 self-start text-xs font-bold text-emerald-800 hover:text-emerald-950 px-3 py-1.5 rounded-lg bg-white border border-emerald-200 hover:bg-emerald-100/60 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
               Đổi sang đăng mới
             </button>
           </div>
         )}
 
-        {/* Hộp chọn nhanh món đồ đang sở hữu để bán lại kế thừa Passport */}
+        {/* Hộp chọn nhanh món đồ đang sở hữu để bán lại kế thừa Hành trình */}
         {!resellItemData && availableResellItems.length > 0 && (
           <div className="mt-4 p-4 bg-emerald-50/60 rounded-2xl border border-emerald-200 shadow-xs space-y-2.5">
-            <div className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
-              <span>🔄 Bạn muốn bán lại món đồ đã mua trong Đồ của tôi (kế thừa tiếp nối Đời chủ Passport)?</span>
+            <div className="text-xs font-bold text-emerald-900">
+              Bạn muốn bán lại món đồ đã mua trong Đồ của tôi để tiếp nối hành trình?
             </div>
             <div className="flex flex-wrap gap-2">
               {availableResellItems.map((item) => (
@@ -540,10 +678,10 @@ export function SellForm() {
                   key={item.id}
                   type="button"
                   onClick={() => handleSelectResellItem(item)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-100 text-[#001B48] border border-emerald-200 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-100 text-[#001B48] border border-emerald-200 transition-colors cursor-pointer inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
                 >
                   <span className="truncate max-w-[220px]">{item.title}</span>
-                  <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200 shrink-0">
+                  <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200 shrink-0 whitespace-nowrap">
                     Đời chủ #{item.myOwnerSeq}
                   </span>
                 </button>
@@ -555,8 +693,8 @@ export function SellForm() {
         {/* Nút bấm điền nhanh dữ liệu mẫu 1-chạm (Ẩn khi đang bán lại món đồ có sẵn) */}
         {!resellItemData && !resellItemId && (
           <div className="mt-4 p-3.5 bg-white rounded-2xl border border-[#D6E8EE] shadow-xs">
-            <div className="text-xs font-bold text-[#001B48] mb-2 flex items-center gap-1.5">
-              <span>✨ Thử nhanh mẫu tin sinh viên phổ biến (1 chạm):</span>
+            <div className="text-xs font-bold text-[#001B48] mb-2">
+              Thử nhanh mẫu tin sinh viên phổ biến:
             </div>
             <div className="flex flex-wrap gap-2">
               {DEMO_PRESETS.map((preset, idx) => (
@@ -564,7 +702,7 @@ export function SellForm() {
                   key={idx}
                   type="button"
                   onClick={() => handleApplyPreset(preset, idx)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-[#D6E8EE]/60 text-[#001B48] transition-colors cursor-pointer border border-slate-200"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-[#D6E8EE]/60 text-[#001B48] transition-colors cursor-pointer border border-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
                 >
                   {preset.label}
                 </button>
@@ -626,10 +764,20 @@ export function SellForm() {
                 <button
                   type="button"
                   onClick={() => handleRemoveImage(idx)}
-                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-80 group-hover:opacity-100 hover:bg-rose-600 transition-all cursor-pointer"
+                  aria-label="Xóa ảnh"
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-80 group-hover:opacity-100 hover:bg-rose-600 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   title="Xóa ảnh"
                 >
-                  ✕
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             ))}
@@ -732,7 +880,7 @@ export function SellForm() {
                   className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                 />
                 <span className="text-xs font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
-                  🎁 Tặng miễn phí 0đ
+                  Tặng miễn phí 0đ
                 </span>
               </label>
             </div>
@@ -819,7 +967,7 @@ export function SellForm() {
             </div>
           </div>
 
-          {/* Công tắc Ẩn SĐT công khai (BR36) */}
+          {/* Công tắc Ẩn SĐT công khai */}
           <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-start gap-3">
             <input
               type="checkbox"
@@ -828,38 +976,33 @@ export function SellForm() {
               onChange={(e) => setHidePhone(e.target.checked)}
               className="mt-1 w-4 h-4 text-[#018ABE] rounded border-slate-300 focus:ring-[#018ABE] cursor-pointer"
             />
-            <label htmlFor="hidePhoneCheck" className="text-xs sm:text-sm text-[#001B48] cursor-pointer select-none">
-              <span className="font-bold block text-[#018ABE]">
-                🛡️ Ẩn số điện thoại trên bài đăng công khai (Khuyên dùng - BR36)
+            <label htmlFor="hidePhoneCheck" className="text-xs sm:text-sm text-[#001B48] cursor-pointer select-none space-y-1">
+              <span className="font-bold text-[#018ABE] inline-flex flex-wrap items-center gap-2">
+                <span>Ẩn số điện thoại trên bài đăng công khai</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E3F1F9] text-[#0088C2] border border-[#BAE6FD] whitespace-nowrap">
+                  Khuyên dùng
+                </span>
               </span>
-              <span className="text-[#02457A] text-xs">
+              <span className="text-[#02457A] text-xs block">
                 Người mua sẽ bấm nút &quot;Mở Zalo&quot; bảo mật và hệ thống chuyển tiếp trực tiếp, ngăn chặn kẻ xấu cào số spam tin nhắn rác hoặc quảng cáo.
               </span>
             </label>
           </div>
         </div>
 
-        {/* KHỐI 4: DIGITAL PRODUCT PASSPORT (BR24, BR29) */}
-        <div className="bg-gradient-to-br from-slate-900 to-[#001B48] text-white rounded-3xl p-5 sm:p-7 shadow-lg space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-lg">
-                📜
-              </span>
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-white">
-                  Digital Product Passport (Hộ Chiếu Đồ Vật)
-                </h2>
-                <span className="text-xs text-[#D6E8EE]">
-                  {resellItemData
-                    ? `Kế thừa Hộ chiếu • Tiếp nối Đời chủ #${resellItemData.myOwnerSeq} ➔ #${resellItemData.totalOwners + 1}`
-                    : "Độc quyền tại UniCycle • Theo dõi vòng đời Đời chủ #1 ➔ #2"}
-                </span>
-              </div>
-            </div>
-            {resellItemData || resellItemId ? (
-              <span className="text-[11px] font-bold text-emerald-300 bg-emerald-500/20 px-3 py-1 rounded-xl border border-emerald-500/30 shrink-0">
-                🔒 Bắt buộc kế thừa (BR33)
+        {/* KHỐI 4: HÀNH TRÌNH ĐỒ VẬT (ĐỒNG BỘ VỚI TRANG CHI TIẾT SẢN PHẨM) */}
+        <ItemJourneyTimeline
+          title="Hành trình đồ vật"
+          subtitle={
+            isResellMode
+              ? "Xem trước hành trình kế thừa sẽ hiển thị trên trang sản phẩm"
+              : "Xem trước hành trình sẽ hiển thị trên trang sản phẩm"
+          }
+          animate={false}
+          headerRight={
+            isResellMode ? (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#E6F6EE] text-[#0B6B3A] border border-[#B7E4CB] whitespace-nowrap">
+                Kế thừa tự động
               </span>
             ) : (
               <label className="relative inline-flex items-center cursor-pointer select-none">
@@ -867,74 +1010,42 @@ export function SellForm() {
                   type="checkbox"
                   checked={passportEnabled}
                   onChange={(e) => setPassportEnabled(e.target.checked)}
+                  aria-label="Bật hoặc tắt hành trình đồ vật"
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#018ABE]" />
+                <div className="w-11 h-6 bg-slate-300 peer-focus-visible:ring-2 peer-focus-visible:ring-[#018ABE] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#018ABE]" />
               </label>
-            )}
-          </div>
-
-          {passportEnabled && (
-            <div className="pt-3 border-t border-white/10 space-y-3">
-              <p className="text-xs text-slate-300 leading-relaxed">
-                {resellItemData
-                  ? "Món đồ này kế thừa nguyên vẹn mã định danh và lịch sử chuyển giao trước đó. Sau khi người mua xác nhận nhận hàng, Passport sẽ tự động ghi nhận đời chủ kế tiếp."
-                  : "Khi kích hoạt, món đồ sẽ được cấp 1 mã định danh duy nhất (bytes32 commit hash). Người mua sau này có thể kế thừa và xem nguồn gốc xuất xứ, giúp món đồ giữ trọn giá trị sang nhượng."}
-              </p>
-
-              {/* Tùy chọn hiển thị tên (BR29) */}
-              <div className="flex items-center gap-2.5 bg-white/5 p-3 rounded-xl border border-white/10">
+            )
+          }
+          steps={journeySteps}
+          nextStep={journeyNextStep}
+          emptyContent={
+            <div className="rounded-2xl p-4 sm:p-5 border border-[#BAE6FD] bg-white/90 text-xs text-[#475569] leading-relaxed">
+              Bạn đang tạm tắt Hành trình đồ vật cho tin đăng này. Bạn có thể bật lại để món đồ minh bạch nguồn gốc và dễ sang nhượng hơn.
+            </div>
+          }
+          footer={
+            effectivePassportEnabled ? (
+              <div className="rounded-2xl p-3.5 sm:p-4 bg-white/90 border border-[#BAE6FD] flex items-start gap-3">
                 <input
                   type="checkbox"
                   id="showNameCheck"
                   checked={showNameOnPassport}
                   onChange={(e) => setShowNameOnPassport(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#018ABE] bg-white/10 border-white/20 cursor-pointer"
+                  className="mt-0.5 w-4 h-4 rounded text-[#018ABE] border-slate-300 focus:ring-[#018ABE] cursor-pointer"
                 />
-                <label htmlFor="showNameCheck" className="text-xs text-[#D6E8EE] cursor-pointer select-none">
-                  Hiển thị tên <span className="font-bold text-white">({currentUser?.displayName || "Bạn"})</span> trong lịch sử Đời chủ #{resellItemData ? resellItemData.myOwnerSeq : 1} (Mặc định ẩn danh để bảo mật thông tin sinh viên - BR29)
+                <label htmlFor="showNameCheck" className="text-xs text-[#0B1F4B] cursor-pointer select-none space-y-0.5">
+                  <span className="font-bold block">
+                    Hiển thị tên thật ({currentUser?.displayName || "Bạn"}) tại Đời chủ #{resellItemData ? resellItemData.myOwnerSeq : 1}
+                  </span>
+                  <span className="text-[#475569] block">
+                    Mặc định ẩn danh để bảo vệ quyền riêng tư sinh viên.
+                  </span>
                 </label>
               </div>
-
-              {/* Thẻ xem trước mini */}
-              {resellItemData ? (
-                <div className="bg-black/30 rounded-xl p-3 border border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="font-mono text-emerald-300">
-                      Đời chủ hiện tại: #{resellItemData.myOwnerSeq} ➔ Người mua kế tiếp: #{resellItemData.totalOwners + 1}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[11px] text-slate-300 font-mono">
-                      Passport ID: {resellItemData.passportId.slice(0, 10)}...{resellItemData.passportId.slice(-6)} (Kế thừa)
-                    </span>
-                    {resellItemData.txHash && (
-                      <a
-                        href={`https://testnet.snowtrace.io/tx/${resellItemData.txHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-emerald-300 hover:underline font-mono"
-                      >
-                        ⛓️ Snowtrace ↗
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-black/30 rounded-xl p-3 border border-white/10 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="font-mono text-emerald-300">Đời chủ: #1 (Khởi tạo)</span>
-                  </div>
-                  <span className="text-[11px] text-slate-400 font-mono">
-                    Passport ID: 0x... (Sẽ sinh tự động)
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            ) : undefined
+          }
+        />
 
         {/* NÚT SUBMIT */}
         <div className="flex items-center justify-end gap-3 pt-4">
@@ -947,7 +1058,7 @@ export function SellForm() {
           <button
             type="submit"
             disabled={submitting || isCompressing}
-            className="px-8 py-3.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-8 py-3.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2"
           >
             {submitting ? (
               <>
@@ -955,9 +1066,7 @@ export function SellForm() {
                 <span>Đang xử lý đăng tin...</span>
               </>
             ) : (
-              <>
-                <span>🚀 Đăng Tin Ngay (&lt; 60s)</span>
-              </>
+              <span>{isResellMode ? "Đăng bán lại ngay" : "Đăng tin ngay"}</span>
             )}
           </button>
         </div>
@@ -965,45 +1074,84 @@ export function SellForm() {
 
       {/* 3. MODAL THÀNH CÔNG */}
       {createdListingResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sell-success-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+        >
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 text-center shadow-2xl space-y-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
-              🎉
+            <div
+              className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner"
+              aria-hidden="true"
+            >
+              <svg
+                className="w-8 h-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
             </div>
-            <h3 className="text-xl sm:text-2xl font-extrabold text-[#001B48]">
-              {resellItemData || resellItemId ? "Đăng Bán Lại Thành Công! 🔄" : "Đăng Tin Thành Công! 🎉"}
+            <h3 id="sell-success-title" className="text-xl sm:text-2xl font-extrabold text-[#001B48]">
+              {isResellMode ? "Đăng bán lại thành công" : "Đăng tin thành công"}
             </h3>
             <p className="text-xs sm:text-sm text-[#02457A]">
-              Món đồ <span className="font-bold text-[#001B48]">&quot;{createdListingResult.title}&quot;</span> {resellItemData || resellItemId ? "đã kế thừa trọn vẹn Digital Passport và sẵn sàng kết nối đời chủ kế tiếp." : "đã được đăng lên sàn UniCycle và sẵn sàng kết nối người mua."}
+              Món đồ <span className="font-bold text-[#001B48]">&quot;{createdListingResult.title}&quot;</span> {isResellMode ? "đã kế thừa trọn vẹn hành trình đồ vật và sẵn sàng kết nối đời chủ kế tiếp." : "đã được đăng lên sàn UniCycle và sẵn sàng kết nối người mua."}
             </p>
 
             {createdListingResult.passportId && (
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-bold text-[#018ABE] uppercase tracking-wider">
-                  <span>📜 Digital Product Passport:</span>
-                  <Link href={`/passport/${createdListingResult.passportId}`} className="hover:underline">
-                    Xem Passport ↗
-                  </Link>
+              <div className="p-4 bg-[#F0F9FF] rounded-2xl border border-[#BAE6FD] text-left space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-[#001B48]">
+                    Hành trình đồ vật đã sẵn sàng
+                  </span>
+                  <span className="text-[11px] font-mono text-[#475569] shrink-0">
+                    {createdListingResult.passportId.slice(0, 8)}...{createdListingResult.passportId.slice(-6)}
+                  </span>
                 </div>
-                <span className="text-xs font-mono text-[#001B48] break-all block">
-                  {createdListingResult.passportId}
-                </span>
-                {createdListingResult.txHash && createdListingResult.snowtraceUrl && (
-                  <div className="pt-2 border-t border-slate-200/80 space-y-1.5">
-                    <span className="text-[11px] font-mono text-slate-600 break-all block">
-                      Tx Fuji: {createdListingResult.txHash.slice(0, 14)}...
-                      {createdListingResult.txHash.slice(-8)}
-                    </span>
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <Link
+                    href={`/passport/${createdListingResult.passportId}`}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#018ABE] hover:text-[#02457A] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] rounded"
+                  >
+                    <span>Xem hành trình đồ vật</span>
+                    <svg
+                      className="w-3.5 h-3.5 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                    </svg>
+                  </Link>
+
+                  {createdListingResult.snowtraceUrl && (
                     <a
                       href={createdListingResult.snowtraceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-extrabold transition-colors"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 rounded"
                     >
-                      <span>⛓️ Xem trực tiếp trên Snowtrace Fuji ↗</span>
+                      <span>Tra cứu trên Snowtrace</span>
+                      <svg
+                        className="w-3.5 h-3.5 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                      </svg>
                     </a>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 

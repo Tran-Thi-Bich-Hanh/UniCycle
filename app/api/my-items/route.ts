@@ -44,6 +44,17 @@ export async function GET(request: NextRequest) {
             showName: true,
             since: true,
             ownerHash: true,
+            user: {
+              select: {
+                displayName: true,
+                school: {
+                  select: {
+                    shortName: true,
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
         listings: {
@@ -63,10 +74,10 @@ export async function GET(request: NextRequest) {
           },
         },
         chainTxs: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
+          orderBy: { createdAt: "asc" },
           select: {
             id: true,
+            kind: true,
             status: true,
             txHash: true,
           },
@@ -95,6 +106,15 @@ export async function GET(request: NextRequest) {
         ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(passportUrl)}`
         : null;
 
+      const latestChainTx =
+        item.chainTxs.length > 0 ? item.chainTxs[item.chainTxs.length - 1] : null;
+      const registerTx = item.chainTxs.find(
+        (t) => t.kind === "REGISTER" && Boolean(t.txHash)
+      );
+      const transferTxs = item.chainTxs.filter(
+        (t) => t.kind === "TRANSFER" && Boolean(t.txHash)
+      );
+
       return {
         id: item.id,
         passportId: item.passportId,
@@ -114,7 +134,34 @@ export async function GET(request: NextRequest) {
         latestListingStatus: latestListing?.status || null,
         passportUrl,
         qrUrl,
-        chainTx: item.chainTxs[0] || null,
+        chainTx: latestChainTx
+          ? {
+              id: latestChainTx.id,
+              status: latestChainTx.status,
+              txHash: latestChainTx.txHash,
+            }
+          : null,
+        owners: item.owners.map((o) => {
+          const schoolShortName =
+            o.user?.school?.shortName || o.user?.school?.name || null;
+          const isMe = o.userId === resolvedUserId;
+          return {
+            seq: o.seq,
+            isMe,
+            showName: o.showName,
+            displayName:
+              o.showName && o.user
+                ? o.user.displayName
+                : `Sinh viên ẩn danh (${schoolShortName || "UniCycle"})`,
+            realDisplayName: isMe && o.user ? o.user.displayName : null,
+            since: o.since.toISOString(),
+            schoolShortName,
+            txHash:
+              o.seq === 1
+                ? registerTx?.txHash || null
+                : transferTxs[o.seq - 2]?.txHash || null,
+          };
+        }),
       };
     });
 
