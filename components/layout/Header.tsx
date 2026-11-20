@@ -4,7 +4,10 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { HEADER_CATEGORIES } from "@/lib/constants/categories";
+import {
+  formatCategoryCount,
+  HEADER_CATEGORIES,
+} from "@/lib/constants/categories";
 
 interface HeaderUser {
   id: string;
@@ -54,27 +57,31 @@ export function Header() {
     ordersCount: number;
     activeOrdersCount: number;
   }>({ itemsCount: 0, productsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number> | null>(
+    null
+  );
 
   useEffect(() => {
     let active = true;
 
     const loadUserData = async () => {
       try {
-        const [userRes, countsRes] = await Promise.all([
-          fetch("/api/auth/me", { cache: "no-store" }),
-          fetch("/api/user/counts", { cache: "no-store" }),
+        const [userRes, countsRes, categoryCountsRes] = await Promise.all([
+          fetch("/api/auth/me", { cache: "no-store" }).catch(() => null),
+          fetch("/api/user/counts", { cache: "no-store" }).catch(() => null),
+          fetch("/api/categories/counts", { cache: "no-store" }).catch(() => null),
         ]);
 
         if (!active) return;
 
-        if (userRes.ok) {
+        if (userRes && userRes.ok) {
           const userData = await userRes.json();
           setCurrentUser(userData.user || null);
         } else {
           setCurrentUser(null);
         }
 
-        if (countsRes.ok) {
+        if (countsRes && countsRes.ok) {
           const countsData = await countsRes.json();
           setUserCounts({
             itemsCount: countsData.itemsCount || 0,
@@ -85,6 +92,13 @@ export function Header() {
         } else {
           setUserCounts({ itemsCount: 0, productsCount: 0, ordersCount: 0, activeOrdersCount: 0 });
         }
+
+        if (categoryCountsRes && categoryCountsRes.ok) {
+          const catData = await categoryCountsRes.json();
+          if (catData && typeof catData.counts === "object" && catData.counts !== null) {
+            setCategoryCounts(catData.counts);
+          }
+        }
       } catch {
         // Ignore
       } finally {
@@ -94,9 +108,11 @@ export function Header() {
 
     loadUserData();
     window.addEventListener("unicycle-auth-change", loadUserData);
+    window.addEventListener("unicycle-listings-change", loadUserData);
     return () => {
       active = false;
       window.removeEventListener("unicycle-auth-change", loadUserData);
+      window.removeEventListener("unicycle-listings-change", loadUserData);
     };
   }, [pathname]);
 
@@ -361,10 +377,16 @@ export function Header() {
                                   }`}
                               >
                                 <div>
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="font-semibold text-sm text-[#001B48]">{cat.name}</span>
-                                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#D6E8EE] text-[#02457A]">
-                                      {cat.count}
+                                  <div className="flex items-start justify-between gap-2">
+                                    <span className="font-semibold text-sm text-[#001B48] leading-snug min-w-0">
+                                      {cat.name}
+                                    </span>
+                                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#D6E8EE] text-[#02457A] whitespace-nowrap shrink-0 tabular-nums">
+                                      {categoryCounts !== null
+                                        ? formatCategoryCount(
+                                            categoryCounts[cat.slug] ?? 0
+                                          )
+                                        : "—"}
                                     </span>
                                   </div>
                                   <p className="text-xs text-slate-600 mt-1 line-clamp-2">{cat.desc}</p>
@@ -861,11 +883,15 @@ export function Header() {
                               <Link
                                 href={`/categories/${cat.slug}`}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#F4F9FB] text-sm font-medium text-[#001B48]"
+                                className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl hover:bg-[#F4F9FB] text-sm font-medium text-[#001B48]"
                               >
-                                <span>{cat.name}</span>
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-[#D6E8EE] text-[#02457A] font-semibold">
-                                  {cat.count}
+                                <span className="min-w-0 truncate">{cat.name}</span>
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-[#D6E8EE] text-[#02457A] font-semibold whitespace-nowrap shrink-0 tabular-nums">
+                                  {categoryCounts !== null
+                                    ? formatCategoryCount(
+                                        categoryCounts[cat.slug] ?? 0
+                                      )
+                                    : "—"}
                                 </span>
                               </Link>
                             </li>

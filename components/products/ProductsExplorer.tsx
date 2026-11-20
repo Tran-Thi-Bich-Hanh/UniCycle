@@ -683,11 +683,13 @@ function FilterPanelContent({
   const selectedCategoryCount =
     selectedCategory === "all"
       ? initialProducts.length
-      : initialProducts.filter((p) =>
-          isSelectedFreeCategory
-            ? p.isFree || p.price === 0
-            : p.category?.slug === selectedCategory
-        ).length;
+      : typeof selectedCategoryObj?.listingCount === "number"
+        ? selectedCategoryObj.listingCount
+        : initialProducts.filter((p) =>
+            isSelectedFreeCategory
+              ? p.isFree || p.price === 0 || p.category?.slug === "goc-0d-cho-tang"
+              : p.category?.slug === selectedCategory
+          ).length;
 
   return (
     <div className="divide-y divide-[#EBF3F7]">
@@ -855,9 +857,14 @@ function FilterPanelContent({
                 {categories.map((c) => {
                   const isSelected = selectedCategory === c.slug;
                   const isFree = c.slug === "goc-0d-cho-tang";
-                  const count = initialProducts.filter((p) =>
-                    isFree ? p.isFree || p.price === 0 : p.category?.slug === c.slug
-                  ).length;
+                  const count =
+                    typeof c.listingCount === "number"
+                      ? c.listingCount
+                      : initialProducts.filter((p) =>
+                          isFree
+                            ? p.isFree || p.price === 0 || p.category?.slug === "goc-0d-cho-tang"
+                            : p.category?.slug === c.slug
+                        ).length;
 
                   return (
                     <button

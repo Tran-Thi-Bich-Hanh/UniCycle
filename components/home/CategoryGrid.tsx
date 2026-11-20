@@ -13,6 +13,7 @@ export interface CategoryItem {
   icon?: string | null;
   imageUrl?: string | null;
   count?: string;
+  listingCount?: number;
 }
 
 const CATEGORY_IMAGES: Record<string, string> = {
@@ -70,7 +71,8 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     slug: "giao-trinh-sach",
     name: "Giáo trình & Sách",
     description: "Giáo trình đại học, sách chuyên ngành và tài liệu học tập",
-    count: "140+ tin",
+    count: "0 tin",
+    listingCount: 0,
     imageUrl: "/categories/giao-trinh-sach.jpg",
     icon: "book",
   },
@@ -79,7 +81,8 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     slug: "ban-ghe-tu-ktx",
     name: "Bàn ghế & Nội thất",
     description: "Bàn học, ghế xoay, kệ sách và nội thất phòng trọ",
-    count: "85+ tin",
+    count: "0 tin",
+    listingCount: 0,
     imageUrl: "/categories/ban-ghe-tu-ktx.jpg",
     icon: "archive",
   },
@@ -88,7 +91,8 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     slug: "do-gia-dung-quat",
     name: "Đồ gia dụng",
     description: "Quạt điện, ấm siêu tốc, nồi cơm mini và vật dụng sinh hoạt",
-    count: "110+ tin",
+    count: "0 tin",
+    listingCount: 0,
     imageUrl: "/categories/do-gia-dung-quat.jpg",
     icon: "bolt",
   },
@@ -97,7 +101,8 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     slug: "do-dien-tu-phu-kien",
     name: "Đồ điện tử",
     description: "Máy tính, máy tính cầm tay, chuột, bàn phím và tai nghe",
-    count: "95+ tin",
+    count: "0 tin",
+    listingCount: 0,
     imageUrl: "/categories/do-dien-tu-phu-kien.jpg",
     icon: "chip",
   },
@@ -106,7 +111,8 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     slug: "xe-dap-phuong-tien",
     name: "Xe đạp & Di chuyển",
     description: "Xe đạp, mũ bảo hiểm và vật dụng đi lại",
-    count: "40+ tin",
+    count: "0 tin",
+    listingCount: 0,
     imageUrl: "/categories/xe-dap-phuong-tien.jpg",
     icon: "truck",
   },
@@ -115,7 +121,8 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
     slug: "goc-0d-cho-tang",
     name: "Đồ tặng miễn phí",
     description: "Đồ dùng miễn phí được sinh viên khóa trước chia sẻ",
-    count: "50+ tin",
+    count: "0 tin",
+    listingCount: 0,
     imageUrl: "/categories/goc-0d-cho-tang.jpg",
     icon: "gift",
   },
@@ -271,7 +278,7 @@ export function CategoryGrid({
 
               {/* Số lượng tin dạng Capsule Pill Badge */}
               <span
-                className={`inline-flex items-center text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-colors ${
+                className={`inline-flex items-center text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 tabular-nums transition-colors ${
                   isSelected
                     ? "bg-[#018ABE] text-white"
                     : isFree
@@ -279,7 +286,10 @@ export function CategoryGrid({
                     : "bg-slate-100 text-slate-600 group-hover:bg-[#D6E8EE]/70 group-hover:text-[#018ABE]"
                 }`}
               >
-                {cat.count || "Khám phá"}
+                {cat.count ??
+                  (typeof cat.listingCount === "number"
+                    ? `${cat.listingCount} tin`
+                    : "0 tin")}
               </span>
             </button>
           </ScrollReveal>
