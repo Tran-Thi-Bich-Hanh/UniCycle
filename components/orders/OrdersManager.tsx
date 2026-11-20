@@ -533,19 +533,19 @@ export function OrdersManager() {
                         {isPending && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            Chờ Người Bán Duyệt (48h)
+                            Chờ xác nhận
                           </span>
                         )}
                         {isAccepted && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-600 text-white shadow-xs flex items-center gap-1">
                             <span>✓</span>
-                            Đang Giữ Chỗ (RESERVED)
+                            Đã chấp nhận
                           </span>
                         )}
                         {isWaitingConfirmation && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-600 text-white shadow-xs flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                            Chờ Xác Nhận Đối Ứng (48h)
+                            Đang chờ đối tác xác nhận
                           </span>
                         )}
                         {isDisputed && (
@@ -559,13 +559,17 @@ export function OrdersManager() {
                         {isCompleted && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-800">
                             {order.status === "AUTO_COMPLETED"
-                              ? "Tự Hoàn Tất 48h"
-                              : "Đã Hoàn Tất Giao Dịch"}
+                              ? "Đã hết thời hạn xác nhận"
+                              : "Giao dịch hoàn tất thành công"}
                           </span>
                         )}
                         {isCancelled && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-600">
-                            {order.status === "REJECTED" ? "Đã Từ Chối" : order.status === "EXPIRED" ? "Hết Hạn (48h)" : "Đã Hủy Lịch Hẹn"}
+                            {order.status === "REJECTED"
+                              ? "Đã từ chối"
+                              : order.status === "EXPIRED"
+                              ? "Đã hết thời hạn xác nhận"
+                              : "Đã hủy"}
                           </span>
                         )}
 
@@ -601,7 +605,7 @@ export function OrdersManager() {
                         </span>
                       </div>
 
-                      {/* Trạng thái xác nhận bàn giao 2 chiều */}
+                      {/* Xác nhận bàn giao hai chiều */}
                       {(isHandoverPhase || isCompleted || isDisputed) && (
                         <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
                           <span
@@ -611,7 +615,9 @@ export function OrdersManager() {
                                 : "bg-slate-50 text-slate-500 border-slate-200"
                             }`}
                           >
-                            {order.sellerConfirmedAt ? "✓ Người bán đã bàn giao" : "○ Người bán chưa xác nhận"}
+                            {order.sellerConfirmedAt
+                              ? "✓ Người bán: Đã xác nhận"
+                              : "○ Người bán: Chưa xác nhận bàn giao"}
                           </span>
                           <span
                             className={`px-2 py-0.5 rounded-md font-semibold border ${
@@ -620,7 +626,9 @@ export function OrdersManager() {
                                 : "bg-slate-50 text-slate-500 border-slate-200"
                             }`}
                           >
-                            {order.buyerConfirmedAt ? "✓ Người mua đã nhận hàng" : "○ Người mua chưa xác nhận"}
+                            {order.buyerConfirmedAt
+                              ? "✓ Người mua: Đã xác nhận"
+                              : "○ Người mua: Chưa xác nhận nhận hàng"}
                           </span>
                         </div>
                       )}
@@ -743,8 +751,8 @@ export function OrdersManager() {
                               {isActing
                                 ? "Đang xử lý..."
                                 : isSellerRole
-                                ? "🤝 Đã bàn giao đồ"
-                                : "📦 Đã nhận được đồ"}
+                                ? "Xác nhận đã bàn giao sản phẩm"
+                                : "Xác nhận đã nhận hàng"}
                             </button>
                           )}
 
@@ -770,7 +778,7 @@ export function OrdersManager() {
                             href={`/products/${order.listingId}?action=zalo`}
                             className="px-3.5 py-2.5 rounded-xl bg-[#0068FF] hover:bg-[#0052cc] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
                           >
-                            <span>💬 Nhắn Zalo</span>
+                            <span>Nhắn Zalo cho đối tác</span>
                           </Link>
 
                           {isAccepted && (
