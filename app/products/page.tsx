@@ -1,15 +1,6 @@
 import React, { Suspense } from "react";
-import prisma from "@/lib/prisma";
 import { ProductsExplorer } from "@/components/products/ProductsExplorer";
-import { ProductCardData } from "@/components/products/ProductCard";
-import { CategoryItem } from "@/components/home/CategoryGrid";
-import { getPublicReviewCountsByUserIds } from "@/lib/utils/reputation";
-import {
-  FALLBACK_PRODUCTS,
-  FALLBACK_CATEGORIES,
-  FALLBACK_SCHOOLS,
-} from "@/lib/data/mock-fallback";
-import { syncCategoriesWithHeader } from "@/lib/constants/categories";
+import { getMarketplaceData } from "@/lib/data/marketplace";
 
 interface PageProps {
   searchParams: Promise<{
@@ -25,123 +16,14 @@ async function ProductsListContent({ searchParams }: PageProps) {
   const category = resolvedParams.category || "all";
   const campus = resolvedParams.campus || "all";
 
-  let products: ProductCardData[] = FALLBACK_PRODUCTS;
-  let categories: CategoryItem[] = FALLBACK_CATEGORIES;
-  let schools = FALLBACK_SCHOOLS;
-
-  try {
-    const [dbListings, dbCategories, dbSchools] = await Promise.all([
-      prisma.listing.findMany({
-        where: {
-          status: "AVAILABLE",
-          expiresAt: {
-            gt: new Date(),
-          },
-        },
-        include: {
-          school: true,
-          category: true,
-          seller: true,
-          item: {
-            include: {
-              owners: true,
-            },
-          },
-          images: {
-            orderBy: {
-              position: "asc",
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 50,
-      }),
-      prisma.category.findMany(),
-      prisma.school.findMany(),
-    ]);
-
-    if (dbListings && dbListings.length > 0) {
-      const reviewCounts = await getPublicReviewCountsByUserIds(
-        dbListings.map((l) => l.seller.id)
-      );
-      products = dbListings.map((l) => ({
-        id: l.id,
-        title: l.title,
-        price: l.price,
-        isFree: l.isFree,
-        condition: l.condition,
-        zaloPhone: l.hidePhone ? undefined : l.zaloPhone,
-        createdAt: l.createdAt.toISOString(),
-        school: l.school
-          ? {
-              id: l.school.id,
-              name: l.school.name,
-              shortName: l.school.shortName,
-              area: l.school.area,
-            }
-          : null,
-        category: l.category
-          ? {
-              id: l.category.id,
-              name: l.category.name,
-              slug: l.category.slug,
-            }
-          : null,
-        seller: {
-          id: l.seller.id,
-          displayName: l.seller.displayName,
-          avatarUrl: l.seller.avatarUrl,
-          isStudentVerified: l.seller.isStudentVerified,
-          reputationScore: l.seller.reputationScore,
-          reviewCount: reviewCounts.get(l.seller.id) ?? 0,
-          dorm: l.seller.dorm,
-        },
-        item: l.item
-          ? {
-              id: l.item.id,
-              passportEnabled: l.item.passportEnabled,
-              passportId: l.item.passportId,
-              passportStatus: l.item.passportStatus,
-              owners: l.item.owners.map((o) => ({
-                seq: o.seq,
-                showName: o.showName,
-              })),
-            }
-          : null,
-        images: l.images.map((img) => ({
-          id: img.id,
-          url: img.url,
-        })),
-      }));
-    }
-
-    if (dbCategories && dbCategories.length > 0) {
-      categories = dbCategories.map((c) => ({
-        id: c.id,
-        slug: c.slug,
-        name: c.name,
-        description: c.description,
-        icon: c.icon,
-      }));
-    }
-
-    if (dbSchools && dbSchools.length > 0) {
-      schools = dbSchools.map((s) => ({
-        id: s.id,
-        name: s.name,
-        shortName: s.shortName,
-      }));
-    }
-  } catch (err) {
-    console.warn("⚠️ Không thể kết nối DB khi lấy danh sách sản phẩm:", err);
-  }
+  const { products, categories, schools } = await getMarketplaceData({
+    limit: 50,
+  });
 
   return (
     <ProductsExplorer
       initialProducts={products}
-      categories={syncCategoriesWithHeader(categories)}
+      categories={categories}
       schools={schools}
       initialQuery={q}
       initialCategory={category}

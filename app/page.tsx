@@ -1,9 +1,6 @@
 import React, { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import prisma from "@/lib/prisma";
-import { ProductCardData } from "@/components/products/ProductCard";
-import { CategoryItem } from "@/components/home/CategoryGrid";
 import { HomeProductFeed } from "@/components/home/HomeProductFeed";
 import { TrustStrip } from "@/components/home/TrustStrip";
 import { CircularStorySection } from "@/components/home/CircularStorySection";
@@ -11,135 +8,17 @@ import { HowItWorksSection } from "@/components/home/HowItWorksSection";
 import { StudentTestimonialsSection } from "@/components/home/StudentTestimonialsSection";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import ScrollToTopButton from "@/components/ui/ScrollToTopButton";
-import { getPublicReviewCountsByUserIds } from "@/lib/utils/reputation";
+import { getMarketplaceData } from "@/lib/data/marketplace";
 import {
-  FALLBACK_PRODUCTS,
   FALLBACK_CATEGORIES,
+  FALLBACK_PRODUCTS,
   FALLBACK_SCHOOLS,
 } from "@/lib/data/mock-fallback";
 
 async function LiveMarketplaceFeed() {
-  let products: ProductCardData[] = FALLBACK_PRODUCTS;
-  let categories: CategoryItem[] = FALLBACK_CATEGORIES;
-  let schools = FALLBACK_SCHOOLS;
-
-  try {
-    const [dbListings, dbCategories, dbSchools] = await Promise.all([
-      prisma.listing.findMany({
-        where: {
-          status: "AVAILABLE",
-        },
-        include: {
-          school: true,
-          category: true,
-          seller: true,
-          item: {
-            include: {
-              owners: true,
-            },
-          },
-          images: {
-            orderBy: {
-              position: "asc",
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 20,
-      }),
-      prisma.category.findMany(),
-      prisma.school.findMany(),
-    ]);
-
-    if (dbListings && dbListings.length > 0) {
-      const reviewCounts = await getPublicReviewCountsByUserIds(
-        dbListings.map((l) => l.seller.id)
-      );
-      products = dbListings.map((l) => ({
-        id: l.id,
-        title: l.title,
-        price: l.price,
-        isFree: l.isFree,
-        condition: l.condition,
-        zaloPhone: l.zaloPhone,
-        createdAt: l.createdAt.toISOString(),
-        school: l.school
-          ? {
-            id: l.school.id,
-            name: l.school.name,
-            shortName: l.school.shortName,
-            area: l.school.area,
-          }
-          : null,
-        category: l.category
-          ? {
-            id: l.category.id,
-            name: l.category.name,
-            slug: l.category.slug,
-          }
-          : null,
-        seller: {
-          id: l.seller.id,
-          displayName: l.seller.displayName,
-          avatarUrl: l.seller.avatarUrl,
-          isStudentVerified: l.seller.isStudentVerified,
-          reputationScore: l.seller.reputationScore,
-          reviewCount: reviewCounts.get(l.seller.id) ?? 0,
-          dorm: l.seller.dorm,
-        },
-        item: l.item
-          ? {
-            id: l.item.id,
-            passportEnabled: l.item.passportEnabled,
-            passportId: l.item.passportId,
-            passportStatus: l.item.passportStatus,
-            owners: l.item.owners.map((o) => ({
-              seq: o.seq,
-              showName: o.showName,
-            })),
-          }
-          : null,
-        images: l.images.map((img) => ({
-          id: img.id,
-          url: img.url,
-        })),
-      }));
-    }
-
-    if (dbCategories && dbCategories.length > 0) {
-      // Map số tin tương ứng hoặc fallback
-      const countMap: Record<string, string> = {
-        "goc-0d-cho-tang": "50+ tin",
-        "giao-trinh-sach": "140+ tin",
-        "do-dien-tu-phu-kien": "95+ tin",
-        "xe-dap-phuong-tien": "40+ tin",
-        "ban-ghe-tu-ktx": "85+ tin",
-        "do-gia-dung-quat": "110+ tin",
-      };
-
-      categories = dbCategories.map((c) => ({
-        id: c.id,
-        slug: c.slug,
-        name: c.slug === "goc-0d-cho-tang" ? "Đồ tặng miễn phí" : c.name,
-        description: c.description,
-        icon: c.icon,
-        imageUrl: `/categories/${c.slug}.jpg`,
-        count: countMap[c.slug] || "Khám phá",
-      }));
-    }
-
-    if (dbSchools && dbSchools.length > 0) {
-      schools = dbSchools.map((s) => ({
-        id: s.id,
-        name: s.name,
-        shortName: s.shortName,
-      }));
-    }
-  } catch (error) {
-    console.warn("⚠️ Không thể tải trực tiếp từ DB server (dùng dữ liệu mẫu seed):", error);
-  }
+  const { products, categories, schools } = await getMarketplaceData({
+    limit: 20,
+  });
 
   return (
     <HomeProductFeed

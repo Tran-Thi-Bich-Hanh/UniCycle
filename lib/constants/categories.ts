@@ -2,7 +2,7 @@ export interface HeaderCategoryDefinition {
   slug: string;
   name: string;
   desc: string;
-  count: string;
+  count?: string;
   highlight?: boolean;
 }
 
@@ -14,6 +14,15 @@ export interface CategorySyncItem {
   icon?: string | null;
   imageUrl?: string | null;
   count?: string;
+  listingCount?: number;
+}
+
+export function formatCategoryCount(count?: number | null): string {
+  const safeCount =
+    typeof count === "number" && Number.isFinite(count) && count > 0
+      ? Math.floor(count)
+      : 0;
+  return `${safeCount} tin`;
 }
 
 export const HEADER_CATEGORIES: HeaderCategoryDefinition[] = [
@@ -21,37 +30,31 @@ export const HEADER_CATEGORIES: HeaderCategoryDefinition[] = [
     slug: "giao-trinh-sach",
     name: "Giáo trình & Sách",
     desc: "Giáo trình đại học, sách chuyên ngành và tài liệu học tập",
-    count: "140+ tin",
   },
   {
     slug: "ban-ghe-tu-ktx",
     name: "Bàn ghế & Nội thất",
     desc: "Bàn học, ghế xoay, kệ sách và nội thất phòng trọ",
-    count: "85+ tin",
   },
   {
     slug: "do-gia-dung-quat",
     name: "Đồ gia dụng",
     desc: "Quạt điện, ấm siêu tốc, nồi cơm mini và vật dụng sinh hoạt",
-    count: "110+ tin",
   },
   {
     slug: "do-dien-tu-phu-kien",
     name: "Đồ điện tử",
     desc: "Máy tính, máy tính cầm tay, chuột, bàn phím và tai nghe",
-    count: "95+ tin",
   },
   {
     slug: "xe-dap-phuong-tien",
     name: "Xe đạp & Di chuyển",
     desc: "Xe đạp, mũ bảo hiểm và vật dụng đi lại",
-    count: "40+ tin",
   },
   {
     slug: "goc-0d-cho-tang",
     name: "Góc Cho Tặng",
     desc: "Đồ dùng miễn phí được sinh viên khóa trước chia sẻ",
-    count: "60+ tin",
     highlight: true,
   },
 ];
@@ -76,8 +79,13 @@ export function syncCategoriesWithHeader<T extends CategorySyncItem>(
       name: headerCat.name,
       description: existing?.description ?? headerCat.desc,
       icon: existing?.icon ?? null,
-      imageUrl: existing?.imageUrl ?? null,
-      count: existing?.count ?? headerCat.count,
+      imageUrl: existing?.imageUrl ?? `/categories/${headerCat.slug}.jpg`,
+      listingCount: existing?.listingCount,
+      count:
+        existing?.count ??
+        (typeof existing?.listingCount === "number"
+          ? formatCategoryCount(existing.listingCount)
+          : headerCat.count),
     };
   });
 
