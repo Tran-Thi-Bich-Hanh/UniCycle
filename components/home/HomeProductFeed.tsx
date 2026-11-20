@@ -26,7 +26,7 @@ export function HomeProductFeed({
   // Trạng thái bộ lọc
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>("all");
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>("all");
-  const [onlyPassport, setOnlyPassport] = useState<boolean>(false);
+  const [onlyVerifiedStudent, setOnlyVerifiedStudent] = useState<boolean>(false);
   const [onlyFree, setOnlyFree] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<"newest" | "price-asc" | "price-desc">("newest");
 
@@ -60,9 +60,9 @@ export function HomeProductFeed({
         }
       }
 
-      // 3. Lọc chỉ đồ có Product Passport
-      if (onlyPassport) {
-        if (!product.item?.passportEnabled && !product.item?.passportId) {
+      // 3. Lọc chỉ tin từ sinh viên đã xác minh
+      if (onlyVerifiedStudent) {
+        if (!product.seller.isStudentVerified) {
           return false;
         }
       }
@@ -84,7 +84,7 @@ export function HomeProductFeed({
       }
       return 0; // Mặc định mới nhất
     });
-  }, [initialProducts, activeCategorySlug, selectedSchoolId, onlyPassport, onlyFree, sortBy]);
+  }, [initialProducts, activeCategorySlug, selectedSchoolId, onlyVerifiedStudent, onlyFree, sortBy]);
 
   const activeCategoryName = useMemo(() => {
     if (activeCategorySlug === "all") return null;
@@ -95,13 +95,13 @@ export function HomeProductFeed({
   const hasAnyFilter =
     activeCategorySlug !== "all" ||
     selectedSchoolId !== "all" ||
-    onlyPassport ||
+    onlyVerifiedStudent ||
     onlyFree;
 
   const resetAllFilters = () => {
     setActiveCategorySlug("all");
     setSelectedSchoolId("all");
-    setOnlyPassport(false);
+    setOnlyVerifiedStudent(false);
     setOnlyFree(false);
   };
 
@@ -153,11 +153,11 @@ export function HomeProductFeed({
                   type="button"
                   onClick={() => {
                     setActiveCategorySlug("all");
-                    setOnlyPassport(false);
+                    setOnlyVerifiedStudent(false);
                     setOnlyFree(false);
                   }}
-                  className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-                    activeCategorySlug === "all" && !onlyPassport && !onlyFree
+                  className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer border whitespace-nowrap ${
+                    activeCategorySlug === "all" && !onlyVerifiedStudent && !onlyFree
                       ? "bg-[#001B48] text-white border-[#001B48] shadow-xs"
                       : "bg-[#D6E8EE]/30 text-[#02457A] border-transparent hover:bg-[#D6E8EE]/60"
                   }`}
@@ -169,7 +169,7 @@ export function HomeProductFeed({
                   <button
                     type="button"
                     onClick={() => setActiveCategorySlug("all")}
-                    className="h-9 px-3 rounded-xl text-xs font-bold bg-[#018ABE]/10 text-[#018ABE] border border-[#018ABE]/30 hover:bg-[#018ABE]/20 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                    className="h-9 px-3 rounded-xl text-xs font-bold bg-[#018ABE]/10 text-[#018ABE] border border-[#018ABE]/30 hover:bg-[#018ABE]/20 transition-colors inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                   >
                     <span>{activeCategoryName}</span>
                     <span aria-hidden="true">×</span>
@@ -178,17 +178,18 @@ export function HomeProductFeed({
 
                 <button
                   type="button"
-                  onClick={() => setOnlyPassport(!onlyPassport)}
-                  className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer border ${
-                    onlyPassport
+                  aria-pressed={onlyVerifiedStudent}
+                  onClick={() => setOnlyVerifiedStudent((prev) => !prev)}
+                  className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer border whitespace-nowrap ${
+                    onlyVerifiedStudent
                       ? "bg-[#018ABE] text-white border-[#018ABE] shadow-xs"
                       : "bg-white text-[#02457A] border-[#D6E8EE] hover:border-[#018ABE]"
                   }`}
                 >
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                   </svg>
-                  <span>Có Product Passport</span>
+                  <span>Sinh viên đã xác minh</span>
                 </button>
 
                 <button

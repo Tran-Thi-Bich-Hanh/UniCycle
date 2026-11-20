@@ -7,6 +7,8 @@ interface PageProps {
     q?: string;
     category?: string;
     campus?: string;
+    verified?: string;
+    multiOwner?: string;
   }>;
 }
 
@@ -15,6 +17,8 @@ async function ProductsListContent({ searchParams }: PageProps) {
   const q = resolvedParams.q || "";
   const category = resolvedParams.category || "all";
   const campus = resolvedParams.campus || "all";
+  const initialVerifiedOnly = resolvedParams.verified === "true";
+  const initialMultiOwner = resolvedParams.multiOwner === "true";
 
   const { products, categories, schools } = await getMarketplaceData({
     limit: 50,
@@ -28,6 +32,8 @@ async function ProductsListContent({ searchParams }: PageProps) {
       initialQuery={q}
       initialCategory={category}
       initialCampus={campus}
+      initialVerifiedOnly={initialVerifiedOnly}
+      initialMultiOwner={initialMultiOwner}
     />
   );
 }

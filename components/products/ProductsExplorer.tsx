@@ -25,6 +25,8 @@ interface ProductsExplorerProps {
   initialQuery?: string;
   initialCategory?: string;
   initialCampus?: string;
+  initialVerifiedOnly?: boolean;
+  initialMultiOwner?: boolean;
 }
 
 interface PriceRangeOption {
@@ -50,10 +52,14 @@ export function ProductsExplorer({
   initialQuery = "",
   initialCategory = "all",
   initialCampus = "all",
+  initialVerifiedOnly = false,
+  initialMultiOwner = false,
 }: ProductsExplorerProps) {
   const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery);
   const [prevInitialCategory, setPrevInitialCategory] = useState(initialCategory);
   const [prevInitialCampus, setPrevInitialCampus] = useState(initialCampus);
+  const [prevInitialVerifiedOnly, setPrevInitialVerifiedOnly] = useState(initialVerifiedOnly);
+  const [prevInitialMultiOwner, setPrevInitialMultiOwner] = useState(initialMultiOwner);
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -74,8 +80,17 @@ export function ProductsExplorer({
 
   const [selectedPriceIndex, setSelectedPriceIndex] = useState(0);
   const [selectedConditions, setSelectedConditions] = useState<ConditionGrade[]>([]);
-  const [onlyPassport, setOnlyPassport] = useState(false);
-  const [onlyVerifiedStudent, setOnlyVerifiedStudent] = useState(false);
+  const [onlyMultiOwner, setOnlyMultiOwner] = useState(initialMultiOwner);
+  const [onlyVerifiedStudent, setOnlyVerifiedStudent] = useState(initialVerifiedOnly);
+
+  if (prevInitialVerifiedOnly !== initialVerifiedOnly) {
+    setPrevInitialVerifiedOnly(initialVerifiedOnly);
+    setOnlyVerifiedStudent(initialVerifiedOnly);
+  }
+  if (prevInitialMultiOwner !== initialMultiOwner) {
+    setPrevInitialMultiOwner(initialMultiOwner);
+    setOnlyMultiOwner(initialMultiOwner);
+  }
   const [sortBy, setSortBy] = useState<"verified" | "newest" | "price_asc" | "price_desc">("verified");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
@@ -198,8 +213,8 @@ export function ProductsExplorer({
           }
         }
 
-        if (onlyPassport) {
-          if (!p.item?.passportEnabled && !p.item?.passportId) {
+        if (onlyMultiOwner) {
+          if ((p.item?.owners?.length ?? 0) < 2) {
             return false;
           }
         }
@@ -230,7 +245,7 @@ export function ProductsExplorer({
     selectedCampus,
     selectedPriceIndex,
     selectedConditions,
-    onlyPassport,
+    onlyMultiOwner,
     onlyVerifiedStudent,
     sortBy,
     categoryNameBySlug,
@@ -242,7 +257,7 @@ export function ProductsExplorer({
     setSelectedCampus("all");
     setSelectedPriceIndex(0);
     setSelectedConditions([]);
-    setOnlyPassport(false);
+    setOnlyMultiOwner(false);
     setOnlyVerifiedStudent(false);
   };
 
@@ -252,7 +267,7 @@ export function ProductsExplorer({
     (selectedCampus !== "all" ? 1 : 0) +
     (selectedPriceIndex !== 0 ? 1 : 0) +
     selectedConditions.length +
-    (onlyPassport ? 1 : 0) +
+    (onlyMultiOwner ? 1 : 0) +
     (onlyVerifiedStudent ? 1 : 0);
 
   const hasActiveFilters = activeFilterCount > 0;
@@ -337,7 +352,7 @@ export function ProductsExplorer({
               selectedCampus={selectedCampus}
               selectedPriceIndex={selectedPriceIndex}
               selectedConditions={selectedConditions}
-              onlyPassport={onlyPassport}
+              onlyMultiOwner={onlyMultiOwner}
               onlyVerifiedStudent={onlyVerifiedStudent}
               showResetButton={hasActiveFilters}
               onResetFilters={resetFilters}
@@ -346,7 +361,7 @@ export function ProductsExplorer({
               onSelectCampus={setSelectedCampus}
               onSelectPriceIndex={setSelectedPriceIndex}
               onToggleCondition={toggleConditionGrade}
-              onTogglePassport={() => setOnlyPassport((prev) => !prev)}
+              onToggleMultiOwner={() => setOnlyMultiOwner((prev) => !prev)}
               onToggleVerifiedStudent={() => setOnlyVerifiedStudent((prev) => !prev)}
             />
           </aside>
@@ -440,10 +455,10 @@ export function ProductsExplorer({
                     onClear={() => toggleConditionGrade(grade)}
                   />
                 ))}
-                {onlyPassport && (
+                {onlyMultiOwner && (
                   <ActiveFilterChip
-                    label="Có Digital Passport"
-                    onClear={() => setOnlyPassport(false)}
+                    label="Đã qua ≥ 2 đời chủ"
+                    onClear={() => setOnlyMultiOwner(false)}
                   />
                 )}
                 {onlyVerifiedStudent && (
@@ -559,14 +574,14 @@ export function ProductsExplorer({
                 selectedCampus={selectedCampus}
                 selectedPriceIndex={selectedPriceIndex}
                 selectedConditions={selectedConditions}
-                onlyPassport={onlyPassport}
+                onlyMultiOwner={onlyMultiOwner}
                 onlyVerifiedStudent={onlyVerifiedStudent}
                 onSearchChange={setSearchQuery}
                 onSelectCategory={setSelectedCategory}
                 onSelectCampus={setSelectedCampus}
                 onSelectPriceIndex={setSelectedPriceIndex}
                 onToggleCondition={toggleConditionGrade}
-                onTogglePassport={() => setOnlyPassport((prev) => !prev)}
+                onToggleMultiOwner={() => setOnlyMultiOwner((prev) => !prev)}
                 onToggleVerifiedStudent={() => setOnlyVerifiedStudent((prev) => !prev)}
               />
             </div>
@@ -604,7 +619,7 @@ interface FilterPanelContentProps {
   selectedCampus: string;
   selectedPriceIndex: number;
   selectedConditions: ConditionGrade[];
-  onlyPassport: boolean;
+  onlyMultiOwner: boolean;
   onlyVerifiedStudent: boolean;
   showResetButton?: boolean;
   onResetFilters?: () => void;
@@ -613,7 +628,7 @@ interface FilterPanelContentProps {
   onSelectCampus: (campusId: string) => void;
   onSelectPriceIndex: (index: number) => void;
   onToggleCondition: (grade: ConditionGrade) => void;
-  onTogglePassport: () => void;
+  onToggleMultiOwner: () => void;
   onToggleVerifiedStudent: () => void;
 }
 
@@ -627,7 +642,7 @@ function FilterPanelContent({
   selectedCampus,
   selectedPriceIndex,
   selectedConditions,
-  onlyPassport,
+  onlyMultiOwner,
   onlyVerifiedStudent,
   showResetButton = false,
   onResetFilters,
@@ -636,7 +651,7 @@ function FilterPanelContent({
   onSelectCampus,
   onSelectPriceIndex,
   onToggleCondition,
-  onTogglePassport,
+  onToggleMultiOwner,
   onToggleVerifiedStudent,
 }: FilterPanelContentProps) {
   const searchInputId = `${idPrefix}-products-search`;
@@ -1039,49 +1054,6 @@ function FilterPanelContent({
         <button
           type="button"
           role="switch"
-          aria-checked={onlyPassport}
-          onClick={onTogglePassport}
-          className={`w-full px-3 py-2.5 rounded-xl border flex items-center justify-between gap-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
-            onlyPassport
-              ? "bg-[#F4F9FB] border-[#97CADB]"
-              : "bg-[#F8FAFC] border-[#E2EEF3] hover:bg-[#F4F9FB]"
-          }`}
-        >
-          <span className="inline-flex items-center gap-2 min-w-0 text-xs font-bold text-[#001B48]">
-            <svg
-              className="w-4 h-4 text-[#018ABE] shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.9}
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-              />
-            </svg>
-            <span className="truncate">Có Digital Passport</span>
-          </span>
-
-          <span
-            aria-hidden="true"
-            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200 motion-reduce:transition-none ${
-              onlyPassport ? "bg-[#018ABE]" : "bg-slate-300"
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 motion-reduce:transition-none ${
-                onlyPassport ? "translate-x-4" : "translate-x-0"
-              }`}
-            />
-          </span>
-        </button>
-
-        <button
-          type="button"
-          role="switch"
           aria-checked={onlyVerifiedStudent}
           onClick={onToggleVerifiedStudent}
           className={`w-full px-3 py-2.5 rounded-xl border flex items-center justify-between gap-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
@@ -1115,6 +1087,49 @@ function FilterPanelContent({
             <span
               className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 motion-reduce:transition-none ${
                 onlyVerifiedStudent ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </span>
+        </button>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={onlyMultiOwner}
+          onClick={onToggleMultiOwner}
+          className={`w-full px-3 py-2.5 rounded-xl border flex items-center justify-between gap-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+            onlyMultiOwner
+              ? "bg-[#F4F9FB] border-[#97CADB]"
+              : "bg-[#F8FAFC] border-[#E2EEF3] hover:bg-[#F4F9FB]"
+          }`}
+        >
+          <span className="inline-flex items-center gap-2 min-w-0 text-xs font-bold text-[#001B48]">
+            <svg
+              className="w-4 h-4 text-[#018ABE] shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.9}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+              />
+            </svg>
+            <span className="truncate">Đã qua ≥ 2 đời chủ</span>
+          </span>
+
+          <span
+            aria-hidden="true"
+            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200 motion-reduce:transition-none ${
+              onlyMultiOwner ? "bg-[#018ABE]" : "bg-slate-300"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 motion-reduce:transition-none ${
+                onlyMultiOwner ? "translate-x-4" : "translate-x-0"
               }`}
             />
           </span>

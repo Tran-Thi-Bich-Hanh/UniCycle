@@ -405,17 +405,17 @@ export function Header() {
                                 Mỗi món đồ, một câu chuyện.
                               </h3>
                               <p className="text-xs text-[#D6E8EE] mt-1.5 leading-relaxed">
-                                Theo dõi hành trình của món đồ qua mã QR, từ người sở hữu đầu tiên đến những lần trao đổi tiếp theo.
+                                100% món đồ trên UniCycle được cấp Hộ chiếu số, lưu lại chuỗi đời chủ minh bạch qua từng khóa sinh viên.
                               </p>
                             </div>
                             <Link
-                              href="/products?passport=true"
+                              href="/products?multiOwner=true"
                               onClick={() => setCategoryMenuOpen(false)}
-                              className="mt-4 inline-flex items-center justify-center px-3.5 py-2 rounded-lg bg-white text-[#001B48] hover:bg-[#D6E8EE] text-xs font-bold transition-colors"
+                              className="mt-4 inline-flex items-center justify-center px-3.5 py-2 rounded-lg bg-white text-[#001B48] hover:bg-[#D6E8EE] text-xs font-bold transition-colors text-center"
                             >
-                              Xem đồ có Passport
+                              Xem đồ qua ≥ 2 đời chủ
                             </Link>
-                            </div>
+                          </div>
                           </div>
                         </div>
               )}
