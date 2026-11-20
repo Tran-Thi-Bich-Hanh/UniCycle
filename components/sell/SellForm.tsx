@@ -171,8 +171,7 @@ export function SellForm() {
   const [zaloPhone, setZaloPhone] = useState("0987654321");
   const [hidePhone, setHidePhone] = useState(true);
 
-  // Product Passport states (BR24, BR29)
-  const [passportEnabled, setPassportEnabled] = useState(true);
+  // Product Passport states (mặc định bật 100% Hộ chiếu số - chỉ giữ tùy chọn hiển thị tên)
   const [showNameOnPassport, setShowNameOnPassport] = useState(false);
 
   // Quản lý ảnh
@@ -274,7 +273,6 @@ export function SellForm() {
                 setTitle(found.title);
                 const matchingCat = categories.find((c) => c.slug === found.categorySlug);
                 if (matchingCat) setCategoryId(matchingCat.id);
-                setPassportEnabled(true);
                 setShowNameOnPassport(found.showNameOnPassport);
               }
             }
@@ -305,7 +303,6 @@ export function SellForm() {
     setTitle(item.title);
     const matchingCat = categories.find((c) => c.slug === item.categorySlug);
     if (matchingCat) setCategoryId(matchingCat.id);
-    setPassportEnabled(true);
     setShowNameOnPassport(item.showNameOnPassport);
     setFormError(null);
   };
@@ -451,7 +448,7 @@ export function SellForm() {
         schoolId,
         zaloPhone: zaloPhone.trim(),
         hidePhone,
-        passportEnabled,
+        passportEnabled: true,
         showNameOnPassport,
         resellItemId: resellItemData?.id || resellItemId || undefined,
         images: images.map((img) => ({
@@ -472,6 +469,8 @@ export function SellForm() {
         setFormError(data.error || "Không thể đăng tin, vui lòng thử lại.");
         return;
       }
+
+      window.dispatchEvent(new Event("unicycle-listings-change"));
 
       // Đăng thành công: Mở modal chúc mừng
       setCreatedListingResult({
@@ -501,13 +500,11 @@ export function SellForm() {
 
   const selectedSchool = schools.find((s) => s.id === schoolId) || schools[0];
   const isResellMode = Boolean(resellItemData || resellItemId);
-  const effectivePassportEnabled = isResellMode || passportEnabled;
 
   let journeySteps: JourneyOwnerStep[] = [];
   let journeyNextStep: JourneyNextStep | null = null;
 
-  if (effectivePassportEnabled) {
-    if (resellItemData) {
+  if (resellItemData) {
       const rawOwners: ResellOwnerSnapshot[] =
         resellItemData.owners.length > 0
           ? resellItemData.owners
@@ -594,7 +591,6 @@ export function SellForm() {
         description:
           "Tự động kế thừa tiếp nối hồ sơ xuất xứ (từ Đời chủ #1) khi hoàn tất xác nhận trao tay.",
       };
-    }
   }
 
   return (
@@ -1005,45 +1001,31 @@ export function SellForm() {
                 Kế thừa tự động
               </span>
             ) : (
-              <label className="relative inline-flex items-center cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={passportEnabled}
-                  onChange={(e) => setPassportEnabled(e.target.checked)}
-                  aria-label="Bật hoặc tắt hành trình đồ vật"
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-300 peer-focus-visible:ring-2 peer-focus-visible:ring-[#018ABE] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#018ABE]" />
-              </label>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#E3F1F9] text-[#02457A] border border-[#BAE6FD] whitespace-nowrap">
+                Tự động cấp Hộ chiếu
+              </span>
             )
           }
           steps={journeySteps}
           nextStep={journeyNextStep}
-          emptyContent={
-            <div className="rounded-2xl p-4 sm:p-5 border border-[#BAE6FD] bg-white/90 text-xs text-[#475569] leading-relaxed">
-              Bạn đang tạm tắt Hành trình đồ vật cho tin đăng này. Bạn có thể bật lại để món đồ minh bạch nguồn gốc và dễ sang nhượng hơn.
-            </div>
-          }
           footer={
-            effectivePassportEnabled ? (
-              <div className="rounded-2xl p-3.5 sm:p-4 bg-white/90 border border-[#BAE6FD] flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="showNameCheck"
-                  checked={showNameOnPassport}
-                  onChange={(e) => setShowNameOnPassport(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-[#018ABE] border-slate-300 focus:ring-[#018ABE] cursor-pointer"
-                />
-                <label htmlFor="showNameCheck" className="text-xs text-[#0B1F4B] cursor-pointer select-none space-y-0.5">
-                  <span className="font-bold block">
-                    Hiển thị tên thật ({currentUser?.displayName || "Bạn"}) tại Đời chủ #{resellItemData ? resellItemData.myOwnerSeq : 1}
-                  </span>
-                  <span className="text-[#475569] block">
-                    Mặc định ẩn danh để bảo vệ quyền riêng tư sinh viên.
-                  </span>
-                </label>
-              </div>
-            ) : undefined
+            <div className="rounded-2xl p-3.5 sm:p-4 bg-white/90 border border-[#BAE6FD] flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="showNameCheck"
+                checked={showNameOnPassport}
+                onChange={(e) => setShowNameOnPassport(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded text-[#018ABE] border-slate-300 focus:ring-[#018ABE] cursor-pointer"
+              />
+              <label htmlFor="showNameCheck" className="text-xs text-[#0B1F4B] cursor-pointer select-none space-y-0.5">
+                <span className="font-bold block">
+                  Hiển thị tên thật ({currentUser?.displayName || "Bạn"}) tại Đời chủ #{resellItemData ? resellItemData.myOwnerSeq : 1}
+                </span>
+                <span className="text-[#475569] block">
+                  Mặc định ẩn danh để bảo vệ quyền riêng tư sinh viên.
+                </span>
+              </label>
+            </div>
           }
         />
 

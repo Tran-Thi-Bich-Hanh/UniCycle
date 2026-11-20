@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
   const isFree = searchParams.get("isFree") === "true";
   const hasPassport = searchParams.get("hasPassport") === "true";
   const verifiedOnly = searchParams.get("verifiedOnly") === "true";
+  const multiOwner = searchParams.get("multiOwner") === "true";
   const sort = searchParams.get("sort") || "verified_priority"; // verified_priority, newest, price_asc, price_desc
 
   try {
@@ -131,6 +132,10 @@ export async function GET(req: NextRequest) {
           schoolNorm.includes(normalizedQuery)
         );
       });
+    }
+
+    if (multiOwner) {
+      listings = listings.filter((l) => (l.item?.owners?.length ?? 0) >= 2);
     }
 
     // Sắp xếp
@@ -240,7 +245,6 @@ export async function POST(req: NextRequest) {
       schoolId,
       zaloPhone,
       hidePhone,
-      passportEnabled,
       showNameOnPassport,
       resellItemId,
       images,
@@ -322,7 +326,7 @@ export async function POST(req: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    const shouldEnablePassport = passportEnabled !== false;
+    const shouldEnablePassport = true;
 
     // 7. Phân giải khóa ngoại thực tế trong PostgreSQL (User, Category, School), kiểm tra BR16 và ghi DB qua Transaction
     let createdListing = null;
