@@ -177,13 +177,13 @@ export function OrdersManager() {
     setActionMessage(null);
 
     if (action === "accept") {
-      if (!confirm("Xác nhận chấp nhận lịch hẹn? Món đồ sẽ chuyển sang trạng thái GIỮ CHỖ (RESERVED) độc quyền và các yêu cầu khác sẽ tự động bị từ chối (BR11).")) {
+      if (!confirm("Xác nhận chấp nhận lịch hẹn? Món đồ sẽ chuyển sang trạng thái Giữ chỗ độc quyền và các yêu cầu khác sẽ tự động bị từ chối.")) {
         return;
       }
     }
 
     if (action === "cancel") {
-      if (!confirm("Bạn có chắc chắn muốn hủy lịch hẹn này? Món đồ sẽ được mở bán lại trên sàn (BR21).")) {
+      if (!confirm("Bạn có chắc chắn muốn hủy lịch hẹn này? Món đồ sẽ được mở bán lại trên sàn.")) {
         return;
       }
     }
@@ -520,7 +520,7 @@ export function OrdersManager() {
                         {isPending && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            Chờ Người Bán Duyệt (48h - BR12)
+                            Chờ Người Bán Duyệt (48h)
                           </span>
                         )}
                         {isAccepted && (
@@ -532,7 +532,7 @@ export function OrdersManager() {
                         {isWaitingConfirmation && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-600 text-white shadow-xs flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                            Chờ Xác Nhận Đối Ứng (48h - BR13)
+                            Chờ Xác Nhận Đối Ứng (48h)
                           </span>
                         )}
                         {isDisputed && (
@@ -540,14 +540,14 @@ export function OrdersManager() {
                             <svg className="w-3 h-3 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
-                            <span>Đang Khiếu Nại (SLA 72h - BR13)</span>
+                            <span>Đang Khiếu Nại (SLA 72h)</span>
                           </span>
                         )}
                         {isCompleted && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-800">
                             {order.status === "AUTO_COMPLETED"
-                              ? "Tự Hoàn Tất 48h (BR13)"
-                              : "Đã Hoàn Tất Giao Dịch (BR07)"}
+                              ? "Tự Hoàn Tất 48h"
+                              : "Đã Hoàn Tất Giao Dịch"}
                           </span>
                         )}
                         {isCancelled && (
@@ -740,7 +740,7 @@ export function OrdersManager() {
                               disabled={isActing}
                               onClick={() => handleOrderAction(order.id, "cancel")}
                               className="px-3 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold border border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
-                              title="Hủy lịch hẹn và mở bán lại món đồ (BR21)"
+                              title="Hủy lịch hẹn và mở bán lại món đồ"
                             >
                               Hủy hẹn
                             </button>
@@ -761,9 +761,9 @@ export function OrdersManager() {
                           ) : !myReview.visibleAt ? (
                             <span
                               className="px-3 py-2 rounded-xl bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200 flex items-center gap-1.5"
-                              title="Đánh giá đang được bảo mật - chờ đối tác nộp hoặc sau 48h tự mở khóa (BR14)"
+                              title="Đánh giá đang được bảo mật - chờ đối tác nộp hoặc sau 48h tự mở khóa"
                             >
-                              <span>🔒 Đã gửi ({myReview.rating}★ - Chờ mở khóa)</span>
+                              <span>Đã gửi ({myReview.rating}★ · Chờ mở khóa)</span>
                             </span>
                           ) : (
                             <span className="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200 flex items-center gap-1.5">
@@ -809,7 +809,7 @@ export function OrdersManager() {
                       </span>
                     </span>
                     <span className="text-[11px] text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200 font-semibold">
-                      Cửa sổ xác nhận 48h (BR13)
+                      Cửa sổ xác nhận 48h
                     </span>
                   </div>
                 )}
@@ -820,13 +820,13 @@ export function OrdersManager() {
                     <span className="font-medium">
                       ⏳{" "}
                       {hasConfirmedSelf
-                        ? `Bạn đã xác nhận thành công. Đang chờ đối tác xác nhận đối ứng trước ${formatDateTime(order.expiresAt)} (tự động hoàn tất sau 48h theo BR13).`
-                        : `Đối tác đã xác nhận bàn giao! Vui lòng xác nhận trước ${formatDateTime(order.expiresAt)} hoặc bấm "Tôi chưa nhận hàng" nếu có sự cố (BR13).`}
+                        ? `Bạn đã xác nhận thành công. Đang chờ đối tác xác nhận đối ứng trước ${formatDateTime(order.expiresAt)} (tự động hoàn tất sau 48h).`
+                        : `Đối tác đã xác nhận bàn giao! Vui lòng xác nhận trước ${formatDateTime(order.expiresAt)} hoặc bấm "Tôi chưa nhận hàng" nếu có sự cố.`}
                     </span>
                   </div>
                 )}
 
-                {/* Khối Blind Review khi đơn đã hoàn tất (BR14) */}
+                {/* Khối Blind Review khi đơn đã hoàn tất */}
                 {isCompleted && partnerReview && (
                   <div className="mt-4 pt-3 border-t border-slate-100">
                     {partnerReview.isBlindHidden ? (
@@ -836,9 +836,9 @@ export function OrdersManager() {
                           <span>
                             Đối tác đã gửi đánh giá cho bạn!{" "}
                             {!myReview ? (
-                              <strong>Hãy gửi đánh giá đối ứng để cùng mở khóa xem nhận xét (BR14).</strong>
+                              <strong>Hãy gửi đánh giá đối ứng để cùng mở khóa xem nhận xét.</strong>
                             ) : (
-                              <span>Đang chờ hoàn tất theo quy tắc Blind Review 48h (BR14).</span>
+                              <span>Đang chờ hoàn tất mở khóa đánh giá đối ứng 48h.</span>
                             )}
                           </span>
                         </span>

@@ -217,14 +217,14 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
 
     if (
       action === "accept" &&
-      !confirm("Chấp nhận lịch hẹn này sẽ chuyển món đồ sang Giữ chỗ (RESERVED) và từ chối các yêu cầu khác (BR11). Tiếp tục?")
+      !confirm("Chấp nhận lịch hẹn này sẽ chuyển món đồ sang trạng thái Giữ chỗ và từ chối các yêu cầu khác. Tiếp tục?")
     ) {
       return;
     }
 
     if (
       action === "cancel" &&
-      !confirm("Bạn có chắc muốn hủy lịch hẹn này? Món đồ sẽ được mở bán lại trên sàn (BR21).")
+      !confirm("Bạn có chắc muốn hủy lịch hẹn này? Món đồ sẽ được mở bán lại trên sàn.")
     ) {
       return;
     }
@@ -413,7 +413,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
               <svg className="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <span>Đơn hàng đang trong trạng thái Khiếu Nại (DISPUTED - BR13)</span>
+              <span>Đơn hàng đang trong trạng thái Khiếu nại</span>
             </p>
             <p>
               <strong>Lý do từ người mua:</strong> {order.disputeReason}
@@ -541,7 +541,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
         {(isHandoverPhase || isCompleted || isDisputed) && (
           <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
             <h3 className="text-xs sm:text-sm font-bold text-[#001B48]">
-              Trạng thái xác nhận bàn giao 2 chiều (Cửa sổ 48h - BR07, BR13)
+              Trạng thái xác nhận bàn giao 2 chiều (Cửa sổ 48h)
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div
@@ -619,7 +619,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
 
                 <p className="text-xs text-slate-300">
                   {isCompleted
-                    ? "Quyền sở hữu món đồ đã được ghi nhận chuyển giao thành công sang người mua trên hệ thống (BR26)."
+                    ? "Quyền sở hữu món đồ đã được ghi nhận chuyển giao thành công sang người mua trên hệ thống."
                     : "Sau khi hai bên xác nhận hoàn tất giao dịch, món đồ sẽ tự động chuyển giao sang người mua và xuất hiện trong mục Đồ của tôi."}
                 </p>
 
@@ -673,7 +673,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
             <div className="flex items-center justify-between pb-3 border-b border-[#D6E8EE]">
               <h3 className="font-extrabold text-[#001B48] text-sm sm:text-base flex items-center gap-2">
                 <span>⭐</span>
-                <span>Đánh Giá Uy Tín Giao Dịch (Blind Review - BR14)</span>
+                <span>Đánh Giá Uy Tín Giao Dịch (Blind Review)</span>
               </h3>
               <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
                 {myReview?.visibleAt ? "Đã công khai" : "Bảo mật đối ứng 48h"}
@@ -714,8 +714,8 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                     </strong>
                     <p className="text-[11px] text-amber-900/90 leading-relaxed">
                       {!myReview
-                        ? "Nội dung đang được giữ kín. Hãy gửi đánh giá của bạn để cùng mở khóa nhận xét đối ứng và tích lũy điểm uy tín sinh viên nhé (BR14)!"
-                        : "Cả hai nhận xét đang được bảo mật và sẽ tự động mở khóa đồng thời sau khi hệ thống đồng bộ hoặc tối đa 48h (BR14)."}
+                        ? "Nội dung đang được giữ kín. Hãy gửi đánh giá của bạn để cùng mở khóa nhận xét đối ứng và tích lũy điểm uy tín sinh viên nhé!"
+                        : "Cả hai nhận xét đang được bảo mật và sẽ tự động mở khóa đồng thời sau khi hệ thống đồng bộ hoặc tối đa 48h."}
                     </p>
                   </div>
                 </div>
@@ -750,7 +750,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
               )
             ) : (
               <div className="p-3.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs text-slate-500">
-                Đối tác chưa gửi đánh giá. Nếu sau 48 giờ đối tác không nộp, đánh giá của bạn sẽ tự động công khai (BR14).
+                Đối tác chưa gửi đánh giá. Nếu sau 48 giờ đối tác không nộp, đánh giá của bạn sẽ tự động công khai.
               </div>
             )}
           </div>
@@ -838,7 +838,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                   onClick={() => handleAction("cancel")}
                   className="px-4 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-bold border border-rose-200 cursor-pointer disabled:opacity-50"
                 >
-                  Hủy lịch hẹn (BR21)
+                  Hủy lịch hẹn
                 </button>
               )}
             </>
@@ -856,7 +856,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                 </button>
               ) : !myReview.visibleAt ? (
                 <span className="px-4 py-3 rounded-xl bg-amber-50 text-amber-800 text-xs sm:text-sm font-bold border border-amber-200 flex items-center gap-1.5">
-                  <span>🔒 Đã gửi đánh giá ({myReview.rating}★ - Đang chờ mở khóa đối ứng BR14)</span>
+                  <span>Đã gửi đánh giá ({myReview.rating}★ · Đang chờ mở khóa đối ứng)</span>
                 </span>
               ) : (
                 <span className="px-4 py-3 rounded-xl bg-emerald-50 text-emerald-800 text-xs sm:text-sm font-bold border border-emerald-200 flex items-center gap-1.5">

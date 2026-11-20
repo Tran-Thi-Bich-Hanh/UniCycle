@@ -56,7 +56,7 @@ export function DisputeModal({
                 Khiếu Nại: Tôi Chưa Nhận Hàng
               </h3>
               <p className="text-xs text-slate-500">
-                Chặn tự động hoàn tất 48h theo quy tắc an toàn BR13
+                Tạm dừng tự động hoàn tất 48h để bảo vệ quyền lợi người mua
               </p>
             </div>
           </div>

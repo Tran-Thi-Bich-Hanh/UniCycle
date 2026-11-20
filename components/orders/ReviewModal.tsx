@@ -250,7 +250,7 @@ export function ReviewModal({
             </svg>
             <div>
               <strong className="block text-[11px] uppercase tracking-wider text-amber-950 font-extrabold mb-0.5">
-                Cơ chế Đánh Giá Bí Mật 48 Giờ (Blind Review - BR14)
+                Cơ chế Đánh Giá Bí Mật 48 Giờ (Blind Review)
               </strong>
               <p className="text-[11px] leading-relaxed text-amber-900/90">
                 Nhận xét của bạn được giữ kín và chỉ mở khóa khi cả hai bên cùng nộp đánh giá (hoặc tự động sau 48h) nhằm ngăn chặn việc trả đũa đánh giá xấu. Hãy an tâm nhận xét thật lòng!

@@ -279,10 +279,10 @@ export function BookingModal({
           <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-800 space-y-1">
             <span className="font-bold block">💡 Quy tắc đặt hẹn UniCycle:</span>
             <span>
-              - Đơn hẹn có hiệu lực phản hồi trong vòng <strong>48 giờ</strong> (BR12).
+              - Đơn hẹn có hiệu lực phản hồi trong vòng <strong>48 giờ</strong>.
             </span>
             <span>
-              - Khi người bán chấp nhận, món đồ sẽ tự động chuyển sang trạng thái <strong>Giữ chỗ (RESERVED)</strong> độc quyền cho bạn (BR11).
+              - Khi người bán chấp nhận, món đồ sẽ tự động chuyển sang trạng thái <strong>Giữ chỗ</strong> độc quyền cho bạn.
             </span>
           </div>
 
