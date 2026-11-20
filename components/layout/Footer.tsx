@@ -115,7 +115,7 @@ export function Footer() {
               Mỗi món đồ bật Passport có mã QR số hiển thị trên màn hình điện thoại để kiểm tra chuỗi đời chủ (Chủ #1 ➔ Chủ #2 ➔ Chủ #3).
             </p>
             <p className="text-[11px] text-[#97CADB]">
-              Lưu ý (BR30): Passport ghi nhận lịch sử chuyển giao, không chứng nhận chất lượng hàng hóa. Lát cắt đối chiếu on-chain hoạt động trên Avalanche Fuji Testnet.
+              Lưu ý: Passport ghi nhận lịch sử chuyển giao, không chứng nhận chất lượng hàng hóa. Lát cắt đối chiếu on-chain hoạt động trên Avalanche Fuji Testnet.
             </p>
             <Link
               href="/passport/demo-senko-8f3a"

@@ -138,7 +138,7 @@ export function InviteAcceptClient({ code }: InviteAcceptClientProps) {
           Lời Mời Không Khả Dụng
         </h2>
         <p className="text-xs sm:text-sm text-slate-600 mb-6 leading-relaxed">
-          {error || "Lời mời chốt bán này đã hết hạn sau 24 giờ hoặc đã được người khác xác nhận mua trước đó (BR38)."}
+          {error || "Lời mời chốt bán này đã hết hạn sau 24 giờ hoặc đã được người khác xác nhận mua trước đó."}
         </p>
         <Link
           href="/products"
@@ -163,7 +163,7 @@ export function InviteAcceptClient({ code }: InviteAcceptClientProps) {
         {/* Header */}
         <div className="text-center space-y-1.5 pb-5 border-b border-slate-100">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-[#0068FF]/10 text-[#0068FF]">
-            <span>📲 Lời Mời Chốt Bán Qua Zalo (BR38)</span>
+            <span>Lời Mời Chốt Bán Qua Zalo</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-[#001B48] tracking-tight">
             Xác Nhận Giữ Chỗ Món Đồ
@@ -264,7 +264,7 @@ export function InviteAcceptClient({ code }: InviteAcceptClientProps) {
           <div className="pt-2 space-y-3">
             {isSeller ? (
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 text-center font-medium">
-                Bạn là người bán món đồ này. Hãy gửi đường link này cho bạn mua qua Zalo để bạn ấy xác nhận (BR38).
+                Bạn là người bán món đồ này. Hãy gửi đường link này cho bạn mua qua Zalo để bạn ấy xác nhận.
               </div>
             ) : !currentUserId ? (
               <Link

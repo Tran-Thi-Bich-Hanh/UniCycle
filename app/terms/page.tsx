@@ -5,7 +5,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Điều Khoản Sử Dụng & Giao Dịch An Toàn | UniCycle",
   description:
-    "Quy tắc giao dịch đồ cũ sinh viên, danh mục hàng cấm BR17, cơ chế giữ chỗ & khiếu nại 48h và tuyên bố giới hạn trách nhiệm Passport BR30.",
+    "Quy tắc giao dịch đồ cũ sinh viên, danh mục hàng cấm học đường, cơ chế giữ chỗ & khiếu nại 48h và tuyên bố giới hạn trách nhiệm Passport.",
 };
 
 export default function TermsPage() {
@@ -46,14 +46,14 @@ export default function TermsPage() {
                   <strong>Tuyệt đối không chuyển tiền đặt cọc trước</strong> khi chưa kiểm tra món đồ tận tay. UniCycle không thu hộ hoặc giữ tiền giao dịch ở giai đoạn MVP.
                 </li>
                 <li>
-                  Khi người bán chấp nhận yêu cầu hẹn, tin đăng chuyển sang trạng thái <strong>Giữ chỗ độc quyền (RESERVED - BR11)</strong> để bảo vệ lịch hẹn của bạn. Nếu quá giờ hẹn + 24 giờ mà hai bên không xác nhận bàn giao, đơn tự động hết hạn và mở bán lại (BR37).
+                  Khi người bán chấp nhận yêu cầu hẹn, tin đăng chuyển sang trạng thái <strong>Giữ chỗ độc quyền</strong> để bảo vệ lịch hẹn của bạn. Nếu quá giờ hẹn + 24 giờ mà hai bên không xác nhận bàn giao, đơn tự động hết hạn và mở bán lại.
                 </li>
               </ul>
             </section>
 
             <section className="space-y-2">
               <h2 className="text-base sm:text-lg font-extrabold text-[#001B48]">
-                2. Chu kỳ xác nhận bàn giao 48h &amp; Khiếu nại (BR13, SLA 72h)
+                2. Chu kỳ xác nhận bàn giao 48h &amp; Khiếu nại (SLA 72h)
               </h2>
               <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm">
                 <li>
@@ -67,7 +67,7 @@ export default function TermsPage() {
 
             <section className="space-y-2">
               <h2 className="text-base sm:text-lg font-extrabold text-[#001B48]">
-                3. Danh mục hàng cấm &amp; Kiểm duyệt vi phạm (BR16, BR17)
+                3. Danh mục hàng cấm &amp; Kiểm duyệt vi phạm
               </h2>
               <p className="text-xs sm:text-sm">
                 Nghiêm cấm đăng bán, trao đổi trên UniCycle các mặt hàng sau (vi phạm sẽ bị gỡ tin ngay lập tức và có thể khóa tài khoản):
@@ -77,16 +77,16 @@ export default function TermsPage() {
                 <li>Rượu, bia, thuốc lá, thuốc lá điện tử (vape/pod), chất kích thích và chất cấm.</li>
                 <li>Vũ khí, vật liệu cháy nổ, bình gas mini không đảm bảo an toàn trong KTX.</li>
                 <li>Giấy tờ tùy thân, bằng cấp, thẻ sinh viên giả hoặc tài liệu vi phạm bản quyền nghiêm trọng.</li>
-                <li>Giới hạn tối đa <strong>10 tin đăng mới/ngày</strong> và tối đa 5 ảnh/tin (BR16); tin hết hạn sau 30 ngày và có thể gia hạn (BR15).</li>
+                <li>Giới hạn tối đa <strong>10 tin đăng mới/ngày</strong> và tối đa 5 ảnh/tin; tin hết hạn sau 30 ngày và có thể gia hạn.</li>
               </ul>
             </section>
 
             <section className="p-5 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
               <h2 className="text-sm sm:text-base font-extrabold text-amber-950">
-                4. Tuyên bố giới hạn trách nhiệm Digital Product Passport (BR30 &amp; BR39)
+                4. Tuyên bố giới hạn trách nhiệm Digital Product Passport
               </h2>
               <p className="text-xs sm:text-sm text-amber-900">
-                Digital Product Passport trên UniCycle (kèm lát cắt đối chiếu Avalanche Fuji Testnet) chỉ ghi nhận lịch sử chuyển nhượng số giữa các sinh viên qua mã băm ẩn danh. <strong>Passport KHÔNG PHẢI chứng thư giám định chất lượng, không bảo đảm hàng chính hãng hay bảo hành vật lý.</strong> Khi Passport bị gắn cờ vi phạm (<code className="font-mono">FLAGGED</code>), toàn bộ giao dịch mới và đăng bán lại sẽ tạm khóa theo quy tắc BR39.
+                Digital Product Passport trên UniCycle (kèm lát cắt đối chiếu Avalanche Fuji Testnet) chỉ ghi nhận lịch sử chuyển nhượng số giữa các sinh viên qua mã băm ẩn danh. <strong>Passport KHÔNG PHẢI chứng thư giám định chất lượng, không bảo đảm hàng chính hãng hay bảo hành vật lý.</strong> Khi Passport bị gắn cờ vi phạm (<code className="font-mono">FLAGGED</code>), toàn bộ giao dịch mới và đăng bán lại sẽ tạm khóa.
               </p>
             </section>
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Chính Sách Bảo Mật & Nghị Định 13/2023/NĐ-CP | UniCycle",
   description:
-    "Cam kết bảo vệ dữ liệu cá nhân sinh viên theo Nghị định 13/2023/NĐ-CP, bảo vệ SĐT Zalo BR36, ẩn danh Passport BR27/BR29 và cơ chế Crypto-shredding BR34.",
+    "Cam kết bảo vệ dữ liệu cá nhân sinh viên theo Nghị định 13/2023/NĐ-CP, bảo vệ SĐT Zalo, ẩn danh mặc định trên Passport và cơ chế xóa dữ liệu an toàn Crypto-shredding.",
 };
 
 export default function PrivacyPage() {
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
 
             <section className="space-y-2">
               <h2 className="text-base sm:text-lg font-extrabold text-[#001B48]">
-                2. Bảo vệ số điện thoại Zalo khỏi thu thập tự động (BR01, BR36)
+                2. Bảo vệ số điện thoại Zalo khỏi thu thập tự động
               </h2>
               <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm">
                 <li>
@@ -59,21 +59,21 @@ export default function PrivacyPage() {
 
             <section className="space-y-2">
               <h2 className="text-base sm:text-lg font-extrabold text-[#001B48]">
-                3. Ẩn danh mặc định trên Digital Passport &amp; Avalanche Fuji (BR27, BR29)
+                3. Ẩn danh mặc định trên Digital Passport &amp; Avalanche Fuji
               </h2>
               <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm">
                 <li>
-                  Lịch sử chuyển giao trên trang Passport mặc định hiển thị ở dạng ẩn danh: <em>&ldquo;Chủ #n · Trường · Tháng/Năm&rdquo;</em>; tên hiển thị chỉ xuất hiện khi chủ sở hữu chủ động bật cho phép (BR29).
+                  Lịch sử chuyển giao trên trang Passport mặc định hiển thị ở dạng ẩn danh: <em>&ldquo;Chủ #n · Trường · Tháng/Năm&rdquo;</em>; tên hiển thị chỉ xuất hiện khi chủ sở hữu chủ động bật cho phép.
                 </li>
                 <li>
-                  Trên Smart Contract <code className="font-mono">UniCyclePassport.sol</code> (Avalanche Fuji Testnet), UniCycle <strong>chỉ ghi mã băm ẩn danh (<code className="font-mono">bytes32</code>)</strong> gồm <code className="font-mono">passportId</code>, <code className="font-mono">itemCommit</code>, <code className="font-mono">ownerHash</code> và <code className="font-mono">orderHash</code> — tuyệt đối không ghi tên, email, SĐT, ảnh hay giá tiền lên blockchain (BR27).
+                  Trên Smart Contract <code className="font-mono">UniCyclePassport.sol</code> (Avalanche Fuji Testnet), UniCycle <strong>chỉ ghi mã băm ẩn danh (<code className="font-mono">bytes32</code>)</strong> gồm <code className="font-mono">passportId</code>, <code className="font-mono">itemCommit</code>, <code className="font-mono">ownerHash</code> và <code className="font-mono">orderHash</code> — tuyệt đối không ghi tên, email, SĐT, ảnh hay giá tiền lên blockchain.
                 </li>
               </ul>
             </section>
 
             <section className="p-5 rounded-2xl bg-[#F4F9FB] border border-[#D6E8EE] space-y-2">
               <h2 className="text-sm sm:text-base font-extrabold text-[#001B48]">
-                4. Quyền xóa tài khoản theo cơ chế Crypto-Shredding (BR34)
+                4. Quyền xóa tài khoản theo cơ chế Crypto-Shredding
               </h2>
               <p className="text-xs sm:text-sm text-slate-700">
                 Sinh viên có quyền yêu cầu xóa vĩnh viễn tài khoản bất kỳ lúc nào tại <Link href="/profile?tab=privacy" className="text-[#018ABE] font-bold hover:underline">/profile?tab=privacy</Link>. Hệ thống thực thi xóa liên kết <code className="font-mono">PassportOwner.userId = NULL</code>, ẩn danh hóa toàn bộ PII trong bảng <code className="font-mono">User</code>, xóa SĐT trên tin đăng và chuyển các món đồ đang sở hữu sang trạng thái đóng băng <code className="font-mono">ARCHIVED_OWNER_DELETED</code>, giúp vừa xóa sạch danh tính cá nhân vừa bảo toàn tính liên tục của lịch sử đồ vật.

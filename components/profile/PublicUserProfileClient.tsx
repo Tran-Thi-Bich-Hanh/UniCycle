@@ -187,7 +187,7 @@ export function PublicUserProfileClient({ userId }: PublicUserProfileClientProps
 
           {user.isDeleted && (
             <div className="mt-5 p-4 rounded-2xl bg-slate-100 border border-slate-200 text-xs text-slate-700 leading-relaxed">
-              Tài khoản này đã xóa thông tin cá nhân theo cơ chế Crypto-shredding (BR34). Lịch sử vòng đời các món đồ trước đây trên Digital Product Passport vẫn được bảo toàn dưới dạng mã băm ẩn danh.
+              Tài khoản này đã xóa thông tin cá nhân theo cơ chế xóa dữ liệu an toàn (Crypto-shredding). Lịch sử vòng đời các món đồ trước đây trên Digital Product Passport vẫn được bảo toàn dưới dạng mã băm ẩn danh.
             </div>
           )}
         </div>

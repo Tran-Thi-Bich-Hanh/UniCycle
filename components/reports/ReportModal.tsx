@@ -15,13 +15,13 @@ interface ReportModalProps {
 
 const PRESET_REASONS: Record<ReportTargetType, string[]> = {
   LISTING: [
-    "Sản phẩm thuộc danh mục hàng cấm học đường (BR17: cồn, thuốc, chất cấm, tài liệu lậu...)",
+    "Sản phẩm thuộc danh mục hàng cấm học đường (cồn, thuốc, chất cấm, tài liệu lậu...)",
     "Người bán yêu cầu chuyển tiền cọc trước, có dấu hiệu lừa đảo",
     "Hình ảnh hoặc thông tin mô tả không đúng sự thật",
     "Tin đăng spam, trùng lặp hoặc giá ảo",
   ],
   PASSPORT: [
-    "Đồ vật bị nghi ngờ mất cắp hoặc đang có tranh chấp quyền sở hữu (BR32)",
+    "Đồ vật bị nghi ngờ mất cắp hoặc đang có tranh chấp quyền sở hữu",
     "Ảnh hiện tại có dấu hiệu sao chép lại từ đời chủ cũ, không phản ánh đúng thực trạng",
     "Nghi ngờ làm giả thông tin cam kết / serial sản phẩm",
   ],

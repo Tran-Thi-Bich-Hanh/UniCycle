@@ -258,7 +258,7 @@ export function VerifyStudentClient() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-[11px] font-bold text-[#D6E8EE]">
             <span>🎓</span>
-            <span>Xác Minh Cộng Đồng Sinh Viên (BR19)</span>
+            <span>Xác Minh Cộng Đồng Sinh Viên</span>
           </span>
           {verification?.isStudentVerified ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 text-white text-xs font-extrabold shadow-xs">
@@ -282,7 +282,7 @@ export function VerifyStudentClient() {
         </h1>
         <p className="text-xs sm:text-sm text-[#D6E8EE] leading-relaxed max-w-2xl">
           Tài khoản được xác minh giúp tăng độ tin cậy khi giao dịch tại cổng trường / KTX và được{" "}
-          <strong className="text-white">ưu tiên hiển thị tin đăng</strong> trên bảng tin khám phá (BR19).
+          <strong className="text-white">ưu tiên hiển thị tin đăng</strong> trên bảng tin khám phá.
         </p>
       </div>
 
