@@ -331,6 +331,24 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
   const isDisputed = order.status === "DISPUTED";
   const isCompleted = ["COMPLETED", "AUTO_COMPLETED"].includes(order.status);
   const isHandoverPhase = isAccepted || isWaiting;
+  const statusLabel =
+    order.status === "PENDING"
+      ? "Chờ xác nhận"
+      : order.status === "ACCEPTED"
+      ? "Đã chấp nhận"
+      : order.status === "WAITING_CONFIRMATION"
+      ? "Đang chờ đối tác xác nhận"
+      : order.status === "COMPLETED" || order.status === "AUTO_COMPLETED"
+      ? "Giao dịch hoàn tất thành công"
+      : order.status === "DISPUTED"
+      ? "Đang khiếu nại"
+      : order.status === "EXPIRED"
+      ? "Đã hết thời hạn xác nhận"
+      : order.status === "CANCELLED"
+      ? "Đã hủy"
+      : order.status === "REJECTED"
+      ? "Đã từ chối"
+      : "Chưa hoàn tất bàn giao";
 
   const hasConfirmedSelf = isSeller
     ? Boolean(order.sellerConfirmedAt)
@@ -347,9 +365,9 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
   const currentStep = isCompleted ? 4 : isWaiting ? 3 : isAccepted ? 2 : isPending ? 1 : 0;
   const steps = [
     { num: 1, label: "Đặt lịch hẹn" },
-    { num: 2, label: "Giữ chỗ (RESERVED)" },
-    { num: 3, label: "Xác nhận 48h" },
-    { num: 4, label: "Hoàn tất & Passport" },
+    { num: 2, label: "Giữ chỗ" },
+    { num: 3, label: "Xác nhận bàn giao" },
+    { num: 4, label: "Hoàn tất & cập nhật Passport" },
   ];
 
   const latestOwner = order.listing.item?.owners?.[order.listing.item.owners.length - 1];
@@ -391,7 +409,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#D6E8EE] shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h1 className="text-lg sm:text-xl font-extrabold text-[#001B48]">
-            Tiến Trình Giao Dịch Trao Tay
+            Tiến trình giao dịch
           </h1>
           <span
             className={`px-3 py-1 rounded-full text-xs font-extrabold ${
@@ -408,7 +426,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                 : "bg-slate-200 text-slate-700"
             }`}
           >
-            {order.status}
+            {statusLabel}
           </span>
         </div>
 
@@ -571,7 +589,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
         {(isHandoverPhase || isCompleted || isDisputed) && (
           <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
             <h3 className="text-xs sm:text-sm font-bold text-[#001B48]">
-              Trạng thái xác nhận bàn giao 2 chiều (Cửa sổ 48h)
+              Xác nhận bàn giao hai chiều
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div
@@ -583,8 +601,8 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
               >
                 <span className="font-bold block">
                   {order.sellerConfirmedAt
-                    ? "✓ Người bán đã xác nhận bàn giao"
-                    : "○ Người bán chưa xác nhận"}
+                    ? "✓ Người bán: Đã xác nhận"
+                    : "○ Người bán: Chưa xác nhận bàn giao"}
                 </span>
                 {order.sellerConfirmedAt && (
                   <span className="text-[11px] block mt-0.5">
@@ -602,8 +620,8 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
               >
                 <span className="font-bold block">
                   {order.buyerConfirmedAt
-                    ? "✓ Người mua đã xác nhận nhận hàng"
-                    : "○ Người mua chưa xác nhận"}
+                    ? "✓ Người mua: Đã xác nhận"
+                    : "○ Người mua: Chưa xác nhận nhận hàng"}
                 </span>
                 {order.buyerConfirmedAt && (
                   <span className="text-[11px] block mt-0.5">
