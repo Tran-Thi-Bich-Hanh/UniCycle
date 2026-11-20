@@ -181,7 +181,7 @@ export async function DELETE(req: NextRequest) {
       success: true,
       summary,
       message:
-        "Tài khoản và thông tin định danh cá nhân đã được xóa an toàn theo cơ chế Crypto-shredding (BR34). Lịch sử giao dịch ẩn danh trên Passport vẫn được bảo toàn.",
+        "Tài khoản và thông tin định danh cá nhân đã được xóa an toàn theo cơ chế Crypto-shredding. Lịch sử giao dịch ẩn danh trên Passport vẫn được bảo toàn.",
     });
 
     response.cookies.set(SESSION_COOKIE_NAME, "", {

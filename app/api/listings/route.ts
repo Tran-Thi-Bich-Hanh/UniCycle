@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
     const user = await getSessionUser();
     if (!user) {
       return NextResponse.json(
-        { error: "Vui lòng đăng nhập để đăng tin bán món đồ (BR01)." },
+        { error: "Vui lòng đăng nhập để đăng tin bán món đồ." },
         { status: 401 }
       );
     }
@@ -292,7 +292,7 @@ export async function POST(req: NextRequest) {
 
     if (images.length > 5) {
       return NextResponse.json(
-        { error: "Mỗi tin đăng được tối đa 5 hình ảnh thật theo quy định (BR16)." },
+        { error: "Mỗi tin đăng được tối đa 5 hình ảnh thật theo quy định." },
         { status: 400 }
       );
     }
@@ -302,7 +302,7 @@ export async function POST(req: NextRequest) {
     if (prohibitedWord) {
       return NextResponse.json(
         {
-          error: `Tin đăng chứa từ khóa thuộc danh mục cấm: "${prohibitedWord}". UniCycle nghiêm cấm giao dịch chất kích thích, cồn, vũ khí hoặc giấy tờ giả trong môi trường học đường (BR17).`,
+          error: `Tin đăng chứa từ khóa thuộc danh mục cấm: "${prohibitedWord}". UniCycle nghiêm cấm giao dịch chất kích thích, cồn, vũ khí hoặc giấy tờ giả trong môi trường học đường.`,
         },
         { status: 400 }
       );
@@ -397,7 +397,7 @@ export async function POST(req: NextRequest) {
       if (todayListingsCount >= 10) {
         return NextResponse.json(
           {
-            error: "Bạn đã đạt giới hạn tối đa 10 tin đăng trong vòng 24 giờ theo quy định chống spam (BR16).",
+            error: "Bạn đã đạt giới hạn tối đa 10 tin đăng trong vòng 24 giờ theo quy định chống spam.",
           },
           { status: 429 }
         );
@@ -430,23 +430,23 @@ export async function POST(req: NextRequest) {
           }
 
           if (existingItem.currentOwnerId !== sellerDbId) {
-            throw new Error("Chỉ chủ sở hữu hiện tại mới có quyền đăng bán lại món đồ này (BR25).");
+            throw new Error("Chỉ chủ sở hữu hiện tại mới có quyền đăng bán lại món đồ này.");
           }
 
           if (existingItem.passportStatus === "FLAGGED") {
             throw new Error(
-              "Hộ chiếu món đồ này hiện đang bị gắn cờ cảnh báo vi phạm, không thể đăng bán lại (BR39)."
+              "Hộ chiếu món đồ này hiện đang bị gắn cờ cảnh báo vi phạm, không thể đăng bán lại."
             );
           }
 
           if (existingItem.passportStatus === "ARCHIVED_OWNER_DELETED") {
             throw new Error(
-              "Hộ chiếu món đồ này đang ở trạng thái lưu trữ đóng băng do tài khoản chủ cũ đã xóa (BR34)."
+              "Hộ chiếu món đồ này đang ở trạng thái lưu trữ đóng băng do tài khoản chủ cũ đã xóa."
             );
           }
 
           if (existingItem.listings.length > 0) {
-            throw new Error("Món đồ này hiện đang có tin đăng mở bán hoặc đang giữ chỗ trên sàn (BR18).");
+            throw new Error("Món đồ này hiện đang có tin đăng mở bán hoặc đang giữ chỗ trên sàn.");
           }
 
           // Cập nhật tùy chọn hiển thị tên nếu người dùng thay đổi (BR29)

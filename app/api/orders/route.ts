@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
     const user = await getSessionUser();
     if (!user) {
       return NextResponse.json(
-        { error: "Vui lòng đăng nhập để đặt lịch hẹn xem hàng (BR01)." },
+        { error: "Vui lòng đăng nhập để đặt lịch hẹn xem hàng." },
         { status: 401 }
       );
     }
@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
     // 3. Quy tắc BR04: Người mua không được tạo yêu cầu cho sản phẩm của chính mình
     if (listing.sellerId === user.id) {
       return NextResponse.json(
-        { error: "Bạn không thể đặt lịch hẹn cho món đồ do chính mình đăng bán (BR04)." },
+        { error: "Bạn không thể đặt lịch hẹn cho món đồ do chính mình đăng bán." },
         { status: 400 }
       );
     }
@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Món đồ này đang bị khóa do có nghi vấn tranh chấp hoặc vi phạm cộng đồng (BR39).",
+            "Món đồ này đang bị khóa do có nghi vấn tranh chấp hoặc vi phạm cộng đồng.",
         },
         { status: 400 }
       );
@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Đặt lịch hẹn xem hàng thành công! Đơn hẹn có hiệu lực trong 48 giờ (BR12).",
+        message: "Đặt lịch hẹn xem hàng thành công! Đơn hẹn có hiệu lực trong 48 giờ.",
         order,
       },
       { status: 201 }

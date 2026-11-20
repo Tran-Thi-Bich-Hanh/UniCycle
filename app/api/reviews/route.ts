@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
     const numRating = Number(rating);
     if (!Number.isInteger(numRating) || numRating < 1 || numRating > 5) {
       return NextResponse.json(
-        { error: "Số sao đánh giá phải từ 1 đến 5 sao (BR09)." },
+        { error: "Số sao đánh giá phải từ 1 đến 5 sao." },
         { status: 400 }
       );
     }
@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
     // Quy tắc BR08: Chỉ đánh giá khi đơn đã hoàn tất
     if (!["COMPLETED", "AUTO_COMPLETED"].includes(order.status)) {
       return NextResponse.json(
-        { error: "Chỉ có thể đánh giá khi đơn hàng đã hoàn tất trao tay (BR08)." },
+        { error: "Chỉ có thể đánh giá khi đơn hàng đã hoàn tất trao tay." },
         { status: 400 }
       );
     }
@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
 
     if (existingReview) {
       return NextResponse.json(
-        { error: "Bạn đã gửi đánh giá cho đơn hàng này rồi (mỗi bên đánh giá 1 lần theo BR08/BR09)." },
+        { error: "Bạn đã gửi đánh giá cho đơn hàng này rồi (mỗi bên chỉ đánh giá 1 lần)." },
         { status: 400 }
       );
     }
@@ -332,7 +332,7 @@ export async function POST(request: NextRequest) {
           data: {
             userId: revieweeId,
             type: "REVIEW_MUTUAL_UNLOCKED",
-            title: "Đánh giá hai chiều đã mở khóa (BR14)",
+            title: "Đánh giá hai chiều đã mở khóa",
             message: `Đối tác đã hoàn tất đánh giá cho đơn "${order.listing.title}". Cả hai nhận xét hiện đã được mở khóa công khai!`,
             payload: JSON.stringify({ orderId, listingId: order.listing.id }),
           },
@@ -347,7 +347,7 @@ export async function POST(request: NextRequest) {
         {
           success: true,
           isUnlocked: true,
-          message: "Đánh giá thành công! Cả hai bên đã gửi đánh giá nên nhận xét đã được mở khóa công khai (BR14).",
+          message: "Đánh giá thành công! Cả hai bên đã gửi đánh giá nên nhận xét đã được mở khóa công khai.",
           review: newReview,
         },
         { status: 201 }
@@ -371,7 +371,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: revieweeId,
           type: "REVIEW_PENDING_PARTNER",
-          title: "Bạn có đánh giá mới đang chờ mở khóa (BR14)",
+          title: "Bạn có đánh giá mới đang chờ mở khóa",
           message: `Đối tác đã gửi đánh giá bí mật cho đơn "${order.listing.title}". Hãy gửi đánh giá của bạn để cùng mở khóa xem nhận xét nhé!`,
           payload: JSON.stringify({ orderId, listingId: order.listing.id }),
         },
@@ -382,7 +382,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         isUnlocked: false,
-        message: "Đã ghi nhận đánh giá bí mật của bạn. Đánh giá sẽ được mở khóa khi đối tác nộp đánh giá đối ứng hoặc tự động sau 48h (BR14).",
+        message: "Đã ghi nhận đánh giá bí mật của bạn. Đánh giá sẽ được mở khóa khi đối tác nộp đánh giá đối ứng hoặc tự động sau 48h.",
         review: newReview,
       },
       { status: 201 }

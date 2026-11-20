@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
               userId: updated.id,
               type: "STUDENT_VERIFIED",
               title: "Đã cấp Huy hiệu Sinh viên xác minh!",
-              message: `Email trường ${eduEmail} đã được xác thực. Tài khoản của bạn chính thức nhận Huy hiệu 'Sinh viên đã xác minh' và được ưu tiên hiển thị tin đăng (BR19).`,
+              message: `Email trường ${eduEmail} đã được xác thực. Tài khoản của bạn chính thức nhận Huy hiệu 'Sinh viên đã xác minh' và được ưu tiên hiển thị tin đăng.`,
               payload: JSON.stringify({ method: "edu_email", emailDomain }),
             },
           });
@@ -241,7 +241,7 @@ export async function POST(req: NextRequest) {
         success: true,
         verifiedImmediately: true,
         user: updatedSessionUser,
-        message: `Xác minh thành công qua email ${eduEmail}! Tài khoản đã nhận Huy hiệu "Sinh viên đã xác minh" (BR19).`,
+        message: `Xác minh thành công qua email ${eduEmail}! Tài khoản đã nhận Huy hiệu "Sinh viên đã xác minh".`,
       });
 
       response.cookies.set(SESSION_COOKIE_NAME, token, {
