@@ -268,18 +268,18 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full bg-white border-b border-[#D6E8EE] shadow-[0_2px_12px_rgba(0,27,72,0.04)]">
       {/* 1. Main Header Bar (Đã bỏ topbar xanh đen phía trên cho giao diện sạch sẽ, thoáng mắt) */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-16 sm:h-20 flex items-center justify-between md:justify-center gap-2.5">
-          {/* Cụm trái: Logo + Nút Danh mục (khoảng cách gap-2.5 đồng đều) */}
-          <div className="flex items-center gap-2.5 shrink-0">
+      <div className="max-w-[1440px] mx-auto px-2.5 sm:px-6 lg:px-8">
+        <div className="h-16 sm:h-20 flex items-center justify-between md:justify-center gap-1.5 sm:gap-2.5">
+          {/* Cụm trái: Logo + Nút Danh mục (khoảng cách gap-2.5 đồng đều trên sm+) */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 lg:shrink-0">
                   {/* Mobile: Nút mở Offcanvas Menu (kế thừa goal-header-mobile từ index.html) */}
-                  <div className="flex items-center gap-2 lg:hidden">
+                  <div className="flex items-center lg:hidden shrink-0">
                     <button
                       type="button"
                       onClick={() => setMobileMenuOpen(true)}
                       aria-label="Mở danh mục và menu điều hướng"
                       aria-expanded={mobileMenuOpen}
-                      className="w-[38px] h-[38px] inline-flex items-center justify-center rounded-lg text-[#001B48] hover:bg-[#D6E8EE]/50 transition-colors cursor-pointer"
+                      className="w-8 h-9 sm:w-[38px] sm:h-[38px] inline-flex items-center justify-center rounded-lg text-[#001B48] hover:bg-[#D6E8EE]/50 transition-colors cursor-pointer"
                     >
                     <svg
                       className="w-5 h-5"
@@ -297,10 +297,10 @@ export function Header() {
                 {/* Logo chính từ /public/logo.jpg */}
             <Link
                 href="/"
-                className="flex items-center gap-2.5 shrink-0 group focus:outline-none"
+                className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 sm:shrink-0 group focus:outline-none"
                 aria-label="Trang chủ UniCycle"
               >
-              <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl overflow-hidden border border-[#D6E8EE] bg-white shadow-xs group-hover:border-[#018ABE] transition-colors">
+              <div className="relative h-8 w-8 sm:h-11 sm:w-11 rounded-lg sm:rounded-xl overflow-hidden border border-[#D6E8EE] bg-white shadow-xs group-hover:border-[#018ABE] transition-colors shrink-0">
                   <Image
                     src="/logo.jpg"
                     alt="Logo UniCycle"
@@ -310,11 +310,11 @@ export function Header() {
                     priority
                   />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#001B48] leading-none">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-base sm:text-2xl font-extrabold tracking-tight text-[#001B48] leading-none truncate">
                     Uni<span className="text-[#018ABE]">Cycle</span>
                   </span>
-                  <span className="text-[11px] font-medium text-[#02457A] tracking-wide mt-0.5">
+                  <span className="hidden sm:block text-[11px] font-medium text-[#02457A] tracking-wide mt-0.5">
                     Chợ đồ cũ sinh viên
                   </span>
                 </div>
@@ -459,15 +459,15 @@ export function Header() {
             </form>
           </div>
 
-          {/* Cụm hành động bên phải: Khoảng cách gap-2.5 đồng đều giữa các nút */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Cụm hành động bên phải: Khoảng cách gọn trên mobile (<360px), gap-2.5 đồng đều trên sm+ */}
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
                       {/* Nút mở thanh tìm kiếm trên Mobile */}
                       <button
                         type="button"
                         onClick={() => setMobileSearchOpen((prev) => !prev)}
                         aria-label="Mở thanh tìm kiếm sản phẩm"
                         aria-expanded={mobileSearchOpen}
-                        className="md:hidden w-[38px] h-[38px] inline-flex items-center justify-center rounded-lg text-[#001B48] hover:bg-[#D6E8EE]/50 transition-colors cursor-pointer"
+                        className="md:hidden w-8 h-9 sm:w-[38px] sm:h-[38px] inline-flex items-center justify-center rounded-lg text-[#001B48] hover:bg-[#D6E8EE]/50 transition-colors cursor-pointer"
                       >
                         <svg
                           className="w-5 h-5"
@@ -490,7 +490,7 @@ export function Header() {
                         <Link
                           href="/my-items"
                           aria-label="Đồ của tôi"
-                          className={`relative w-[38px] h-[38px] rounded-lg inline-flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0 ${pathname?.startsWith("/my-items") || pathname?.startsWith("/my-products")
+                          className={`relative w-8 h-9 sm:w-[38px] sm:h-[38px] rounded-lg inline-flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0 ${pathname?.startsWith("/my-items") || pathname?.startsWith("/my-products")
                               ? "bg-[#D6E8EE] text-[#001B48]"
                               : "text-[#001B48] hover:bg-[#F4F9FB]"
                             }`}
@@ -510,12 +510,12 @@ export function Header() {
                             />
                           </svg>
                           {currentUser && (userCounts.productsCount ?? userCounts.itemsCount) > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#018ABE] text-white text-[9px] font-bold flex items-center justify-center leading-none border-2 border-white shadow-xs">
+                  <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#018ABE] text-white text-[9px] font-bold flex items-center justify-center leading-none border-2 border-white shadow-xs">
                     {userCounts.productsCount ?? userCounts.itemsCount}
                   </span>
                 )}
               </Link>
-              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#0B1F4B] text-white text-xs font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 transform group-hover:translate-y-0 translate-y-1 shadow-lg z-50">
+              <div className="hidden lg:block absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#0B1F4B] text-white text-xs font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 transform group-hover:translate-y-0 translate-y-1 shadow-lg z-50">
                 <span>Đồ của tôi</span>
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0B1F4B] rotate-45" />
               </div>
@@ -526,7 +526,7 @@ export function Header() {
                         <Link
                           href="/orders"
                           aria-label="Quản lý đơn hẹn xem hàng"
-                          className={`relative w-[38px] h-[38px] rounded-lg inline-flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0 ${pathname?.startsWith("/orders")
+                          className={`relative w-8 h-9 sm:w-[38px] sm:h-[38px] rounded-lg inline-flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0 ${pathname?.startsWith("/orders")
                               ? "bg-[#D6E8EE] text-[#001B48]"
                               : "text-[#001B48] hover:bg-[#F4F9FB]"
                             }`}
@@ -547,14 +547,14 @@ export function Header() {
                           </svg>
                           {currentUser && userCounts.ordersCount > 0 && (
                             <span
-                              className={`absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full text-white text-[9px] font-bold flex items-center justify-center leading-none border-2 border-white shadow-xs ${userCounts.activeOrdersCount > 0 ? "bg-[#EF4444]" : "bg-[#02457A]"
+                              className={`absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 min-w-[16px] h-[16px] px-1 rounded-full text-white text-[9px] font-bold flex items-center justify-center leading-none border-2 border-white shadow-xs ${userCounts.activeOrdersCount > 0 ? "bg-[#EF4444]" : "bg-[#02457A]"
                                 }`}
                             >
                               {userCounts.ordersCount}
                             </span>
                           )}
                         </Link>
-                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#0B1F4B] text-white text-xs font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 transform group-hover:translate-y-0 translate-y-1 shadow-lg z-50">
+                        <div className="hidden lg:block absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#0B1F4B] text-white text-xs font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 transform group-hover:translate-y-0 translate-y-1 shadow-lg z-50">
                           <span>Lịch hẹn &amp; giao dịch</span>
                           <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0B1F4B] rotate-45" />
                         </div>
@@ -565,7 +565,7 @@ export function Header() {
                         <Link
                           href="/sell"
                           aria-label="Đăng bán món đồ"
-                          className="w-[38px] h-[38px] rounded-lg bg-[#018ABE] hover:bg-[#02457A] text-white inline-flex items-center justify-center shadow-xs hover:shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
+                          className="w-8 h-9 sm:w-[38px] sm:h-[38px] rounded-lg bg-[#018ABE] hover:bg-[#02457A] text-white inline-flex items-center justify-center shadow-xs hover:shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
                         >
                           <svg
                             className="w-[18px] h-[18px]"
@@ -578,7 +578,7 @@ export function Header() {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                           </svg>
                         </Link>
-                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#0B1F4B] text-white text-xs font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 transform group-hover:translate-y-0 translate-y-1 shadow-lg z-50">
+                        <div className="hidden lg:block absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#0B1F4B] text-white text-xs font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 transform group-hover:translate-y-0 translate-y-1 shadow-lg z-50">
                           <span>Đăng bán</span>
                           <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0B1F4B] rotate-45" />
                         </div>
@@ -592,7 +592,7 @@ export function Header() {
                           aria-expanded={accountPopupOpen}
                           aria-haspopup="true"
                           aria-label={currentUser ? `Tài khoản ${currentUser.displayName}` : "Tài khoản và đăng nhập"}
-                          className="w-[38px] h-[38px] rounded-full overflow-hidden border-2 border-white ring-2 ring-[#D6E8EE] hover:ring-[#018ABE] hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs shrink-0 flex items-center justify-center bg-white"
+                          className="w-8 h-8 sm:w-[38px] sm:h-[38px] rounded-full overflow-hidden border-2 border-white ring-2 ring-[#D6E8EE] hover:ring-[#018ABE] hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs shrink-0 flex items-center justify-center bg-white"
                         >
                           {currentUser ? (
                             currentUser.avatarUrl ? (
@@ -618,7 +618,7 @@ export function Header() {
                         </button>
 
                         {!accountPopupOpen && (
-                          <div className="absolute top-full mt-2 right-0 px-2.5 py-1 rounded-lg bg-[#0B1F4B] text-white text-xs font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 transform group-hover:translate-y-0 translate-y-1 shadow-lg z-50">
+                          <div className="hidden lg:block absolute top-full mt-2 right-0 px-2.5 py-1 rounded-lg bg-[#0B1F4B] text-white text-xs font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 transform group-hover:translate-y-0 translate-y-1 shadow-lg z-50">
                             <span>{currentUser ? currentUser.displayName : "Tài khoản"}</span>
                             <div className="absolute -top-1 right-4 w-2 h-2 bg-[#0B1F4B] rotate-45" />
                           </div>
@@ -631,7 +631,7 @@ export function Header() {
                               onClick={() => setAccountPopupOpen(false)}
                               aria-hidden="true"
                             />
-                            <div className="absolute right-0 top-full mt-2 w-64 sm:w-72 rounded-2xl bg-white border border-[#D6E8EE] shadow-xl p-2.5 z-50">
+                            <div className="absolute right-0 top-full mt-2 w-64 sm:w-72 max-w-[calc(100vw-1.25rem)] rounded-2xl bg-white border border-[#D6E8EE] shadow-xl p-2.5 z-50">
                               {currentUser ? (
                                 <>
                                   <div className="space-y-1 text-xs">

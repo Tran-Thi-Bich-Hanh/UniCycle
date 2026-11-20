@@ -49,7 +49,7 @@ export default function RootLayout({
     >
       <body
         suppressHydrationWarning
-        className="min-h-full flex flex-col bg-white text-[#001B48] pb-16 lg:pb-0"
+        className="min-h-full flex flex-col bg-white text-[#001B48] pb-16 lg:pb-0 overflow-x-clip"
       >
         <Suspense
           fallback={
@@ -59,7 +59,7 @@ export default function RootLayout({
           <Header />
         </Suspense>
 
-        <main className="flex-1 flex flex-col">{children}</main>
+        <main className="flex-1 flex flex-col min-w-0">{children}</main>
 
         <Suspense fallback={null}>
           <Footer />
