@@ -30,6 +30,7 @@ interface ProfileData {
 }
 
 interface ProfileStats {
+  itemsCount?: number;
   listingsCount: number;
   completedOrdersCount: number;
   ownedItemsCount: number;
@@ -72,6 +73,7 @@ export function ProfileClient() {
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<ProfileStats>({
+    itemsCount: 0,
     listingsCount: 0,
     completedOrdersCount: 0,
     ownedItemsCount: 0,
@@ -425,7 +427,9 @@ export function ProfileClient() {
                 </svg>
               </div>
               <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-[26px] leading-tight font-bold text-[#0B1F4B]">{stats.listingsCount}</span>
+                <span className="text-[26px] leading-tight font-bold text-[#0B1F4B]">
+                  {stats.itemsCount ?? stats.listingsCount}
+                </span>
                 <span className="text-sm text-[#475569]">Đồ của tôi</span>
               </div>
               <svg className="ml-auto text-[#475569] group-hover:translate-x-0.5 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

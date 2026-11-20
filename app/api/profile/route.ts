@@ -78,6 +78,7 @@ export async function GET() {
     };
 
     let stats = {
+      itemsCount: 0,
       listingsCount: 0,
       completedOrdersCount: 0,
       ownedItemsCount: 0,
@@ -151,14 +152,15 @@ export async function GET() {
 
         const now = new Date();
         const [
-          listingsCount,
+          userListings,
           completedOrdersCount,
-          ownedItemsCount,
+          ownedItems,
           blockingOrdersCount,
           dbReviews,
         ] = await Promise.all([
-          prisma.listing.count({
+          prisma.listing.findMany({
             where: { sellerId: dbUser.id, status: { not: "REMOVED" } },
+            select: { id: true, itemId: true },
           }),
           prisma.order.count({
             where: {
@@ -166,8 +168,9 @@ export async function GET() {
               status: { in: ["COMPLETED", "AUTO_COMPLETED"] },
             },
           }),
-          prisma.item.count({
+          prisma.item.findMany({
             where: { currentOwnerId: dbUser.id },
+            select: { id: true },
           }),
           prisma.order.count({
             where: {
@@ -202,10 +205,17 @@ export async function GET() {
           }),
         ]);
 
+        const ownedItemIds = new Set(ownedItems.map((item) => item.id));
+        const unmatchedListingsCount = userListings.filter(
+          (listing) => !listing.itemId || !ownedItemIds.has(listing.itemId)
+        ).length;
+        const unifiedItemsCount = ownedItems.length + unmatchedListingsCount;
+
         stats = {
-          listingsCount,
+          itemsCount: unifiedItemsCount,
+          listingsCount: userListings.length,
           completedOrdersCount,
-          ownedItemsCount,
+          ownedItemsCount: ownedItems.length,
           reviewsCount: dbReviews.length,
           blockingOrdersCount,
         };
