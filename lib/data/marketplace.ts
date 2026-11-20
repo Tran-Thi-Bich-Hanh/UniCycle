@@ -1,3 +1,4 @@
+import { io } from "next/cache";
 import prisma from "@/lib/prisma";
 import { ProductCardData } from "@/components/products/ProductCard";
 import { CategoryItem } from "@/components/home/CategoryGrid";
@@ -64,6 +65,7 @@ function computeCountsFromProducts(
 export async function getCategoryListingCounts(): Promise<
   Record<string, number>
 > {
+  await io();
   const countsBySlug = createInitialCountsBySlug();
 
   try {
@@ -118,6 +120,8 @@ export async function getMarketplaceData(options?: {
   limit?: number;
 }): Promise<MarketplaceData> {
   const limit = options?.limit ?? 50;
+
+  await io();
 
   try {
     const now = new Date();

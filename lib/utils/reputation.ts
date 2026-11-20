@@ -7,6 +7,7 @@
  * - BR35: Chặn cày điểm ảo - chỉ tính tối đa 2 giao dịch đầu tiên giữa cùng một cặp tài khoản
  */
 
+import { io } from "next/cache";
 import prisma from "@/lib/prisma";
 
 /**
@@ -141,6 +142,8 @@ export async function getPublicReviewCountsByUserIds(
   if (uniqueIds.length === 0) {
     return counts;
   }
+
+  await io();
 
   try {
     const rows = await prisma.review.groupBy({
