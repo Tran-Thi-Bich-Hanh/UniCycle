@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DisputeModal } from "@/components/orders/DisputeModal";
 import { ReviewModal } from "@/components/orders/ReviewModal";
+import { HandoverQrModal } from "@/components/orders/HandoverQrModal";
 import { OrderReview } from "@/components/orders/OrdersManager";
 import { formatReputationSummary } from "@/lib/utils/reputation-display";
 
@@ -121,6 +122,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
 
   // Modal đánh giá Blind Review BR14
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [handoverQrOpen, setHandoverQrOpen] = useState(false);
 
   const handleReviewSuccess = (isUnlocked: boolean, message: string) => {
     setReviewOpen(false);
@@ -820,6 +822,35 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
 
           {isHandoverPhase && (
             <>
+              {isSeller && order.listing.item?.passportStatus !== "FLAGGED" && (
+                <button
+                  type="button"
+                  onClick={() => setHandoverQrOpen(true)}
+                  className="px-5 py-3 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs sm:text-sm font-bold shadow-md cursor-pointer inline-flex items-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2"
+                >
+                  <svg
+                    className="w-4 h-4 text-[#97CADB] shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.9}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13.5 14.625h2.25v2.25H13.5v-2.25zm2.25 2.25h2.25v2.25h-2.25v-2.25zm2.25-2.25h2.25v2.25H18v-2.25zm0 4.5h2.25v2.25H18v-2.25zm-4.5 0h2.25v2.25H13.5v-2.25z"
+                    />
+                  </svg>
+                  <span>Mở mã QR giao nhận</span>
+                </button>
+              )}
+
               {!hasConfirmedSelf && (
                 <button
                   type="button"
@@ -930,6 +961,24 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
           isSellerRole={isSeller}
           onClose={() => setReviewOpen(false)}
           onSuccess={handleReviewSuccess}
+        />
+      )}
+
+      {/* Modal QR Giao nhận trao tay (Chỉ người bán mở) */}
+      {order && isSeller && handoverQrOpen && (
+        <HandoverQrModal
+          isOpen={handoverQrOpen}
+          orderId={order.id}
+          onClose={() => setHandoverQrOpen(false)}
+          onCompleted={() => {
+            window.dispatchEvent(new Event("unicycle-auth-change"));
+            window.dispatchEvent(new Event("unicycle-listings-change"));
+            setFeedback({
+              type: "success",
+              text: "Người mua đã quét QR xác nhận nhận hàng — Giao dịch đã hoàn tất!",
+            });
+            loadOrder();
+          }}
         />
       )}
     </div>
