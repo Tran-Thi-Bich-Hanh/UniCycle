@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ReportModal } from "@/components/reports/ReportModal";
+import {
+  ItemJourneyTimeline,
+  JourneyOwnerStep,
+} from "@/components/passport/ItemJourneyTimeline";
 
 export interface PassportOwnerData {
   id: string;
@@ -74,7 +78,12 @@ export interface PassportPayload {
 export interface OnChainVerificationReport {
   passportId: string;
   itemId: string;
-  status: "VERIFIED_MATCH" | "PENDING_SYNC" | "MISMATCH_DETECTED" | "NOT_ANCHORED_YET" | "SIMULATED_MODE";
+  status:
+    | "VERIFIED_MATCH"
+    | "PENDING_SYNC"
+    | "MISMATCH_DETECTED"
+    | "NOT_ANCHORED_YET"
+    | "SIMULATED_MODE";
   contractAddress: string;
   network: string;
   checks: {
@@ -94,25 +103,243 @@ interface PassportClientProps {
   initialData: PassportPayload;
 }
 
+function formatShortHash(value?: string | null, start = 8, end = 6): string {
+  if (!value) return "";
+  if (value.length <= start + end + 3) return value;
+  return `${value.slice(0, start)}...${value.slice(-end)}`;
+}
+
+function formatTxKind(kind: string): string {
+  switch (kind) {
+    case "REGISTER":
+      return "Khởi tạo hộ chiếu";
+    case "TRANSFER":
+      return "Chuyển giao sở hữu";
+    case "FLAG":
+      return "Gắn cờ cảnh báo";
+    default:
+      return kind;
+  }
+}
+
+function formatTxStatus(status: string): string {
+  switch (status) {
+    case "CONFIRMED":
+      return "Đã xác nhận";
+    case "QUEUED":
+      return "Đang chờ gửi";
+    case "SUBMITTED":
+      return "Đang xác nhận";
+    case "FAILED":
+      return "Chưa đồng bộ";
+    default:
+      return status;
+  }
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    return new Date(dateStr).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function VerificationCheckItem({
+  label,
+  passed,
+  detail,
+}: {
+  label: string;
+  passed: boolean;
+  detail?: string;
+}) {
+  return (
+    <div
+      className={`p-3 rounded-xl border flex items-center justify-between gap-2 text-xs ${
+        passed
+          ? "bg-emerald-50/60 border-emerald-200/80 text-emerald-950"
+          : "bg-amber-50/70 border-amber-200/80 text-amber-950"
+      }`}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        {passed ? (
+          <svg
+            className="w-4 h-4 text-emerald-600 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        ) : (
+          <svg
+            className="w-4 h-4 text-amber-600 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+            />
+          </svg>
+        )}
+        <span className="font-semibold truncate">{label}</span>
+      </div>
+      <span
+        className={`text-[11px] font-bold shrink-0 whitespace-nowrap ${
+          passed ? "text-emerald-700" : "text-amber-700"
+        }`}
+      >
+        {detail || (passed ? "Đạt" : "Chưa khớp")}
+      </span>
+    </div>
+  );
+}
+
 export function PassportClient({ initialData }: PassportClientProps) {
   const { passport, owners, events, listingsTimeline, chainTxs } = initialData;
   const [copied, setCopied] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; alt: string } | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrLoadState, setQrLoadState] = useState<"loading" | "loaded" | "error">("loading");
+  const [qrRetryKey, setQrRetryKey] = useState(0);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [showTechDetails, setShowTechDetails] = useState(false);
 
-  // Trạng thái kiểm chứng On-Chain và Đồng bộ Relayer (Sprint 5 Task 5.1)
+  // Trạng thái kiểm chứng On-Chain và Đồng bộ Relayer
   const [activeChainTxs, setActiveChainTxs] = useState(chainTxs);
-  const [verificationReport, setVerificationReport] = useState<OnChainVerificationReport | null>(null);
+  const [verificationReport, setVerificationReport] = useState<OnChainVerificationReport | null>(
+    null
+  );
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
 
-  const handleCopyId = () => {
-    if (passport.passportId) {
-      navigator.clipboard.writeText(passport.passportId);
+  const copyIdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyLinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const closeQrBtnRef = useRef<HTMLButtonElement | null>(null);
+  const closePhotoBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyIdTimerRef.current) clearTimeout(copyIdTimerRef.current);
+      if (copyLinkTimerRef.current) clearTimeout(copyLinkTimerRef.current);
+    };
+  }, []);
+
+  const openQrModal = () => {
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      previousFocusRef.current = document.activeElement;
+    }
+    setCopiedLink(false);
+    setQrLoadState("loading");
+    setQrRetryKey(0);
+    setQrModalOpen(true);
+  };
+
+  const closeQrModal = useCallback(() => {
+    setCopiedLink(false);
+    setQrModalOpen(false);
+  }, []);
+
+  const openPhotoModal = (url: string, alt: string) => {
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      previousFocusRef.current = document.activeElement;
+    }
+    setSelectedPhoto({ url, alt });
+  };
+
+  const closePhotoModal = useCallback(() => {
+    setSelectedPhoto(null);
+  }, []);
+
+  useEffect(() => {
+    if (!qrModalOpen && !selectedPhoto) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const openerElement = previousFocusRef.current;
+    document.body.style.overflow = "hidden";
+
+    const frameId = requestAnimationFrame(() => {
+      if (selectedPhoto) {
+        closePhotoBtnRef.current?.focus();
+      } else if (qrModalOpen) {
+        closeQrBtnRef.current?.focus();
+      }
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (selectedPhoto) {
+          closePhotoModal();
+        } else if (qrModalOpen) {
+          closeQrModal();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      cancelAnimationFrame(frameId);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      openerElement?.focus();
+    };
+  }, [qrModalOpen, selectedPhoto, closeQrModal, closePhotoModal]);
+
+  const handleCopyId = async () => {
+    if (!passport.passportId) return;
+    try {
+      await navigator.clipboard.writeText(passport.passportId);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyIdTimerRef.current) clearTimeout(copyIdTimerRef.current);
+      copyIdTimerRef.current = setTimeout(() => {
+        setCopied(false);
+        copyIdTimerRef.current = null;
+      }, 2000);
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Không thể sao chép mã hộ chiếu. Vui lòng thử lại.",
+      });
+    }
+  };
+
+  const handleCopyPassportLink = async () => {
+    const shareUrl =
+      passport.passportId && typeof window !== "undefined"
+        ? `${window.location.origin}/passport/${passport.passportId}`
+        : passport.passportUrl;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedLink(true);
+      if (copyLinkTimerRef.current) clearTimeout(copyLinkTimerRef.current);
+      copyLinkTimerRef.current = setTimeout(() => {
+        setCopiedLink(false);
+        copyLinkTimerRef.current = null;
+      }, 2000);
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Không thể sao chép liên kết. Vui lòng thử lại.",
+      });
     }
   };
 
@@ -123,7 +350,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
       const res = await fetch(`/api/passport/${passport.passportId}/verify`);
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Không thể kiểm chứng dữ liệu on-chain.");
+        throw new Error(data.error || "Không thể kiểm chứng dữ liệu trên chuỗi.");
       }
       setVerificationReport(data.report);
       if (Array.isArray(data.chainTxs)) {
@@ -131,12 +358,12 @@ export function PassportClient({ initialData }: PassportClientProps) {
       }
       setFeedback({
         type: "success",
-        message: data.report?.message || "Kiểm chứng trực tiếp trên Avalanche Fuji RPC hoàn tất!",
+        message: data.report?.message || "Kiểm tra tính toàn vẹn trên Avalanche Fuji hoàn tất.",
       });
     } catch (err) {
       setFeedback({
         type: "error",
-        message: err instanceof Error ? err.message : "Đã xảy ra lỗi khi kiểm chứng on-chain.",
+        message: err instanceof Error ? err.message : "Đã xảy ra lỗi khi kiểm chứng dữ liệu.",
       });
     } finally {
       setIsVerifying(false);
@@ -152,7 +379,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Không thể kích hoạt Relayer đồng bộ.");
+        throw new Error(data.error || "Không thể kích hoạt đồng bộ dữ liệu.");
       }
       if (data.report) {
         setVerificationReport(data.report);
@@ -162,27 +389,15 @@ export function PassportClient({ initialData }: PassportClientProps) {
       }
       setFeedback({
         type: "success",
-        message: data.message || "Đã kích hoạt Relayer và đồng bộ giao dịch lên Avalanche Fuji thành công!",
+        message: data.message || "Đã đồng bộ giao dịch lên Avalanche Fuji thành công.",
       });
     } catch (err) {
       setFeedback({
         type: "error",
-        message: err instanceof Error ? err.message : "Đã xảy ra lỗi khi kích hoạt Relayer.",
+        message: err instanceof Error ? err.message : "Đã xảy ra lỗi khi đồng bộ giao dịch.",
       });
     } finally {
       setIsSyncing(false);
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-    } catch {
-      return dateStr;
     }
   };
 
@@ -205,394 +420,435 @@ export function PassportClient({ initialData }: PassportClientProps) {
     null;
   const transferTxs = chronologicalTxs.filter((tx) => tx.kind === "TRANSFER");
 
+  const journeySteps: JourneyOwnerStep[] = owners.map((owner, idx) => {
+    const isFirst = idx === 0;
+    const isCurrent = idx === owners.length - 1;
+    const matchingEvent = events.find((e) => e.seq === owner.seq);
+    const matchingListing = listingsTimeline[idx];
+    const ownerTx =
+      idx === 0 ? registerTx : transferTxs[idx - 1] || chronologicalTxs[idx] || null;
+
+    const locationLabel = owner.area
+      ? `${owner.schoolName} · ${owner.area}`
+      : owner.schoolName;
+    const confirmationLabel = matchingEvent
+      ? matchingEvent.confirmationLevel === "BOTH"
+        ? "Xác nhận gặp mặt 2 chiều"
+        : "Xác nhận 1 chiều · Tự hoàn tất 48h"
+      : null;
+    const metaText = [locationLabel, `Từ ${formatDate(owner.since)}`, confirmationLabel]
+      .filter(Boolean)
+      .join(" • ");
+
+    const extraContent =
+      matchingListing && matchingListing.images.length > 0 ? (
+        <div className="pt-2.5 mt-1 border-t border-slate-200/70">
+          <span className="block text-[11px] font-semibold text-slate-600 mb-2">
+            Ảnh chụp món đồ tại đời chủ #{owner.seq} ({formatDate(matchingListing.createdAt)})
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {matchingListing.images.map((img, imgIdx) => {
+              const altText = `Ảnh món đồ ở đời chủ #${owner.seq} (${imgIdx + 1})`;
+              return (
+                <button
+                  key={img.id || imgIdx}
+                  type="button"
+                  onClick={() => openPhotoModal(img.url, altText)}
+                  aria-label={`Phóng to ${altText}`}
+                  className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-slate-200 cursor-pointer hover:border-[#018ABE] hover:scale-105 transition-all shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                >
+                  <Image
+                    src={img.url}
+                    alt={altText}
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : undefined;
+
+    return {
+      key: owner.id,
+      seq: owner.seq,
+      title: `Đời chủ #${owner.seq}: ${owner.displayName}`,
+      badgeLabel: isCurrent ? "Chủ hiện tại" : isFirst ? "Khởi tạo" : "Đã chuyển nhượng",
+      badgeTone: isCurrent ? "current" : isFirst ? "origin" : "transferred",
+      isCurrent,
+      metaText,
+      txHash: ownerTx?.txHash || null,
+      extraContent,
+    };
+  });
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 sm:py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* 1. Thanh điều hướng breadcrumb & Nút báo cáo */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <nav className="flex items-center gap-2 text-xs font-semibold text-[#02457A]">
-            <Link href="/" className="hover:text-[#018ABE] transition-colors">
+          <nav
+            aria-label="Điều hướng"
+            className="flex items-center gap-2 text-xs font-semibold text-[#02457A] min-w-0 flex-wrap"
+          >
+            <Link
+              href="/"
+              className="hover:text-[#018ABE] transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+            >
               Trang chủ
             </Link>
-            <span>/</span>
-            <Link href="/products" className="hover:text-[#018ABE] transition-colors">
+            <span aria-hidden="true">/</span>
+            <Link
+              href="/products"
+              className="hover:text-[#018ABE] transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+            >
               Sàn trao đổi
             </Link>
-            <span>/</span>
+            <span aria-hidden="true">/</span>
             <span className="text-[#001B48] font-bold">Digital Product Passport</span>
           </nav>
 
           <button
             type="button"
             onClick={() => setReportModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
           >
-            <svg className="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+            <svg
+              className="w-3.5 h-3.5 text-rose-600 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+              />
             </svg>
-            <span>Báo cáo Passport nghi vấn</span>
+            <span>Báo cáo nghi vấn</span>
           </button>
         </div>
 
-        {/* 2. Banner Tuyên Bố Giới Hạn Bắt Buộc (BR30) */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200/90 text-amber-950 text-xs sm:text-sm space-y-1.5 shadow-2xs">
-          <div className="flex items-center gap-2 font-black text-amber-900 uppercase tracking-wider text-xs">
-            <svg className="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span>Tuyên Bố Giới Hạn Trách Nhiệm Bắt Buộc (Quy tắc BR30)</span>
-          </div>
-          <p className="text-amber-900/90 leading-relaxed text-xs sm:text-[13px]">
-            Digital Product Passport ghi nhận chuỗi lịch sử chuyển nhượng số giữa các bạn sinh viên trên nền tảng UniCycle. <strong>Passport KHÔNG PHẢI là chứng thư giám định chất lượng, không đảm bảo tính chính hãng hay bảo hành vật lý của món đồ</strong>. Người mua có trách nhiệm kiểm tra trực tiếp tình trạng thực tế của món đồ khi gặp mặt trao tay.
-          </p>
-        </div>
-
-        {/* Cảnh báo nếu Passport bị gắn cờ vi phạm (BR39) */}
+        {/* 2. Cảnh báo nếu Passport bị gắn cờ vi phạm */}
         {passport.isFlagged && (
-          <div className="p-4 rounded-2xl bg-rose-600 text-white text-xs sm:text-sm shadow-md flex items-start gap-3 animate-in fade-in">
-            <svg className="w-6 h-6 text-white shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <div
+            role="alert"
+            className="p-4 rounded-2xl bg-rose-600 text-white text-xs sm:text-sm shadow-md flex items-start gap-3"
+          >
+            <svg
+              className="w-5 h-5 text-white shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+              />
             </svg>
-            <div>
-              <strong className="block text-sm font-black uppercase tracking-wider">
-                Món đồ này đang bị gắn cờ vi phạm (Flagged)!
+            <div className="min-w-0">
+              <strong className="block text-sm font-black">
+                Món đồ này đang bị gắn cờ cảnh báo!
               </strong>
-              <p className="text-rose-100 text-xs mt-1">
-                Lý do: {passport.flagReason || "Đang có khiếu nại tranh chấp quyền sở hữu hoặc báo cáo vi phạm."}
+              <p className="text-rose-100 text-xs mt-1 leading-relaxed">
+                Lý do:{" "}
+                {passport.flagReason ||
+                  "Đang có khiếu nại tranh chấp quyền sở hữu hoặc báo cáo vi phạm."}
               </p>
             </div>
           </div>
         )}
 
-        {/* 3. Header Thẻ Passport Sinh Viên */}
+        {/* 3. Header Thẻ Passport Sinh Viên (chống tràn ngang min-w-0 flex-1) */}
         <div className="bg-gradient-to-br from-[#001B48] via-[#02457A] to-[#018ABE] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-          {/* Nền họa tiết lưới số */}
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+          <div
+            className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"
+            aria-hidden="true"
+          />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-3 max-w-xl">
+            {/* Cột trái: min-w-0 flex-1 tránh đẩy QR ra khỏi khung */}
+            <div className="min-w-0 flex-1 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-white/15 backdrop-blur-md border border-white/20 text-sky-200">
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-white/15 backdrop-blur-md border border-white/20 text-sky-100 whitespace-nowrap">
                   {passport.category?.name || "Đồ Dùng Sinh Viên"}
                 </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Đời chủ hiện tại: #{passport.currentOwnerSeq}</span>
-                </span>
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/10 text-slate-200">
-                  Mức định danh: {passport.identityLevel}
-                </span>
+                {passport.isFlagged ? (
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-rose-500/80 border border-rose-300/60 text-white whitespace-nowrap">
+                    Đang bị gắn cờ
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/25 border border-emerald-400/40 text-emerald-100 inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 motion-safe:animate-pulse shrink-0" />
+                    <span>Đời chủ hiện tại: #{passport.currentOwnerSeq}</span>
+                  </span>
+                )}
               </div>
 
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-snug">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-snug text-balance">
                 {itemTitle}
               </h1>
 
-              {/* Passport ID & Nút sao chép */}
-              <div className="pt-1">
-                <span className="block text-[11px] text-sky-200 font-semibold mb-1 uppercase tracking-wider">
-                  Mã định danh số (Passport ID):
-                </span>
-                <div className="inline-flex items-center gap-2 bg-black/30 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/15 text-xs font-mono text-sky-100 max-w-full">
-                  <span className="truncate">{passport.passportId}</span>
+              {/* Mã hộ chiếu rút gọn + Copy & Trạng thái bảo chứng */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <div className="inline-flex items-center gap-2 bg-black/25 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/15 text-xs text-sky-100 max-w-full">
+                  <span className="text-sky-200 shrink-0">Mã hộ chiếu:</span>
+                  <span className="font-mono font-semibold text-white">
+                    {formatShortHash(passport.passportId, 8, 6)}
+                  </span>
                   <button
                     type="button"
                     onClick={handleCopyId}
-                    className="shrink-0 p-1 rounded-lg hover:bg-white/15 transition-colors cursor-pointer text-white"
-                    title="Sao chép Passport ID"
+                    aria-label="Sao chép mã Passport đầy đủ"
+                    className="shrink-0 p-1 rounded-lg hover:bg-white/15 transition-colors cursor-pointer text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                    title="Sao chép mã Passport đầy đủ"
                   >
                     {copied ? (
-                      <span className="text-[11px] text-emerald-300 font-bold">Đã chép ✓</span>
+                      <span
+                        role="status"
+                        aria-live="polite"
+                        className="inline-flex items-center gap-1 text-[11px] text-emerald-300 font-bold whitespace-nowrap"
+                      >
+                        <svg
+                          className="w-3.5 h-3.5 shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M4.5 12.75l6 6 9-13.5"
+                          />
+                        </svg>
+                        <span>Đã chép</span>
+                      </span>
                     ) : (
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
                       </svg>
                     )}
                   </button>
                 </div>
-              </div>
 
-              {/* Liên kết mở trực tiếp Snowtrace Fuji Testnet */}
-              <div className="pt-1 flex flex-wrap items-center gap-2">
-                {latestSnowtraceTxUrl && latestTxHash ? (
-                  <a
-                    href={latestSnowtraceTxUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-300/40 text-emerald-100 text-xs font-bold transition-all backdrop-blur-md shadow-xs"
-                  >
-                    <svg className="w-4 h-4 text-emerald-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                {latestSnowtraceTxUrl ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/20 border border-emerald-300/35 text-emerald-100 text-xs font-semibold whitespace-nowrap">
+                    <svg
+                      className="w-4 h-4 text-emerald-300 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                      />
                     </svg>
-                    <span>
-                      Xem trực tiếp giao dịch trên Snowtrace Fuji ({latestTxHash.slice(0, 10)}...
-                      {latestTxHash.slice(-6)}) ↗
-                    </span>
-                  </a>
+                    <span>Đã bảo chứng trên Avalanche Fuji</span>
+                  </span>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleSyncRelayer}
-                    disabled={isSyncing || isVerifying}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-300/40 text-amber-100 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    <span>⚡</span>
-                    <span>
-                      {isSyncing
-                        ? "Đang đồng bộ lên Fuji..."
-                        : "Đồng bộ lấy mã giao dịch Snowtrace Fuji ngay"}
-                    </span>
-                  </button>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-400/20 border border-amber-300/35 text-amber-100 text-xs font-semibold whitespace-nowrap">
+                    <svg
+                      className="w-4 h-4 text-amber-200 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span>Chờ đồng bộ on-chain</span>
+                  </span>
                 )}
               </div>
             </div>
 
-            {/* Khung Mã QR số màn hình */}
-            <div className="shrink-0 flex flex-col items-center justify-center p-4 rounded-2xl bg-white text-slate-800 shadow-lg text-center">
-              <div
-                className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden cursor-pointer group"
-                onClick={() => setQrModalOpen(true)}
-              >
-                <Image
-                  src={passport.qrUrl}
-                  alt="Passport QR Code"
-                  fill
-                  sizes="128px"
-                  className="object-contain p-1"
-                  unoptimized
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[11px] font-bold transition-opacity rounded-xl">
-                  Phóng to ↗
-                </div>
-              </div>
-              <span className="text-[10px] font-extrabold text-[#018ABE] uppercase tracking-wider mt-2">
-                Quét đối chiếu KTX
-              </span>
+            {/* Cột phải: Khung Mã QR (luôn nằm gọn bên trong thẻ Hero) */}
+            <div className="shrink-0 self-center md:self-auto w-44 sm:w-48 p-4 rounded-2xl bg-white text-slate-800 shadow-lg text-center">
               <button
                 type="button"
-                onClick={() => setQrModalOpen(true)}
-                className="text-[11px] text-[#02457A] hover:underline font-bold mt-0.5 cursor-pointer"
+                onClick={openQrModal}
+                aria-label="Phóng to mã QR hộ chiếu toàn màn hình"
+                className="w-full flex flex-col items-center cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] rounded-xl"
               >
-                Mở QR toàn màn hình
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
+                  <Image
+                    src={passport.qrUrl}
+                    alt="Mã QR Digital Product Passport"
+                    fill
+                    sizes="128px"
+                    className="object-contain p-1.5"
+                    unoptimized
+                  />
+                  <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[11px] font-bold transition-opacity rounded-xl">
+                    Phóng to
+                  </div>
+                </div>
+                <span className="text-[10px] font-extrabold text-[#018ABE] uppercase tracking-wider mt-2.5">
+                  Quét đối chiếu KTX
+                </span>
+                <span className="text-[11px] text-[#02457A] group-hover:underline font-bold mt-0.5">
+                  Mở QR toàn màn hình
+                </span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* 4. Timeline Chuỗi Đời Chủ (Chủ #1 ➔ Chủ #2 ➔ Chủ #3...) */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#D6E8EE] shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-[#D6E8EE]">
-            <div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-[#001B48]">
-                Chuỗi Vòng Đời & Lịch Sử Sở Hữu
-              </h2>
-              <p className="text-xs text-[#02457A] mt-0.5">
-                Ghi nhận các thế hệ sinh viên đã từng sở hữu và bảo quản món đồ
-              </p>
-            </div>
-            <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 self-start sm:self-auto">
+        {/* 4. Lưu ý phạm vi xác thực (đặt ngay dưới thẻ Hero) */}
+        <div className="p-4 rounded-2xl bg-amber-50/75 border border-amber-200/80 text-amber-950 flex items-start gap-3 text-xs sm:text-[13px] leading-relaxed">
+          <svg
+            className="w-4 h-4 text-amber-700 shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+            />
+          </svg>
+          <p>
+            <strong className="font-bold text-amber-950">Lưu ý phạm vi xác thực:</strong>{" "}
+            Digital Product Passport ghi nhận chuỗi lịch sử chuyển nhượng số giữa các sinh viên
+            trên UniCycle, không phải chứng thư giám định chất lượng hay bảo hành vật lý. Người
+            mua vui lòng kiểm tra trực tiếp tình trạng thực tế của món đồ khi gặp mặt trao tay.
+          </p>
+        </div>
+
+        {/* 5. Hành trình đồ vật (Đồng bộ component với trang Chi tiết sản phẩm & Đăng tin) */}
+        <ItemJourneyTimeline
+          title="Hành trình đồ vật"
+          subtitle="Ghi nhận các thế hệ sinh viên đã từng sở hữu và bảo quản món đồ"
+          headerRight={
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-[#0B6B3A] bg-[#E6F6EE] border border-[#B7E4CB] whitespace-nowrap">
               Tổng cộng {owners.length} đời chủ
+            </span>
+          }
+          steps={journeySteps}
+        />
+
+        {/* 6. Xác minh tính toàn vẹn & Chi tiết kỹ thuật (Progressive Disclosure) */}
+        <section
+          id="passport-verify"
+          className="bg-white rounded-3xl p-6 sm:p-8 border border-[#D6E8EE] shadow-xs space-y-5"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div className="flex items-start gap-3 min-w-0">
+              <span
+                className="w-10 h-10 rounded-xl bg-[#EEF7FC] border border-[#BAE6FD] text-[#018ABE] flex items-center justify-center shrink-0 mt-0.5"
+                aria-hidden="true"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                  />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <h2 className="font-extrabold text-[#001B48] text-base sm:text-lg">
+                  Xác minh tính toàn vẹn
+                </h2>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Lịch sử chuyển giao được lưu dấu bất biến trên mạng Avalanche Fuji để đảm bảo
+                  không ai có thể tự ý chỉnh sửa hồ sơ món đồ.
+                </p>
+              </div>
+            </div>
+            <span className="self-start sm:self-center text-[11px] font-semibold text-[#02457A] bg-[#EEF7FC] px-3 py-1 rounded-full border border-[#BAE6FD] whitespace-nowrap shrink-0">
+              Avalanche Fuji
             </span>
           </div>
 
-          <div className="relative pl-6 sm:pl-8 space-y-8 before:absolute before:left-3 sm:before:left-4 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#D6E8EE]">
-            {owners.map((owner, idx) => {
-              const isCurrentOwner = idx === owners.length - 1;
-              const matchingEvent = events.find((e) => e.seq === owner.seq);
-              const matchingListing = listingsTimeline[idx];
-              const ownerTx =
-                idx === 0
-                  ? registerTx
-                  : transferTxs[idx - 1] || chronologicalTxs[idx] || null;
-
-              return (
-                <div key={owner.id} className="relative group">
-                  {/* Icon Node trên timeline */}
-                  <div
-                    className={`absolute -left-6 sm:-left-8 top-1.5 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-black shadow-xs transition-transform group-hover:scale-110 ${
-                      isCurrentOwner
-                        ? "bg-emerald-600 text-white ring-4 ring-emerald-100"
-                        : "bg-[#018ABE] text-white ring-4 ring-sky-50"
-                    }`}
-                  >
-                    {owner.seq}
-                  </div>
-
-                  <div
-                    className={`p-4 sm:p-5 rounded-2xl border transition-all ${
-                      isCurrentOwner
-                        ? "bg-emerald-50/40 border-emerald-200 shadow-xs"
-                        : "bg-slate-50/70 border-slate-200/80 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm sm:text-base font-extrabold text-[#001B48]">
-                          Đời chủ #{owner.seq}: {owner.displayName}
-                        </span>
-                        {isCurrentOwner && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white">
-                            Chủ hiện tại
-                          </span>
-                        )}
-                        {!owner.showName && (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-200/70 text-slate-600" title="Chủ sở hữu chọn chế độ ẩn danh theo quy tắc BR29">
-                            Ẩn danh (BR29)
-                          </span>
-                        )}
-                      </div>
-
-                      <span className="text-xs text-slate-500 font-semibold">
-                        Từ: {formatDate(owner.since)}
-                      </span>
-                    </div>
-
-                    {/* Trường học & Ký túc xá */}
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#02457A] mb-3">
-                      <span className="font-semibold">🏫 {owner.schoolName}</span>
-                      {owner.area && (
-                        <>
-                          <span>•</span>
-                          <span className="inline-flex items-center gap-1">
-                            <svg className="w-3 h-3 text-[#018ABE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            {owner.area}
-                          </span>
-                        </>
-                      )}
-                      <span>•</span>
-                      <span className="font-mono text-[11px] text-slate-400">
-                        Hash: {owner.ownerHashMasked}
-                      </span>
-                    </div>
-
-                    {/* Mức độ xác nhận bàn giao (BR31) */}
-                    {matchingEvent && (
-                      <div className="mb-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
-                            matchingEvent.confirmationLevel === "BOTH"
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                              : "bg-amber-50 text-amber-800 border-amber-200"
-                          }`}
-                        >
-                          <span>{matchingEvent.confirmationLevel === "BOTH" ? "✓" : "○"}</span>
-                          <span>
-                            {matchingEvent.confirmationLevel === "BOTH"
-                              ? "Hai bên xác nhận gặp mặt trực tiếp (BR31)"
-                              : "Một bên xác nhận / Tự hoàn tất 48h (BR31)"}
-                          </span>
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Giao dịch Blockchain tương ứng trên Snowtrace Fuji */}
-                    {ownerTx && (
-                      <div className="mb-3 p-2.5 rounded-xl bg-white/90 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-bold text-[#001B48] shrink-0 inline-flex items-center gap-1">
-                            <svg className="w-3.5 h-3.5 text-[#018ABE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                            </svg>
-                            {idx === 0
-                              ? "Khởi tạo Passport (REGISTER):"
-                              : "Chuyển giao sở hữu (TRANSFER):"}
-                          </span>
-                          <span className="font-mono text-slate-600 truncate">
-                            {ownerTx.txHash
-                              ? `${ownerTx.txHash.slice(0, 12)}...${ownerTx.txHash.slice(-8)}`
-                              : `Trạng thái: ${ownerTx.status}`}
-                          </span>
-                        </div>
-                        {ownerTx.txHash && (
-                          <a
-                            href={`https://testnet.snowtrace.io/tx/${ownerTx.txHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-[#018ABE] border border-sky-200 font-bold transition-colors shrink-0"
-                          >
-                            <span>Xem mã giao dịch trên Snowtrace Fuji</span>
-                            <span>↗</span>
-                          </a>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Đối chiếu ảnh của đời chủ này (BR24) */}
-                    {matchingListing && matchingListing.images.length > 0 && (
-                      <div className="pt-2 border-t border-slate-200/60">
-                        <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                          Ảnh chụp món đồ ở đời chủ #{owner.seq} ({formatDate(matchingListing.createdAt)}):
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {matchingListing.images.map((img, imgIdx) => (
-                            <div
-                              key={img.id || imgIdx}
-                              onClick={() => setSelectedPhoto(img.url)}
-                              className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-slate-200 cursor-pointer hover:opacity-90 hover:scale-105 transition-all shadow-2xs"
-                            >
-                              <Image
-                                src={img.url}
-                                alt={`Ảnh đời chủ ${owner.seq}`}
-                                fill
-                                sizes="80px"
-                                className="object-cover"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 5. Khối Lát Cắt Công Nghệ Blockchain (Avalanche Fuji Testnet) */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#D6E8EE] shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">❄️</span>
-                <h3 className="font-extrabold text-[#001B48] text-base sm:text-lg">
-                  Bảo Chứng Bất Biến (Avalanche Fuji C-Chain)
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Kiến trúc lai On-Chain ↔ Off-Chain: Bản quyền dữ liệu cá nhân (PII) được bảo vệ an toàn trong PostgreSQL, còn mã băm cam kết món đồ và lịch sử đời chủ được bảo chứng bất biến trên chuỗi Avalanche Fuji (Chain ID 43113).
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[11px] font-mono font-bold text-sky-800 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200">
-                Fuji Testnet (43113)
-              </span>
-            </div>
-          </div>
-
-          {/* Action Bar: Xác minh Fuji RPC & Kích hoạt Relayer */}
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Thanh hành động căn hàng gọn */}
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={handleVerifyOnChain}
               disabled={isVerifying || isSyncing}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-98"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
             >
               {isVerifying ? (
                 <>
-                  <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  <svg
+                    className="animate-spin h-4 w-4 text-white shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    />
                   </svg>
-                  <span>Đang đọc Fuji RPC...</span>
+                  <span>Đang kiểm tra...</span>
                 </>
               ) : (
                 <>
-                  <span>🔍</span>
-                  <span>Xác minh trực tiếp trên Blockchain (Fuji RPC)</span>
+                  <svg
+                    className="w-4 h-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                    />
+                  </svg>
+                  <span>Kiểm tra ngay</span>
                 </>
               )}
             </button>
@@ -601,20 +857,49 @@ export function PassportClient({ initialData }: PassportClientProps) {
               type="button"
               onClick={handleSyncRelayer}
               disabled={isVerifying || isSyncing}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-98"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#E3F1F9] hover:bg-[#BAE6FD]/70 text-[#02457A] border border-[#BAE6FD] text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
             >
               {isSyncing ? (
                 <>
-                  <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  <svg
+                    className="animate-spin h-4 w-4 text-[#02457A] shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    />
                   </svg>
-                  <span>Relayer đang phát sóng...</span>
+                  <span>Đang đồng bộ...</span>
                 </>
               ) : (
                 <>
-                  <span>⚡</span>
-                  <span>Đồng bộ Relayer lên Fuji ngay</span>
+                  <svg
+                    className="w-4 h-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                    />
+                  </svg>
+                  <span>Đồng bộ lại</span>
                 </>
               )}
             </button>
@@ -623,19 +908,31 @@ export function PassportClient({ initialData }: PassportClientProps) {
               href={latestSnowtraceTxUrl || "https://testnet.snowtrace.io"}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#02457A] hover:bg-slate-100 transition-colors ml-auto border border-slate-200"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#02457A] hover:bg-slate-100 transition-colors border border-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
             >
-              <span>
-                {latestSnowtraceTxUrl ? "Xem giao dịch trên Snowtrace Fuji" : "Snowtrace Fuji Explorer"}
-              </span>
-              <span>↗</span>
+              <span>Mở Snowtrace</span>
+              <svg
+                className="w-3.5 h-3.5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+                />
+              </svg>
             </a>
           </div>
 
-          {/* Banner thông báo kết quả */}
+          {/* Thông báo kết quả */}
           {feedback && (
             <div
-              className={`p-3.5 rounded-2xl text-xs font-medium border flex items-start gap-2.5 animate-in fade-in ${
+              role="status"
+              className={`p-3.5 rounded-2xl text-xs font-medium border flex items-start gap-2.5 ${
                 feedback.type === "success"
                   ? "bg-emerald-50 text-emerald-900 border-emerald-200"
                   : feedback.type === "error"
@@ -643,35 +940,64 @@ export function PassportClient({ initialData }: PassportClientProps) {
                   : "bg-sky-50 text-sky-900 border-sky-200"
               }`}
             >
-              <span className="text-base leading-none shrink-0">
-                {feedback.type === "success" ? (
-                  <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                ) : feedback.type === "error" ? (
-                  <svg className="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
-              </span>
-              <div className="flex-1">{feedback.message}</div>
+              {feedback.type === "success" ? (
+                <svg
+                  className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              ) : feedback.type === "error" ? (
+                <svg
+                  className="w-4 h-4 text-rose-600 shrink-0 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-4 h-4 text-sky-600 shrink-0 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              )}
+              <div className="flex-1 min-w-0">{feedback.message}</div>
             </div>
           )}
 
-          {/* Bảng đối chiếu 2 cột: Off-Chain (PostgreSQL) ↔ On-Chain (Avalanche Fuji) */}
+          {/* Checklist kết quả dễ hiểu (khi người dùng bấm Kiểm tra ngay) */}
           {verificationReport && (
-            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50/50 space-y-4 p-4 sm:p-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
-                <div className="flex items-center gap-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5 space-y-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-extrabold text-sm text-[#001B48]">
-                    Bảng Đối Chiếu Tính Toàn Vẹn Độc Lập
+                    Kết quả đối chiếu độc lập
                   </span>
                   <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${
                       verificationReport.status === "VERIFIED_MATCH"
                         ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                         : verificationReport.status === "PENDING_SYNC"
@@ -682,286 +1008,452 @@ export function PassportClient({ initialData }: PassportClientProps) {
                     }`}
                   >
                     {verificationReport.status === "VERIFIED_MATCH" && "Khớp toàn vẹn 100%"}
-                    {verificationReport.status === "PENDING_SYNC" && "Chờ Relayer đồng bộ"}
+                    {verificationReport.status === "PENDING_SYNC" && "Đang chờ đồng bộ"}
                     {verificationReport.status === "SIMULATED_MODE" && "Chế độ mô phỏng"}
                     {verificationReport.status === "NOT_ANCHORED_YET" && "Chưa neo on-chain"}
-                    {verificationReport.status === "MISMATCH_DETECTED" && "Cảnh báo sai lệch"}
+                    {verificationReport.status === "MISMATCH_DETECTED" && "Phát hiện sai lệch"}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-500 font-mono">
-                  Kiểm chứng: {new Date(verificationReport.verifiedAt).toLocaleTimeString("vi-VN")}
-                </div>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Kiểm tra lúc:{" "}
+                  {new Date(verificationReport.verifiedAt).toLocaleTimeString("vi-VN")}
+                </span>
               </div>
 
-              {/* Grid 2 Cột */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                {/* Cột 1: Off-Chain PostgreSQL */}
-                <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="font-bold text-[#001B48] flex items-center gap-1.5">
-                      <span>🗄️</span> CSDL Off-Chain (PostgreSQL)
-                    </span>
-                    <span className="text-[10px] font-mono text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded">
-                      Local DB
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[11px] text-slate-500">Mã băm cam kết món đồ (itemCommit):</div>
-                      <div className="font-mono text-[11px] text-slate-800 break-all font-semibold bg-slate-50 p-1.5 rounded border border-slate-100">
-                        {verificationReport.checks.commitMatch.offChain || "Chưa khởi tạo"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] text-slate-500">Mã đời chủ hiện tại (ownerHash):</div>
-                      <div className="font-mono text-[11px] text-slate-800 break-all font-semibold bg-slate-50 p-1.5 rounded border border-slate-100">
-                        {verificationReport.checks.ownerMatch.offChain || "Chưa có"}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] text-slate-500">Số lần chuyển giao:</span>
-                      <span className="font-bold text-[#001B48]">
-                        {verificationReport.checks.transferCountMatch.offChain} lần
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500">Tình trạng gắn cờ vi phạm:</span>
-                      <span
-                        className={`font-bold ${
-                          verificationReport.checks.flagStatusMatch.offChain ? "text-rose-600" : "text-emerald-600"
-                        }`}
-                      >
-                        {verificationReport.checks.flagStatusMatch.offChain ? "Đang bị gắn cờ" : "An toàn"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cột 2: On-Chain Avalanche Fuji RPC */}
-                <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="font-bold text-[#02457A] flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-[#018ABE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                      </svg>
-                      Smart Contract (Avalanche Fuji)
-                    </span>
-                    <span className="text-[10px] font-mono text-sky-800 font-semibold bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
-                      Chain ID: 43113
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[11px] text-slate-500 flex items-center justify-between">
-                        <span>itemCommit ghi nhận on-chain:</span>
-                        {verificationReport.checks.commitMatch.passed && (
-                          <span className="text-emerald-600 font-bold text-[10px]">Khớp ✓</span>
-                        )}
-                      </div>
-                      <div className="font-mono text-[11px] text-slate-800 break-all font-semibold bg-slate-50 p-1.5 rounded border border-slate-100">
-                        {verificationReport.checks.commitMatch.onChain || "Chưa đồng bộ"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] text-slate-500 flex items-center justify-between">
-                        <span>ownerHash ghi nhận on-chain:</span>
-                        {verificationReport.checks.ownerMatch.passed && (
-                          <span className="text-emerald-600 font-bold text-[10px]">Khớp ✓</span>
-                        )}
-                      </div>
-                      <div className="font-mono text-[11px] text-slate-800 break-all font-semibold bg-slate-50 p-1.5 rounded border border-slate-100">
-                        {verificationReport.checks.ownerMatch.onChain || "Chưa đồng bộ"}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] text-slate-500">Số lần chuyển giao on-chain:</span>
-                      <span className="font-bold text-[#02457A] flex items-center gap-1">
-                        <span>{verificationReport.checks.transferCountMatch.onChain} lần</span>
-                        {verificationReport.checks.transferCountMatch.passed && (
-                          <span className="text-emerald-600 text-[11px]">✓</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500">Tình trạng gắn cờ on-chain:</span>
-                      <span
-                        className={`font-bold ${
-                          verificationReport.checks.flagStatusMatch.onChain ? "text-rose-600" : "text-emerald-600"
-                        }`}
-                      >
-                        {verificationReport.checks.flagStatusMatch.onChain ? "Bị cờ vi phạm" : "An toàn"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Thông tin Contract & Tra cứu Explorer */}
-              <div className="pt-2 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
-                <div className="truncate max-w-md">
-                  <span className="font-semibold">Hợp đồng UniCyclePassport:</span>{" "}
-                  <code className="font-mono text-slate-700 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                    {verificationReport.contractAddress}
-                  </code>
-                </div>
-                {verificationReport.explorerUrl && (
-                  <a
-                    href={verificationReport.explorerUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-bold text-[#018ABE] hover:underline shrink-0"
-                  >
-                    Xem trên Snowtrace Testnet ↗
-                  </a>
-                )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <VerificationCheckItem
+                  label="Hồ sơ tồn tại trên chuỗi"
+                  passed={verificationReport.checks.exists.passed}
+                />
+                <VerificationCheckItem
+                  label="Thông tin món đồ nguyên vẹn"
+                  passed={verificationReport.checks.commitMatch.passed}
+                />
+                <VerificationCheckItem
+                  label="Chủ sở hữu hiện tại khớp"
+                  passed={verificationReport.checks.ownerMatch.passed}
+                />
+                <VerificationCheckItem
+                  label="Số lần chuyển giao khớp"
+                  passed={verificationReport.checks.transferCountMatch.passed}
+                  detail={`${verificationReport.checks.transferCountMatch.offChain} lần`}
+                />
+                <VerificationCheckItem
+                  label="Trạng thái an toàn"
+                  passed={verificationReport.checks.flagStatusMatch.passed}
+                  detail={
+                    verificationReport.checks.flagStatusMatch.offChain
+                      ? "Đang bị gắn cờ"
+                      : "Bình thường"
+                  }
+                />
               </div>
             </div>
           )}
 
-          {/* Danh sách giao dịch Relayer (Chain Transactions Queue) */}
-          <div className="space-y-2 pt-2">
-            <div className="text-xs font-bold text-[#001B48] flex items-center justify-between">
-              <span>Lịch Sử Giao Dịch Relayer On-Chain ({activeChainTxs.length})</span>
-              <span className="text-[11px] font-normal text-slate-500">
-                Tự động serialize nonce và trả phí gas hộ sinh viên
+          {/* Mục thu gọn: Chi tiết kỹ thuật & lịch sử giao dịch (Mặc định ĐÓNG) */}
+          <div className="border-t border-slate-100 pt-4">
+            <button
+              type="button"
+              aria-expanded={showTechDetails}
+              aria-controls="passport-tech-details"
+              onClick={() => setShowTechDetails((prev) => !prev)}
+              className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200/90 text-left text-xs font-bold text-[#001B48] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+            >
+              <span className="flex items-center gap-2 min-w-0">
+                <svg
+                  className="w-4 h-4 text-[#018ABE] shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"
+                  />
+                </svg>
+                <span>Chi tiết kỹ thuật &amp; lịch sử giao dịch ({activeChainTxs.length})</span>
               </span>
-            </div>
+              <svg
+                className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${
+                  showTechDetails ? "rotate-180" : ""
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
 
-            {activeChainTxs.length > 0 ? (
-              <div className="space-y-2">
-                {activeChainTxs.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                  >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-[#001B48]">
-                          Thao tác: {tx.kind}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                            tx.status === "CONFIRMED"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : tx.status === "QUEUED"
-                              ? "bg-amber-100 text-amber-800"
-                              : tx.status === "SUBMITTED"
-                              ? "bg-sky-100 text-sky-800"
-                              : "bg-rose-100 text-rose-700"
-                          }`}
-                        >
-                          {tx.status}
-                        </span>
-                      </div>
-                      <div className="font-mono text-[11px] text-slate-500 truncate max-w-sm sm:max-w-md">
-                        Tx: {tx.txHash || "Đang xếp hàng gửi lên Avalanche Fuji (QUEUED)..."}
-                      </div>
+            {showTechDetails && (
+              <div id="passport-tech-details" className="mt-4 space-y-4">
+                {/* 1. Mã định danh đầy đủ & thông số định danh */}
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-bold text-[#001B48]">Mã định danh Passport đầy đủ</span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-semibold text-slate-600">
+                        Mức định danh: {passport.identityLevel}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyId}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-sky-50 text-[11px] font-bold text-[#018ABE] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                      >
+                        {copied ? "Đã chép" : "Sao chép mã"}
+                      </button>
                     </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      {tx.txHash && (
+                  </div>
+                  <div className="font-mono text-[11px] text-slate-800 break-all bg-white p-2.5 rounded-xl border border-slate-200">
+                    {passport.passportId}
+                  </div>
+                  {verificationReport && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-slate-600">
+                      <div className="min-w-0">
+                        <span className="font-semibold">Hợp đồng UniCyclePassport: </span>
+                        <code className="font-mono text-slate-700 bg-white px-1.5 py-0.5 rounded border border-slate-200 break-all">
+                          {verificationReport.contractAddress}
+                        </code>
+                      </div>
+                      {verificationReport.explorerUrl && (
                         <a
-                          href={`https://testnet.snowtrace.io/tx/${tx.txHash}`}
+                          href={verificationReport.explorerUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-[#018ABE] hover:bg-sky-50 transition-colors shadow-2xs"
+                          className="font-bold text-[#018ABE] hover:underline shrink-0"
                         >
-                          Xem trên Snowtrace ↗
+                          Xem trên Snowtrace Testnet
                         </a>
                       )}
                     </div>
+                  )}
+                </div>
+
+                {/* 2. Bảng đối chiếu mã băm kỹ thuật (khi đã bấm kiểm tra) */}
+                {verificationReport && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span className="font-bold text-[#001B48] inline-flex items-center gap-1.5">
+                          <svg
+                            className="w-4 h-4 text-[#018ABE] shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.8}
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375"
+                            />
+                          </svg>
+                          <span>Dữ liệu hệ thống (Off-chain)</span>
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-slate-500 mb-1">itemCommit:</div>
+                        <div className="font-mono text-[11px] text-slate-800 break-all bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          {verificationReport.checks.commitMatch.offChain || "Chưa khởi tạo"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-slate-500 mb-1">ownerHash:</div>
+                        <div className="font-mono text-[11px] text-slate-800 break-all bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          {verificationReport.checks.ownerMatch.offChain || "Chưa có"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span className="font-bold text-[#02457A] inline-flex items-center gap-1.5">
+                          <svg
+                            className="w-4 h-4 text-[#018ABE] shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.8}
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                            />
+                          </svg>
+                          <span>Hợp đồng thông minh (Fuji)</span>
+                        </span>
+                        <span className="text-[10px] font-mono text-sky-800 font-semibold bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                          Chain ID: 43113
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-slate-500 mb-1">
+                          itemCommit on-chain:
+                        </div>
+                        <div className="font-mono text-[11px] text-slate-800 break-all bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          {verificationReport.checks.commitMatch.onChain || "Chưa đồng bộ"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-slate-500 mb-1">
+                          ownerHash on-chain:
+                        </div>
+                        <div className="font-mono text-[11px] text-slate-800 break-all bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          {verificationReport.checks.ownerMatch.onChain || "Chưa đồng bộ"}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-3.5 bg-sky-50/70 border border-sky-100 rounded-xl text-xs text-sky-900 flex items-center justify-between">
-                <span>Bản ghi đã được bảo chứng toàn vẹn trong cơ sở dữ liệu hệ thống (Off-chain DB).</span>
-                <span className="text-[11px] font-bold text-sky-700">Trạng thái: Sẵn sàng</span>
+                )}
+
+                {/* 3. Danh sách giao dịch on-chain */}
+                <div className="space-y-2">
+                  <div className="text-xs font-bold text-[#001B48]">
+                    Lịch sử giao dịch on-chain ({activeChainTxs.length})
+                  </div>
+
+                  {activeChainTxs.length > 0 ? (
+                    <div className="space-y-2">
+                      {activeChainTxs.map((tx) => (
+                        <div
+                          key={tx.id}
+                          className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="min-w-0 space-y-0.5">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-bold text-[#001B48]">
+                                {formatTxKind(tx.kind)}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
+                                  tx.status === "CONFIRMED"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : tx.status === "QUEUED"
+                                    ? "bg-amber-100 text-amber-800"
+                                    : tx.status === "SUBMITTED"
+                                    ? "bg-sky-100 text-sky-800"
+                                    : "bg-rose-100 text-rose-700"
+                                }`}
+                              >
+                                {formatTxStatus(tx.status)}
+                              </span>
+                            </div>
+                            <div className="font-mono text-[11px] text-slate-500">
+                              {tx.txHash
+                                ? `Mã giao dịch: ${formatShortHash(tx.txHash, 10, 8)}`
+                                : "Đang chờ gửi lên Avalanche Fuji"}
+                            </div>
+                          </div>
+
+                          {tx.txHash && (
+                            <a
+                              href={`https://testnet.snowtrace.io/tx/${tx.txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-[#018ABE] hover:bg-sky-50 transition-colors shadow-2xs shrink-0 self-start sm:self-center"
+                            >
+                              <span>Xem trên Snowtrace</span>
+                              <svg
+                                className="w-3 h-3 shrink-0"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={1.8}
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+                                />
+                              </svg>
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-3.5 bg-sky-50/70 border border-sky-100 rounded-xl text-xs text-sky-900">
+                      Bản ghi đã được bảo toàn toàn vẹn trên hệ thống và đang sẵn sàng đồng bộ lên
+                      chuỗi.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
-        </div>
+        </section>
       </div>
 
-      {/* Modal Phóng To Ảnh */}
+      {/* Modal Phóng To Ảnh (Chuẩn A11y) */}
       {selectedPhoto && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Xem ảnh món đồ phóng to"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in"
-          onClick={() => setSelectedPhoto(null)}
+          onClick={closePhotoModal}
         >
-          <div className="relative max-w-3xl max-h-[85vh] w-full h-[70vh]">
+          <div
+            className="relative max-w-3xl max-h-[85vh] w-full h-[70vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Image
-              src={selectedPhoto}
-              alt="Ảnh phóng to"
+              src={selectedPhoto.url}
+              alt={selectedPhoto.alt}
               fill
               className="object-contain"
             />
             <button
+              ref={closePhotoBtnRef}
               type="button"
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute -top-10 right-0 text-white font-bold text-sm bg-white/20 px-3 py-1 rounded-full cursor-pointer"
+              onClick={closePhotoModal}
+              aria-label="Đóng ảnh phóng to"
+              className="absolute -top-11 right-0 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
-              Đóng [X]
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         </div>
       )}
 
-      {/* Modal QR Code Toàn Màn Hình */}
+      {/* Modal QR Code Toàn Màn Hình (Chuẩn A11y) */}
       {qrModalOpen && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="passport-qr-title"
+          aria-describedby="passport-qr-desc"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in"
-          onClick={() => setQrModalOpen(false)}
+          onClick={closeQrModal}
         >
           <div
             className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 shadow-2xl border border-slate-100"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h3 className="font-black text-[#001B48] text-base">
-                Mã Định Danh Số
+              <h3 id="passport-qr-title" className="font-black text-[#001B48] text-base">
+                Mã QR Hành trình đồ vật
               </h3>
               <button
+                ref={closeQrBtnRef}
                 type="button"
-                onClick={() => setQrModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1"
+                onClick={closeQrModal}
+                aria-label="Đóng hộp thoại mã QR"
+                className="w-9 h-9 -mr-1.5 rounded-xl text-slate-500 hover:text-[#001B48] hover:bg-slate-100 inline-flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
               >
-                ✕
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <div className="relative w-64 h-64 mx-auto border-2 border-dashed border-[#018ABE]/30 p-2 rounded-2xl">
-              <Image
-                src={passport.qrUrl}
-                alt="Passport QR Fullscreen"
-                fill
-                sizes="256px"
-                className="object-contain p-2"
-                unoptimized
-              />
+            <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto border border-[#BAE6FD] bg-[#F8FAFC] p-3 rounded-2xl flex items-center justify-center overflow-hidden">
+              {qrLoadState === "loading" && (
+                <div
+                  className="absolute inset-3 rounded-xl bg-slate-200/70 motion-safe:animate-pulse"
+                  aria-hidden="true"
+                />
+              )}
+
+              {qrLoadState === "error" ? (
+                <div className="text-center space-y-2.5 px-3">
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Không tải được mã QR. Bạn vẫn có thể sao chép liên kết bên dưới.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQrLoadState("loading");
+                      setQrRetryKey((k) => k + 1);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-[#E3F1F9] hover:bg-[#BAE6FD]/70 text-[#02457A] text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE]"
+                  >
+                    Thử tải lại
+                  </button>
+                </div>
+              ) : (
+                <Image
+                  key={`${passport.passportId}-${qrRetryKey}`}
+                  src={
+                    qrRetryKey > 0
+                      ? `${passport.qrUrl}${passport.qrUrl.includes("?") ? "&" : "?"}retry=${qrRetryKey}`
+                      : passport.qrUrl
+                  }
+                  alt="Mã QR Digital Product Passport toàn màn hình"
+                  fill
+                  sizes="256px"
+                  className={`object-contain p-3 transition-opacity duration-200 motion-reduce:transition-none ${
+                    qrLoadState === "loaded" ? "opacity-100" : "opacity-0"
+                  }`}
+                  unoptimized
+                  onLoad={() => setQrLoadState("loaded")}
+                  onError={() => setQrLoadState("error")}
+                />
+              )}
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Mở màn hình điện thoại này cho người mua quét trực tiếp để mở trang Digital Passport và đối chiếu lịch sử trao tay tại chỗ.
+            <p id="passport-qr-desc" className="text-xs text-slate-600 leading-relaxed">
+              Mở màn hình điện thoại này cho người mua quét trực tiếp để mở trang Digital Passport
+              và đối chiếu lịch sử trao tay tại chỗ.
             </p>
 
-            <button
-              type="button"
-              onClick={() => setQrModalOpen(false)}
-              className="w-full py-2.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold transition-colors cursor-pointer"
-            >
-              Đã hiểu, đóng lại
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={handleCopyPassportLink}
+                className={`flex-1 h-10 px-3.5 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] ${
+                  copiedLink
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : "bg-[#F4F9FB] hover:bg-[#D6E8EE]/70 text-[#001B48] border-[#D6E8EE]"
+                }`}
+              >
+                {copiedLink ? "Đã sao chép" : "Sao chép link"}
+              </button>
+              <button
+                type="button"
+                onClick={closeQrModal}
+                className="flex-1 h-10 px-3.5 rounded-xl bg-[#018ABE] hover:bg-[#02457A] text-white text-xs font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#018ABE] focus-visible:ring-offset-2"
+              >
+                Đóng lại
+              </button>
+            </div>
           </div>
         </div>
       )}
-      {/* Modal Báo cáo Passport nghi vấn (Task 5.3) */}
+
+      {/* Modal Báo cáo Passport nghi vấn */}
       <ReportModal
         isOpen={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
         targetType="PASSPORT"
         targetId={passport.itemId || passport.passportId}
-        targetLabel={`Báo cáo Passport #${passport.passportId.slice(0, 12)}...`}
+        targetLabel={`Báo cáo Passport ${formatShortHash(passport.passportId, 8, 6)}`}
       />
     </div>
   );

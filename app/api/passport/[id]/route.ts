@@ -118,6 +118,7 @@ export async function GET(
     // "Chủ #n · Trường · Tháng/Năm". Tên hiển thị chỉ xuất hiện nếu chủ đó chủ động bật showName = true.
     const sanitizedOwners = item.owners.map((owner) => {
       const showRealName = Boolean(owner.showName && owner.user);
+      const schoolName = owner.user?.school?.shortName || owner.user?.school?.name || "ĐHQG TP.HCM";
       return {
         id: owner.id,
         seq: owner.seq,
@@ -125,8 +126,8 @@ export async function GET(
         showName: owner.showName,
         displayName: showRealName
           ? owner.user?.displayName
-          : `Sinh viên Đời #${owner.seq} (Ẩn danh)`,
-        schoolName: owner.user?.school?.shortName || owner.user?.school?.name || "ĐHQG TP.HCM",
+          : `Sinh viên ẩn danh (${schoolName})`,
+        schoolName,
         area: owner.user?.school?.area || null,
         ownerHashMasked: `${owner.ownerHash.slice(0, 10)}...${owner.ownerHash.slice(-8)}`,
       };
