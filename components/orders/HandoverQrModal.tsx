@@ -289,7 +289,7 @@ export function HandoverQrModal({
               </p>
               <p className="text-xs text-emerald-800 leading-relaxed">
                 Người mua đã quét mã QR và xác nhận nhận hàng. Quyền sở hữu Digital
-                Product Passport đã được chuyển giao.
+                Digital Product Passport đã được chuyển giao.
               </p>
             </div>
             <button
@@ -412,7 +412,7 @@ export function HandoverQrModal({
 
             <p className="text-xs text-slate-600 text-center leading-relaxed">
               Đưa mã QR này cho người mua quét trực tiếp tại điểm hẹn. Khi người mua
-              bấm xác nhận, giao dịch sẽ tự động hoàn tất và chuyển Passport.
+              bấm xác nhận, giao dịch sẽ tự động hoàn tất và cập nhật Digital Product Passport.
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">

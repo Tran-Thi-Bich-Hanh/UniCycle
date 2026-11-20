@@ -65,7 +65,7 @@ export function ProductCard({ product }: ProductCardProps) {
     ? images[0].url
     : "https://images.unsplash.com/photo-1587145820266-a5951ee6f620?w=600";
 
-  // Số đời chủ nếu có Product Passport
+  // Số đời chủ nếu có Digital Product Passport
   const ownersCount = item?.owners?.length || 1;
   const hasPassport = item?.passportEnabled !== false && (item?.passportId || item?.passportEnabled);
 
@@ -96,12 +96,12 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Lớp bóng mờ nhẹ trên ảnh */}
         <div className="absolute inset-0 bg-linear-to-t from-black/20 via-transparent to-black/10 opacity-60 group-hover:opacity-40 transition-opacity" />
 
-        {/* Góc trên bên trái: Badges Hộ chiếu Product Passport & Góc 0đ */}
+        {/* Góc trên bên trái: Badge Digital Product Passport & Góc 0đ */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-10 items-start">
           {hasPassport && (
             <span
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#018ABE] text-white shadow-sm backdrop-blur-xs border border-white/20"
-              title="Món đồ có Hộ chiếu Product Passport lưu lại lịch sử vòng đời"
+              title="Món đồ có Digital Product Passport lưu lại lịch sử vòng đời"
             >
               <svg className="w-3.5 h-3.5 text-[#D6E8EE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

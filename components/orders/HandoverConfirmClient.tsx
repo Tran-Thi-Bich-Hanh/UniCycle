@@ -439,7 +439,7 @@ export function HandoverConfirmClient({
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1 min-w-0">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
-                Trạng thái Product Passport
+                Trạng thái Digital Product Passport
               </span>
               {data.passport.isFlagged ? (
                 <p className="text-xs sm:text-sm font-extrabold text-rose-800">
@@ -447,7 +447,7 @@ export function HandoverConfirmClient({
                 </p>
               ) : (
                 <p className="text-xs sm:text-sm font-extrabold text-emerald-900">
-                  Bình thường · Hộ chiếu hợp lệ (Đời chủ #{data.passport.ownersCount})
+                  Bình thường · Digital Product Passport hợp lệ (Đời chủ #{data.passport.ownersCount})
                 </p>
               )}
               {data.passport.isFlagged && data.passport.flagReason && (
@@ -476,7 +476,7 @@ export function HandoverConfirmClient({
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-[#02457A] hover:text-[#018ABE] hover:underline"
               >
-                <span>Xem lịch sử Passport chi tiết ↗</span>
+                <span>Xem Digital Product Passport chi tiết ↗</span>
               </Link>
             </div>
           )}

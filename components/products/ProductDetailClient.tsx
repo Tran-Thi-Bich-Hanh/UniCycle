@@ -291,7 +291,7 @@ export function ProductDetailClient({
       badgeLabel: isFirst
         ? "Khởi tạo"
         : isCurrent
-        ? "Chủ hiện tại (Đang bán lại)"
+        ? "Chủ sở hữu hiện tại"
         : "Đã chuyển nhượng",
       badgeTone: isFirst ? "origin" : isCurrent ? "current" : "transferred",
       isCurrent,
@@ -330,7 +330,7 @@ export function ProductDetailClient({
 
       {/* 2. Khối chính: 2 Cột (Trái: Gallery & Passport, Phải: Thông tin & Dual CTA) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
-        {/* CỘT TRÁI (7/12 cột): Ảnh & Lịch sử Product Passport */}
+        {/* CỘT TRÁI (7/12 cột): Ảnh & lịch sử Digital Product Passport */}
         <div className="lg:col-span-7 space-y-6">
           {/* Khung Ảnh chính */}
           <div className="relative aspect-4/3 sm:aspect-16/10 w-full rounded-3xl overflow-hidden bg-slate-100 border border-[#D6E8EE] shadow-xs">
@@ -439,7 +439,7 @@ export function ProductDetailClient({
                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    <span>Tra cứu chi tiết Digital Passport</span>
+                    <span>Xem Digital Product Passport chi tiết</span>
                     <svg
                       className="w-3.5 h-3.5 text-[#0088C2] shrink-0"
                       fill="none"
@@ -513,7 +513,7 @@ export function ProductDetailClient({
                     />
                   </svg>
                   <span>
-                    <strong className="text-[#0B1F4B]">Tuyên bố giới hạn:</strong> Product Passport ghi nhận chuỗi sự kiện chuyển giao sở hữu giữa sinh viên, không đóng vai trò chứng nhận chất lượng kỹ thuật hay bảo hành thương mại của nhà sản xuất.
+                    <strong className="text-[#0B1F4B]">Tuyên bố giới hạn:</strong> Digital Product Passport ghi nhận chuỗi sự kiện chuyển giao sở hữu giữa sinh viên, không đóng vai trò chứng nhận chất lượng kỹ thuật hay bảo hành thương mại của nhà sản xuất.
                   </span>
                 </div>
               }

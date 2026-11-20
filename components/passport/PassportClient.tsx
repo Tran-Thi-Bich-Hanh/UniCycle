@@ -374,7 +374,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
   };
 
   const latestListing = listingsTimeline[listingsTimeline.length - 1];
-  const itemTitle = latestListing?.title || "Món đồ sinh viên có Digital Passport";
+  const itemTitle = latestListing?.title || "Món đồ sinh viên có Digital Product Passport";
 
   const latestTxHash =
     verificationReport?.latestTxHash ||
@@ -559,7 +559,7 @@ export function PassportClient({ initialData }: PassportClientProps) {
                 ) : (
                   <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/25 border border-emerald-400/40 text-emerald-100 inline-flex items-center gap-1.5 whitespace-nowrap">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 motion-safe:animate-pulse shrink-0" />
-                    <span>Đời chủ hiện tại: #{passport.currentOwnerSeq}</span>
+                    <span>Chủ sở hữu hiện tại: Đời chủ #{passport.currentOwnerSeq}</span>
                   </span>
                 )}
               </div>
