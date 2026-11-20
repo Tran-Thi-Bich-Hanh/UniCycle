@@ -290,32 +290,23 @@ export function ProfileClient() {
       {/* 1. Header Hồ Sơ (Chuẩn thiết kế ui-profile) */}
       <section className="bg-white border border-[#DCE6EE] rounded-[24px] overflow-hidden shadow-xs">
         {/* Banner 96px */}
-        <div className="h-24 bg-gradient-to-r from-[#0B1F4B] via-[#0A4A82] to-[#0088C2] flex justify-end items-start p-4 box-border">
-          <label className="inline-flex items-center gap-2 min-h-[44px] px-3.5 rounded-xl border border-white/35 bg-[#0B1F4B]/55 hover:bg-[#0B1F4B]/75 text-white text-[13px] font-semibold cursor-pointer transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" />
-              <circle cx="12" cy="13" r="3" />
-            </svg>
-            <span>Đổi ảnh bìa</span>
-            <input type="file" accept="image/*" onChange={handleAvatarUpload} className="sr-only" />
-          </label>
-        </div>
+        <div className="h-24 bg-gradient-to-r from-[#0B1F4B] via-[#0A4A82] to-[#0088C2]" />
 
         <div className="p-6 pt-0 flex flex-col gap-6">
           <div className="flex flex-wrap items-start gap-3 sm:gap-6">
             {/* Avatar 112px đè lên banner (-52px) */}
             <div className="relative -mt-[52px] w-28 h-28 shrink-0">
               <div className="w-28 h-28 box-border border-4 border-white rounded-[28px] overflow-hidden bg-gradient-to-br from-[#0B1F4B] to-[#0088C2] text-white flex items-center justify-center text-[38px] font-bold tracking-wide shadow-sm">
-                {profile.avatarUrl ? (
+                {avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={profile.avatarUrl}
-                    alt={profile.displayName}
+                    src={avatarUrl}
+                    alt={displayName || profile.displayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span>
-                    {profile.displayName
+                    {(displayName || profile.displayName)
                       .split(" ")
                       .map((w) => w[0])
                       .slice(-2)
@@ -326,7 +317,7 @@ export function ProfileClient() {
               </div>
               <label
                 aria-label="Đổi ảnh đại diện"
-                className="absolute -right-2.5 -bottom-2.5 w-11 h-11 rounded-full border border-[#DCE6EE] bg-white text-[#0B1F4B] hover:bg-slate-50 flex items-center justify-center cursor-pointer shadow-xs transition-colors"
+                className="absolute -right-2.5 -bottom-2.5 w-11 h-11 rounded-full border border-[#DCE6EE] bg-white text-[#0B1F4B] hover:bg-slate-50 flex items-center justify-center cursor-pointer shadow-xs transition-colors focus-within:ring-2 focus-within:ring-[#018ABE] focus-within:ring-offset-2"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" />
@@ -387,7 +378,7 @@ export function ProfileClient() {
                   <rect x="3" y="11" width="18" height="11" rx="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <span>{profile.email}{profile.dorm ? ` · ${profile.dorm}` : ""}</span>
+                <span>{profile.email}</span>
                 <span className="px-2 py-0.5 rounded-full bg-[#EEF2F6] text-[#475569] text-xs font-semibold">
                   Chỉ mình bạn thấy
                 </span>
@@ -622,7 +613,7 @@ export function ProfileClient() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-xl border border-[#C9D7E3] bg-white hover:bg-slate-50 text-[#0B1F4B] text-sm font-semibold cursor-pointer transition-colors">
+                        <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-xl border border-[#C9D7E3] bg-white hover:bg-slate-50 text-[#0B1F4B] text-sm font-semibold cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-[#018ABE] focus-within:ring-offset-2">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                             <path d="m17 8-5-5-5 5" />
@@ -725,18 +716,18 @@ export function ProfileClient() {
                 {/* Khu vực giao dịch */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="f-area" className="text-sm font-semibold text-[#0B1F4B]">
-                    Khu vực giao dịch
+                    Khu vực / KTX giao dịch
                   </label>
                   <input
                     id="f-area"
                     type="text"
                     value={dorm}
                     onChange={(e) => setDorm(e.target.value)}
-                    placeholder="VD: KTX Khu B ĐHQG, Tòa B4..."
+                    placeholder="VD: KTX Khu B ĐHQG, Thủ Đức..."
                     className="box-border w-full min-h-[48px] px-3.5 border border-[#C9D7E3] rounded-xl bg-white text-[#0B1F4B] text-[15px] focus:outline-none focus:border-[#0088C2]"
                   />
                   <span className="text-[13px] leading-relaxed text-[#475569]">
-                    Chỉ hiển thị khu vực chung để người mua biết bạn ở gần đâu.
+                    Hiển thị trên hồ sơ công khai và tin đăng để người mua biết bạn ở gần khu vực nào (không nên ghi số phòng cụ thể).
                   </span>
                 </div>
               </div>
@@ -771,24 +762,6 @@ export function ProfileClient() {
                   />
                   <span className="text-[13px] leading-relaxed text-[#475569]">
                     Email đăng nhập, không hiển thị trên hồ sơ công khai.
-                  </span>
-                </div>
-
-                {/* Tòa / ghi chú nhận đồ */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="f-building" className="text-sm font-semibold text-[#0B1F4B]">
-                    Tòa / ghi chú nhận đồ
-                  </label>
-                  <input
-                    id="f-building"
-                    type="text"
-                    value={dorm}
-                    onChange={(e) => setDorm(e.target.value)}
-                    placeholder="VD: Tòa B4, Phòng 302..."
-                    className="box-border w-full min-h-[48px] px-3.5 border border-[#C9D7E3] rounded-xl bg-white text-[#0B1F4B] text-[15px] focus:outline-none focus:border-[#0088C2]"
-                  />
-                  <span className="text-[13px] leading-relaxed text-[#475569]">
-                    Không hiển thị trên hồ sơ công khai.
                   </span>
                 </div>
               </div>
@@ -888,7 +861,12 @@ export function ProfileClient() {
                       <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
-                    <span className="truncate">{dorm || profile.dorm || "KTX Khu B ĐHQG"}</span>
+                    <span className="truncate">
+                      {dorm.trim() ||
+                        schools.find((s) => s.id === schoolId)?.shortName ||
+                        profile.school?.shortName ||
+                        "Chưa cập nhật khu vực"}
+                    </span>
                   </span>
                   <span className="flex items-center gap-2">
                     <svg className="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -905,7 +883,7 @@ export function ProfileClient() {
                 <rect x="3" y="11" width="18" height="11" rx="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              <span>Email, {dorm || profile.dorm || "tòa nhà"} và số điện thoại sẽ không xuất hiện ở đây.</span>
+              <span>Email đăng nhập, thẻ sinh viên và số điện thoại Zalo sẽ không xuất hiện trên hồ sơ công khai.</span>
             </div>
           </aside>
         </div>
