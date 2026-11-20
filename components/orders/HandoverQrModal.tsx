@@ -235,7 +235,7 @@ export function HandoverQrModal({
               id="handover-qr-modal-title"
               className="font-extrabold text-[#001B48] text-base"
             >
-              Mã QR giao nhận trao tay
+              Mở mã QR giao nhận
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
               Dành cho người mua quét khi gặp mặt nhận đồ
@@ -285,7 +285,7 @@ export function HandoverQrModal({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-extrabold text-emerald-950">
-                Giao dịch đã hoàn tất!
+                Giao dịch hoàn tất thành công
               </p>
               <p className="text-xs text-emerald-800 leading-relaxed">
                 Người mua đã quét mã QR và xác nhận nhận hàng. Quyền sở hữu Digital

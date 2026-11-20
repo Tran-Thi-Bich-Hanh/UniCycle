@@ -279,10 +279,10 @@ export function HandoverConfirmClient({
 
           <div className="space-y-1.5">
             <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
-              Bước 4 hoàn tất
+              Bước 4: Hoàn tất
             </span>
             <h1 className="text-xl font-extrabold text-[#001B48]">
-              Đã xác nhận nhận hàng!
+              Giao dịch hoàn tất thành công
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               {completedResult?.message ||
@@ -491,7 +491,7 @@ export function HandoverConfirmClient({
           </div>
         )}
 
-        {/* Bước 4: Nút xác nhận nhận hàng */}
+        {/* Bước 4: Xác nhận nhận hàng */}
         <div className="space-y-2.5 pt-1">
           {!isActionableOrder ? (
             <div className="p-3.5 rounded-xl bg-slate-100 text-xs font-semibold text-slate-700 text-center">
