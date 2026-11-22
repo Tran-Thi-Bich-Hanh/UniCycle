@@ -14,7 +14,11 @@ interface ProductSpecsCardProps {
 /**
  * Hiển thị trực tiếp các thông số kỹ thuật cam kết theo danh mục ngay trên trang chi tiết món đồ
  */
-export function ProductSpecsCard({ productId, categoryId, attributes }: ProductSpecsCardProps) {
+export function ProductSpecsCard({
+  productId,
+  categoryId,
+  attributes,
+}: ProductSpecsCardProps) {
   const specs = extractDisplaySpecs(categoryId, attributes);
   if (specs.length === 0) return null;
 
@@ -24,16 +28,19 @@ export function ProductSpecsCard({ productId, categoryId, attributes }: ProductS
       className="bg-white rounded-2xl border border-[#D6E8EE] p-6 space-y-4 shadow-2xs"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="specs-heading" className="text-lg font-extrabold text-[#001B48] flex items-center gap-2">
+        <h2
+          id="specs-heading"
+          className="text-lg font-extrabold text-[#001B48] flex items-center gap-2"
+        >
           <IconTag className="w-5 h-5 text-[#018ABE]" />
-          <span>Thông số thực tế người bán cam kết</span>
+          <span>Thông số cam kết trên UniCycle Passport</span>
         </h2>
         <Link
           href={`/products/${productId}/passport`}
           className="inline-flex items-center gap-1 text-xs font-bold text-[#018ABE] hover:text-[#02457A] transition-colors"
         >
           <IconShieldCheck className="w-3.5 h-3.5" />
-          <span>Đã niêm phong trên Passport →</span>
+          <span>Mở hồ sơ chứng thực →</span>
         </Link>
       </div>
 
@@ -62,9 +69,8 @@ export function ProductSpecsCard({ productId, categoryId, attributes }: ProductS
 }
 
 /**
- * Huy hiệu Bảo chứng thu gọn (UX Abstraction):
- * Không phô trương mã hex 0x... gây ngợp cho sinh viên, chỉ hiển thị thông điệp tin cậy rõ ràng
- * và dành sẵn không gian cột phải cho nút Đặt cọc Smart Escrow ở Giai đoạn 3.
+ * Huy hiệu Chứng thực UniCycle Passport thu gọn (UX Abstraction):
+ * Hiển thị thông điệp minh bạch về tính toàn vẹn dữ liệu và lịch sử phiên bản bài đăng.
  */
 export function PassportTrustBanner({ productId }: { productId: string }) {
   return (
@@ -79,14 +85,14 @@ export function PassportTrustBanner({ productId }: { productId: string }) {
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-extrabold text-white truncate">
-              Đã bảo chứng thông số gốc
+              UniCycle Passport — Hồ sơ Chứng thực
             </span>
             <span className="px-1.5 py-0.5 rounded bg-[#018ABE]/30 text-[#97CADB] text-[10px] font-bold border border-[#97CADB]/30 shrink-0">
-              Passport
+              Verified
             </span>
           </div>
           <p className="text-[11px] text-[#97CADB] truncate mt-0.5">
-            Xem chứng nhận nguyên bản & lịch sử qua tay sinh viên
+            Xem thông số cam kết, lịch sử chỉnh sửa & hành trình sở hữu
           </p>
         </div>
       </div>
@@ -94,4 +100,3 @@ export function PassportTrustBanner({ productId }: { productId: string }) {
     </Link>
   );
 }
-

@@ -20,11 +20,18 @@ import {
   IconShieldCheck,
   IconFileText,
   IconCheck,
-  IconSparkles,
 } from "@/components/icons";
 import { Product } from "@/lib/db";
-import { formatCurrencyVND, formatRelativeTime, CONDITION_LABELS, STATUS_LABELS } from "@/lib/utils";
-import { ProductSpecsCard, PassportTrustBanner } from "@/components/product-specs-card";
+import {
+  formatCurrencyVND,
+  formatRelativeTime,
+  CONDITION_LABELS,
+  STATUS_LABELS,
+} from "@/lib/utils";
+import {
+  ProductSpecsCard,
+  PassportTrustBanner,
+} from "@/components/product-specs-card";
 import { EscrowActionCard } from "@/components/escrow-action-card";
 
 const FALLBACK_IMG =
@@ -54,7 +61,6 @@ export default function ProductDetailPage() {
       .finally(() => setAuthLoaded(true));
   }, []);
 
-  // Tải lại chi tiết khi trạng thái đăng nhập đã xác định (để API trả SĐT cho người đã đăng nhập)
   useEffect(() => {
     if (!id || !authLoaded) return;
     setLoading(true);
@@ -62,7 +68,8 @@ export default function ProductDetailPage() {
 
     fetch(`/api/products/${id}`)
       .then(async (res) => {
-        if (!res.ok) throw new Error("Không tìm thấy món đồ hoặc bài đăng đã bị gỡ.");
+        if (!res.ok)
+          throw new Error("Không tìm thấy món đồ hoặc bài đăng đã bị gỡ.");
         return res.json();
       })
       .then((data) => {
@@ -70,17 +77,27 @@ export default function ProductDetailPage() {
         setProduct(prod);
         setActiveImageIndex(0);
         if (prod.category_id) {
-          fetch(`/api/products?category=${prod.category?.slug || prod.category_id}&limit=5`)
+          fetch(
+            `/api/products?category=${
+              prod.category?.slug || prod.category_id
+            }&limit=5`
+          )
             .then((r) => r.json())
             .then((sim) => {
               if (sim.products) {
-                setSimilarProducts(sim.products.filter((p: Product) => p.id !== prod.id).slice(0, 4));
+                setSimilarProducts(
+                  sim.products
+                    .filter((p: Product) => p.id !== prod.id)
+                    .slice(0, 4)
+                );
               }
             })
             .catch(() => {});
         }
       })
-      .catch((err) => setError(err.message || "Đã xảy ra lỗi khi tải bài đăng."))
+      .catch((err) =>
+        setError(err.message || "Đã xảy ra lỗi khi tải bài đăng.")
+      )
       .finally(() => setLoading(false));
   }, [id, authLoaded, currentUser?.id, refreshTick]);
 
@@ -90,11 +107,16 @@ export default function ProductDetailPage() {
       setCopiedPhone(true);
       setTimeout(() => setCopiedPhone(false), 2500);
     } catch {
-      show("Không thể sao chép, hãy chọn và sao chép thủ công.", { type: "error" });
+      show("Không thể sao chép, hãy chọn và sao chép thủ công.", {
+        type: "error",
+      });
     }
   };
 
-  const changeStatus = async (newStatus: "ACTIVE" | "SOLD" | "HIDDEN", previous?: Product["status"]) => {
+  const changeStatus = async (
+    newStatus: "ACTIVE" | "SOLD" | "HIDDEN",
+    previous?: Product["status"]
+  ) => {
     if (!product) return;
     setUpdatingStatus(true);
     try {
@@ -106,10 +128,17 @@ export default function ProductDetailPage() {
       if (!res.ok) throw new Error();
       const before = previous ?? product.status;
       setProduct({ ...product, status: newStatus });
-      show(newStatus === "SOLD" ? "Đã đánh dấu là đã bán." : "Đã mở bán lại món đồ.", {
-        actionLabel: previous ? undefined : "Hoàn tác",
-        onAction: previous ? undefined : () => changeStatus(before as any, before),
-      });
+      show(
+        newStatus === "SOLD"
+          ? "Đã đánh dấu là đã bán."
+          : "Đã mở bán lại món đồ.",
+        {
+          actionLabel: previous ? undefined : "Hoàn tác",
+          onAction: previous
+            ? undefined
+            : () => changeStatus(before as any, before),
+        }
+      );
     } catch {
       show("Không thể cập nhật trạng thái, hãy thử lại.", { type: "error" });
     } finally {
@@ -121,21 +150,27 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen flex flex-col bg-white text-[#001B48]">
         <Navbar />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-pulse" role="status" aria-label="Đang tải">
+        <main
+          className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-pulse"
+          role="status"
+          aria-label="Đang tải"
+        >
           <div className="h-4 bg-[#D6E8EE]/60 rounded-md w-1/4 mb-6" />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-7 space-y-4">
               <div className="aspect-4/3 w-full bg-[#D6E8EE]/60 rounded-2xl" />
               <div className="flex gap-3">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="w-20 h-20 bg-[#D6E8EE]/50 rounded-xl" />
+                  <div
+                    key={i}
+                    className="w-20 h-20 bg-[#D6E8EE]/50 rounded-xl"
+                  />
                 ))}
               </div>
             </div>
             <div className="lg:col-span-5 space-y-4">
-              <div className="h-8 bg-[#D6E8EE]/80 rounded-lg w-3/4" />
-              <div className="h-10 bg-[#D6E8EE]/60 rounded-lg w-1/2" />
-              <div className="h-40 bg-[#D6E8EE]/30 rounded-2xl w-full" />
+              <div className="h-80 bg-[#D6E8EE]/40 rounded-2xl w-full" />
+              <div className="h-24 bg-[#D6E8EE]/30 rounded-2xl w-full" />
             </div>
           </div>
         </main>
@@ -152,9 +187,12 @@ export default function ProductDetailPage() {
           <div className="w-16 h-16 rounded-2xl bg-[#D6E8EE] text-[#018ABE] flex items-center justify-center mb-4">
             <IconPackage className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-extrabold text-[#001B48] mb-2">Không tìm thấy món đồ</h1>
+          <h1 className="text-2xl font-extrabold text-[#001B48] mb-2">
+            Không tìm thấy món đồ
+          </h1>
           <p className="text-sm text-[#02457A] mb-6 max-w-md">
-            {error || "Món đồ bạn đang tìm có thể đã được người bán gỡ hoặc không tồn tại."}
+            {error ||
+              "Món đồ bạn đang tìm có thể đã được người bán gỡ hoặc không tồn tại."}
           </p>
           <Link
             href="/products"
@@ -178,17 +216,30 @@ export default function ProductDetailPage() {
   };
   const statusMeta = STATUS_LABELS[product.status];
   const sellerPhone = product.seller?.phone || null;
-  const loginHref = `/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`;
+  const loginHref = `/login?redirect=${encodeURIComponent(
+    `/products/${product.id}`
+  )}`;
+  const revisionCount = product.revisions?.length || 1;
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#001B48]">
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-[#02457A] mb-6 font-medium">
-          <Link href="/" className="hover:text-[#018ABE] transition-colors">Trang chủ</Link>
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-2 text-xs text-[#02457A] mb-6 font-medium"
+        >
+          <Link href="/" className="hover:text-[#018ABE] transition-colors">
+            Trang chủ
+          </Link>
           <span aria-hidden="true">/</span>
-          <Link href="/products" className="hover:text-[#018ABE] transition-colors">Đồ sinh viên</Link>
+          <Link
+            href="/products"
+            className="hover:text-[#018ABE] transition-colors"
+          >
+            Đồ sinh viên
+          </Link>
           {product.category && (
             <>
               <span aria-hidden="true">/</span>
@@ -201,30 +252,49 @@ export default function ProductDetailPage() {
             </>
           )}
           <span aria-hidden="true">/</span>
-          <span className="text-[#001B48] font-bold truncate max-w-[200px] sm:max-w-none" aria-current="page">
+          <span
+            className="text-[#001B48] font-bold truncate max-w-[200px] sm:max-w-none"
+            aria-current="page"
+          >
             {product.title}
           </span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-          {/* CỘT TRÁI */}
+          {/* =================================================================
+              CỘT TRÁI (7/12): HÌNH ẢNH, THÔNG SỐ PASSPORT & MÔ TẢ CHI TIẾT
+             ================================================================= */}
           <div className="lg:col-span-7 space-y-6">
             <div className="relative aspect-4/3 w-full bg-[#D6E8EE]/30 rounded-2xl border border-[#D6E8EE] overflow-hidden shadow-xs">
-              <img src={activeImage} alt={product.title} className="w-full h-full object-cover" />
+              <img
+                src={activeImage}
+                alt={product.title}
+                className="w-full h-full object-cover"
+              />
 
-              <span className={`absolute top-4 left-4 text-xs font-bold px-3 py-1 rounded-full border shadow-xs backdrop-blur-xs ${conditionMeta.badgeClass}`}>
+              <span
+                className={`absolute top-4 left-4 text-xs font-bold px-3 py-1 rounded-full border shadow-xs backdrop-blur-xs ${conditionMeta.badgeClass}`}
+              >
                 {conditionMeta.label}
               </span>
 
               {product.status !== "ACTIVE" && (
-                <span className={`absolute top-4 right-4 text-xs font-extrabold px-3 py-1 rounded-full shadow-md ${statusMeta?.colorClass || "bg-[#02457A] text-white"}`}>
+                <span
+                  className={`absolute top-4 right-4 text-xs font-extrabold px-3 py-1 rounded-full shadow-md ${
+                    statusMeta?.colorClass || "bg-[#02457A] text-white"
+                  }`}
+                >
                   {statusMeta?.label || product.status}
                 </span>
               )}
             </div>
 
             {images.length > 1 && (
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 pr-1" role="list" aria-label="Ảnh sản phẩm">
+              <div
+                className="flex items-center gap-3 overflow-x-auto pb-2 pr-1"
+                role="list"
+                aria-label="Ảnh sản phẩm"
+              >
                 {images.map((img, idx) => {
                   const isActive = idx === activeImageIndex;
                   return (
@@ -236,10 +306,16 @@ export default function ProductDetailPage() {
                       aria-label={`Xem ảnh ${idx + 1}`}
                       aria-current={isActive}
                       className={`relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                        isActive ? "border-[#018ABE] shadow-md" : "border-[#D6E8EE] opacity-75 hover:opacity-100"
+                        isActive
+                          ? "border-[#018ABE] shadow-md"
+                          : "border-[#D6E8EE] opacity-75 hover:opacity-100"
                       }`}
                     >
-                      <img src={img.url} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={img.url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     </button>
                   );
                 })}
@@ -256,223 +332,320 @@ export default function ProductDetailPage() {
             <section className="bg-white rounded-2xl border border-[#D6E8EE] p-6 space-y-4 shadow-2xs">
               <h2 className="text-lg font-extrabold text-[#001B48] flex items-center gap-2">
                 <IconFileText className="w-5 h-5 text-[#018ABE]" />
-                <span>Mô tả từ người bán</span>
+                <span>Mô tả chi tiết từ người bán</span>
               </h2>
-              <div className="text-sm text-[#001B48] leading-relaxed whitespace-pre-line">{product.description}</div>
+              <div className="text-sm text-[#001B48] leading-relaxed whitespace-pre-line">
+                {product.description}
+              </div>
 
               <div className="pt-4 border-t border-[#D6E8EE] flex flex-wrap items-center justify-between text-xs text-[#02457A] gap-4">
                 <div className="flex items-center gap-4">
                   <span className="inline-flex items-center gap-1.5">
-                    <IconClock className="w-3.5 h-3.5" /> Đăng {formatRelativeTime(product.created_at)}
+                    <IconClock className="w-3.5 h-3.5" /> Đăng{" "}
+                    {formatRelativeTime(product.created_at)}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <IconEye className="w-3.5 h-3.5" /> {product.view_count} lượt xem
+                    <IconEye className="w-3.5 h-3.5" /> {product.view_count} lượt
+                    xem
                   </span>
                 </div>
                 <div>
-                  Mã tin: <span className="font-mono text-[#001B48] font-bold">{product.id.slice(0, 8)}</span>
+                  Mã tin:{" "}
+                  <span className="font-mono text-[#001B48] font-bold">
+                    {product.id.slice(0, 8)}
+                  </span>
                 </div>
               </div>
             </section>
-
-            <div className="bg-[#D6E8EE]/30 rounded-2xl border border-[#97CADB]/60 p-5 flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-[#018ABE]/15 text-[#018ABE] flex items-center justify-center shrink-0">
-                <IconShieldCheck className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-[#001B48]">Quy tắc an toàn sinh viên UniCycle</h3>
-                <p className="text-xs text-[#02457A] leading-relaxed">
-                  Luôn hẹn gặp trực tiếp tại nơi công cộng trong khuôn viên trường (cổng trường, KTX, thư viện).
-                  Sử dụng <strong>Đặt cọc giữ chỗ trên UniCycle</strong> để khóa điểm an toàn, chỉ bấm xác nhận thanh toán sau khi đã kiểm tra đúng đồ.
-                </p>
-              </div>
-            </div>
           </div>
 
-          {/* CỘT PHẢI */}
-          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
-            <section className="bg-white rounded-2xl border border-[#D6E8EE] p-6 shadow-2xs space-y-5">
-              {product.category && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#D6E8EE]/70 text-[#001B48] border border-[#97CADB]/60">
-                  <CategoryGlyph name={product.category.icon} className="w-3.5 h-3.5 text-[#018ABE]" />
-                  <span>{product.category.name}</span>
-                </div>
-              )}
+          {/* =================================================================
+              CỘT PHẢI (5/12) GOM GỌN TỐI ĐA 2 KHỐI THEO /UI-UX-PRO-MAX:
+              - KHỐI 1: THÔNG TIN CHÍNH + THANH TOÁN GIỮ CHỖ ESCROW + LIÊN HỆ NGƯỜI BÁN
+              - KHỐI 2: HỒ SƠ CHỨNG THỰC UNICYCLE PASSPORT & QUẢN TRỊ BÀI ĐĂNG
+             ================================================================= */}
+          <div className="lg:col-span-5 space-y-5 lg:sticky lg:top-20">
+            {/* KHỐI 1: HỢP NHẤT GIÁ, ĐIỂM GIAO DỊCH, ESCROW & LIÊN HỆ NGƯỜI BÁN */}
+            <section className="bg-white rounded-2xl border border-[#D6E8EE] p-5 sm:p-6 shadow-2xs space-y-5">
+              {/* Danh mục & Nhãn trạng thái */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                {product.category && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#D6E8EE]/70 text-[#001B48] border border-[#97CADB]/60">
+                    <CategoryGlyph
+                      name={product.category.icon}
+                      className="w-3.5 h-3.5 text-[#018ABE]"
+                    />
+                    <span>{product.category.name}</span>
+                  </div>
+                )}
 
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001B48] leading-tight">{product.title}</h1>
-
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl sm:text-4xl font-extrabold text-[#02457A]">
-                  {product.price === 0 ? "Miễn phí" : formatCurrencyVND(product.price)}
+                <span
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full border ${conditionMeta.badgeClass}`}
+                >
+                  {conditionMeta.label}
                 </span>
-                <span className="text-xs font-semibold text-[#02457A] bg-[#D6E8EE] px-2.5 py-1 rounded-md">Giá sinh viên</span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#D6E8EE]/30 border border-[#D6E8EE] flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#018ABE] text-white flex items-center justify-center shrink-0">
-                  <IconCheck className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-[#001B48]">Tình trạng: {conditionMeta.label}</div>
-                  <div className="text-[11px] text-[#02457A] mt-0.5">{conditionMeta.desc}</div>
-                </div>
-              </div>
+              {/* Tiêu đề & Giá bán */}
+              <div className="space-y-2">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-[#001B48] leading-snug">
+                  {product.title}
+                </h1>
 
-              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white border border-[#D6E8EE]">
-                <div className="w-8 h-8 rounded-lg bg-[#02457A]/10 text-[#02457A] flex items-center justify-center shrink-0">
-                  <IconMapPin className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-[#001B48]">Nơi nhận đồ trực tiếp</div>
-                  <div className="text-xs text-[#02457A] font-medium mt-0.5">{product.pickup_location}</div>
-                </div>
-              </div>
-
-              {/* Dải bảo chứng Hộ chiếu số tinh gọn */}
-              <PassportTrustBanner productId={product.id} />
-            </section>
-
-            {/* Khung Đặt cọc giữ chỗ Smart Escrow bằng đồng UNIP */}
-            <EscrowActionCard
-              productId={product.id}
-              price={product.price}
-              productStatus={product.status}
-              sellerId={product.seller_id}
-              currentUserId={currentUser?.id || null}
-              onEscrowUpdated={() => setRefreshTick((t) => t + 1)}
-              onNotify={(msg, type) => show(msg, type ? { type } : undefined)}
-            />
-
-            <section className="bg-white rounded-2xl border border-[#D6E8EE] p-6 shadow-2xs space-y-5">
-              <h2 className="text-sm font-extrabold text-[#001B48] uppercase tracking-wider">Người bán</h2>
-
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-[#02457A] text-white flex items-center justify-center text-lg font-extrabold overflow-hidden">
-                  {product.seller?.avatar_url ? (
-                    <img src={product.seller.avatar_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span aria-hidden="true">{product.seller?.full_name?.charAt(0) || "U"}</span>
+                <div className="flex items-baseline gap-2.5">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-[#02457A]">
+                    {product.price === 0
+                      ? "Tặng miễn phí"
+                      : formatCurrencyVND(product.price)}
+                  </span>
+                  {product.price > 0 && (
+                    <span className="text-xs font-bold text-[#018ABE] bg-[#D6E8EE]/50 px-2 py-0.5 rounded-md">
+                      {Math.round(product.price).toLocaleString("vi-VN")} UNIP
+                    </span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-extrabold text-base text-[#001B48] truncate">
-                    {product.seller?.full_name || "Sinh viên UniCycle"}
+              </div>
+
+              {/* Tóm tắt Tình trạng & Điểm hẹn KTX trên lưới gọn 2 cột */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="p-3 rounded-xl bg-[#D6E8EE]/25 border border-[#D6E8EE] flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#018ABE] text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <IconCheck className="w-3.5 h-3.5" />
                   </div>
-                  <div className="text-xs text-[#02457A] truncate mt-0.5 font-medium inline-flex items-center gap-1.5">
-                    <IconSchool className="w-3.5 h-3.5" /> {product.seller?.university || "Sinh viên"}
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-bold text-[#02457A]">
+                      Tình trạng thực tế
+                    </div>
+                    <div className="text-xs font-extrabold text-[#001B48] truncate">
+                      {conditionMeta.label}
+                    </div>
                   </div>
-                  {product.seller?.campus_location && (
-                    <div className="text-[11px] text-[#02457A]/80 truncate inline-flex items-center gap-1.5 ml-3">
-                      <IconBuilding className="w-3 h-3" /> {product.seller.campus_location}
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#D6E8EE]/25 border border-[#D6E8EE] flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#02457A] text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <IconMapPin className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-bold text-[#02457A]">
+                      Điểm hẹn giao dịch
+                    </div>
+                    <div
+                      className="text-xs font-extrabold text-[#001B48] truncate"
+                      title={product.pickup_location}
+                    >
+                      {product.pickup_location}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* LUỒNG THANH TOÁN & GIỮ CHỖ ESCROW HỢP NHẤT */}
+              <EscrowActionCard
+                productId={product.id}
+                price={product.price}
+                pickupLocation={product.pickup_location}
+                productStatus={product.status}
+                sellerId={product.seller_id}
+                currentUserId={currentUser?.id || null}
+                onEscrowUpdated={() => setRefreshTick((t) => t + 1)}
+                onNotify={(msg, type) => show(msg, type ? { type } : undefined)}
+              />
+
+              {/* THÔNG TIN NGƯỜI BÁN & NÚT LIÊN HỆ TRỰC TIẾP GỘP TRONG CÙNG KHỐI */}
+              <div className="pt-4 border-t border-[#D6E8EE] space-y-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-[#02457A] text-white flex items-center justify-center text-base font-extrabold overflow-hidden shrink-0">
+                    {product.seller?.avatar_url ? (
+                      <img
+                        src={product.seller.avatar_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span aria-hidden="true">
+                        {product.seller?.full_name?.charAt(0) || "U"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-extrabold text-sm text-[#001B48] truncate">
+                      {product.seller?.full_name || "Sinh viên UniCycle"}
+                    </div>
+                    <div className="text-xs text-[#02457A] truncate mt-0.5 font-medium flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span className="inline-flex items-center gap-1">
+                        <IconSchool className="w-3.5 h-3.5 text-[#018ABE]" />
+                        {product.seller?.university || "Sinh viên"}
+                      </span>
+                      {product.seller?.campus_location && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-[#02457A]/80">
+                          <IconBuilding className="w-3 h-3" />
+                          {product.seller.campus_location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {product.status === "SOLD" || product.status === "HIDDEN" ? (
+                  <div className="p-3 rounded-xl bg-[#D6E8EE]/40 text-center text-xs font-bold text-[#001B48] border border-[#97CADB]/60">
+                    Món đồ này hiện đã hoàn tất hoặc ngừng giao dịch (
+                    {statusMeta?.label || product.status}).
+                  </div>
+                ) : isOwner ? (
+                  <p className="text-xs text-[#02457A] bg-[#D6E8EE]/30 px-3 py-2 rounded-xl">
+                    Đây là bài đăng của bạn. Khi sinh viên khác giữ chỗ, thông tin
+                    liên hệ của người mua sẽ xuất hiện ngay tại đây.
+                  </p>
+                ) : !currentUser ? (
+                  <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[#D6E8EE]/30 border border-[#D6E8EE]">
+                    <span className="text-xs text-[#02457A]">
+                      Đăng nhập để xem SĐT & Zalo người bán
+                    </span>
+                    <Link
+                      href={loginHref}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#018ABE] text-white hover:bg-[#02457A] transition-colors shrink-0"
+                    >
+                      Đăng nhập
+                    </Link>
+                  </div>
+                ) : sellerPhone ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    <a
+                      href={`tel:${sellerPhone}`}
+                      className="py-2.5 px-3 rounded-xl font-bold text-xs bg-[#018ABE] text-white hover:bg-[#02457A] flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <IconPhone className="w-3.5 h-3.5" />
+                      <span className="truncate">{sellerPhone}</span>
+                    </a>
+                    <a
+                      href={`https://zalo.me/${sellerPhone}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="py-2.5 px-3 rounded-xl font-bold text-xs bg-white text-[#001B48] border border-[#97CADB] hover:bg-[#D6E8EE]/40 flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <span
+                        className="w-4 h-4 rounded-full bg-[#0068FF] text-white text-[9px] font-extrabold flex items-center justify-center shrink-0"
+                        aria-hidden="true"
+                      >
+                        Z
+                      </span>
+                      <span>Chat Zalo</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyPhone(sellerPhone)}
+                      className="py-2.5 px-3 rounded-xl font-semibold text-xs bg-white text-[#02457A] border border-[#D6E8EE] hover:bg-[#D6E8EE]/30 flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                    >
+                      {copiedPhone ? (
+                        <IconCheck className="w-3.5 h-3.5 text-[#018ABE]" />
+                      ) : (
+                        <IconCopy className="w-3.5 h-3.5" />
+                      )}
+                      <span>{copiedPhone ? "Đã chép" : "Sao chép"}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-[#D6E8EE]/30 text-xs text-[#02457A]">
+                    Người bán ưu tiên giữ chỗ qua Escrow và hẹn gặp tại{" "}
+                    <strong className="text-[#001B48]">
+                      {product.pickup_location}
+                    </strong>
+                    .
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* KHỐI 2: CHỨNG THỰC UNICYCLE PASSPORT & QUẢN TRỊ DÀNH CHO CHỦ BÀI ĐĂNG */}
+            <section className="bg-white rounded-2xl border border-[#D6E8EE] p-4 sm:p-5 shadow-2xs space-y-3.5">
+              <PassportTrustBanner productId={product.id} />
+
+              <div className="flex items-center justify-between text-[11px] text-[#02457A] px-1">
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <IconShieldCheck className="w-3.5 h-3.5 text-[#018ABE]" />
+                  <span>Dữ liệu được xác minh toàn vẹn (SHA-256)</span>
+                </span>
+                <Link
+                  href={`/products/${product.id}/passport`}
+                  className="font-bold text-[#001B48] hover:text-[#018ABE] underline"
+                >
+                  Phiên bản #{revisionCount}
+                </Link>
+              </div>
+
+              {isOwner && (
+                <div className="pt-3 border-t border-[#D6E8EE] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-[#001B48]">
+                      Quản lý bài đăng của bạn
+                    </span>
+                    <Link
+                      href="/profile/my-listings"
+                      className="text-[11px] font-bold text-[#018ABE] hover:underline"
+                    >
+                      Tất cả tin đăng →
+                    </Link>
+                  </div>
+
+                  {product.status === "RESERVED" ? (
+                    <p className="text-xs text-[#02457A] bg-[#D6E8EE]/30 rounded-xl p-3 border border-[#97CADB]">
+                      Bài đăng đang có người giữ chỗ (Escrow) nên tạm khóa chỉnh
+                      sửa thông số/giá bán để bảo toàn cam kết trên UniCycle
+                      Passport.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        disabled={updatingStatus}
+                        onClick={() =>
+                          changeStatus(
+                            product.status === "ACTIVE" ? "SOLD" : "ACTIVE"
+                          )
+                        }
+                        className="py-2 px-3 rounded-xl text-xs font-bold bg-[#02457A] text-white hover:bg-[#001B48] transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {product.status === "ACTIVE"
+                          ? "Đánh dấu đã bán"
+                          : "Mở bán lại"}
+                      </button>
+                      <Link
+                        href={`/products/${product.id}/edit`}
+                        className="py-2 px-3 rounded-xl text-xs font-bold text-center bg-white text-[#001B48] border border-[#97CADB] hover:bg-[#D6E8EE]/30 transition-colors"
+                      >
+                        Chỉnh sửa tin
+                      </Link>
                     </div>
                   )}
                 </div>
-              </div>
-
-              {product.status === "SOLD" || product.status === "HIDDEN" ? (
-                <div className="p-4 rounded-xl bg-[#D6E8EE]/40 text-center text-xs font-bold text-[#001B48] border border-[#97CADB]/60">
-                  Món đồ này hiện đã ngừng giao dịch ({statusMeta?.label || product.status}).
-                </div>
-              ) : isOwner ? (
-                <p className="text-xs text-[#02457A] font-medium">Đây là tin của bạn, người mua sẽ thấy nút liên hệ ở đây.</p>
-              ) : !currentUser ? (
-                <div className="space-y-2.5 pt-1">
-                  <p className="text-xs text-[#02457A] leading-relaxed">
-                    Đăng nhập để xem số điện thoại và liên hệ trực tiếp với người bán. Việc này giúp bảo vệ thông tin của
-                    sinh viên khỏi spam.
-                  </p>
-                  <Link
-                    href={loginHref}
-                    className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-[#018ABE] text-white hover:bg-[#02457A] flex items-center justify-center gap-2 shadow-xs transition-colors"
-                  >
-                    <IconPhone className="w-4 h-4" />
-                    <span>Đăng nhập để liên hệ người bán</span>
-                  </Link>
-                  <Link
-                    href={`/register?redirect=${encodeURIComponent(`/products/${product.id}`)}`}
-                    className="block text-center text-xs font-semibold text-[#02457A] hover:text-[#018ABE] py-1"
-                  >
-                    Chưa có tài khoản? Đăng ký miễn phí
-                  </Link>
-                </div>
-              ) : sellerPhone ? (
-                <div className="space-y-2.5 pt-1">
-                  <a
-                    href={`tel:${sellerPhone}`}
-                    className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-[#018ABE] text-white hover:bg-[#02457A] flex items-center justify-center gap-2 shadow-xs transition-colors"
-                  >
-                    <IconPhone className="w-4 h-4" />
-                    <span>Gọi {sellerPhone}</span>
-                  </a>
-                  <a
-                    href={`https://zalo.me/${sellerPhone}`}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-white text-[#001B48] border-2 border-[#97CADB] hover:bg-[#D6E8EE]/40 flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <span className="w-5 h-5 rounded-full bg-[#0068FF] text-white text-[10px] font-extrabold flex items-center justify-center" aria-hidden="true">Z</span>
-                    <span>Nhắn qua Zalo</span>
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => handleCopyPhone(sellerPhone)}
-                    className="w-full py-2 text-xs font-semibold text-[#02457A] hover:text-[#018ABE] transition-colors inline-flex items-center justify-center gap-1.5"
-                  >
-                    {copiedPhone ? <IconCheck className="w-3.5 h-3.5" /> : <IconCopy className="w-3.5 h-3.5" />}
-                    {copiedPhone ? "Đã sao chép số điện thoại" : "Sao chép số điện thoại"}
-                  </button>
-                </div>
-              ) : (
-                <div className="p-4 rounded-xl bg-[#D6E8EE]/40 text-xs text-[#001B48] border border-[#97CADB]/60 leading-relaxed">
-                  Người bán chưa cung cấp số điện thoại. Bạn có thể hẹn gặp tại <strong>{product.pickup_location}</strong> hoặc quay lại sau.
-                </div>
               )}
             </section>
-
-            {isOwner && (
-              <section className="bg-[#D6E8EE]/40 rounded-2xl border-2 border-[#018ABE] p-5 space-y-3">
-                <div className="text-xs font-extrabold text-[#001B48]">Bạn là chủ bài đăng này</div>
-                {product.status === "RESERVED" ? (
-                  <p className="text-xs text-[#02457A] bg-white/80 rounded-xl p-3 border border-[#97CADB]">
-                    Bài đăng đang có người đặt cọc giữ chỗ nên tạm khóa chỉnh sửa để đảm bảo đúng cam kết với người mua.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      disabled={updatingStatus}
-                      onClick={() => changeStatus(product.status === "ACTIVE" ? "SOLD" : "ACTIVE")}
-                      className="py-2.5 px-3 rounded-xl text-xs font-bold bg-[#02457A] text-white hover:bg-[#001B48] transition-colors disabled:opacity-50"
-                    >
-                      {product.status === "ACTIVE" ? "Đánh dấu đã bán" : "Mở bán lại"}
-                    </button>
-                    <Link
-                      href={`/products/${product.id}/edit`}
-                      className="py-2.5 px-3 rounded-xl text-xs font-bold text-center bg-white text-[#001B48] border border-[#97CADB] hover:bg-white/80 transition-colors"
-                    >
-                      Chỉnh sửa tin
-                    </Link>
-                  </div>
-                )}
-                <Link href="/profile/my-listings" className="block text-center text-xs font-semibold text-[#02457A] hover:text-[#018ABE]">
-                  Quản lý tất cả tin đăng →
-                </Link>
-              </section>
-            )}
           </div>
         </div>
 
         {similarProducts.length > 0 && (
-          <section className="mt-16 pt-10 border-t border-[#D6E8EE]" aria-labelledby="similar-title">
+          <section
+            className="mt-16 pt-10 border-t border-[#D6E8EE]"
+            aria-labelledby="similar-title"
+          >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 id="similar-title" className="text-xl sm:text-2xl font-extrabold text-[#001B48]">
+                <h2
+                  id="similar-title"
+                  className="text-xl sm:text-2xl font-extrabold text-[#001B48]"
+                >
                   Đồ cùng danh mục có thể bạn quan tâm
                 </h2>
-                <p className="text-xs text-[#02457A] mt-0.5">Các món đồ tương tự từ cộng đồng sinh viên</p>
+                <p className="text-xs text-[#02457A] mt-0.5">
+                  Các món đồ tương tự từ cộng đồng sinh viên
+                </p>
               </div>
               {product.category && (
-                <Link href={`/products?category=${product.category.slug}`} className="text-xs font-bold text-[#018ABE] hover:underline">
+                <Link
+                  href={`/products?category=${product.category.slug}`}
+                  className="text-xs font-bold text-[#018ABE] hover:underline"
+                >
                   Xem thêm →
                 </Link>
               )}

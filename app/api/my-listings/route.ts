@@ -17,6 +17,7 @@ export async function GET(request: Request) {
     const countsSql = `
       SELECT 
         COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) as active_count,
+        COUNT(CASE WHEN status = 'RESERVED' THEN 1 END) as reserved_count,
         COUNT(CASE WHEN status = 'SOLD' THEN 1 END) as sold_count,
         COUNT(CASE WHEN status = 'HIDDEN' THEN 1 END) as hidden_count,
         COUNT(*) as total_count
@@ -27,6 +28,7 @@ export async function GET(request: Request) {
 
     const counts = {
       active: countRow?.active_count || 0,
+      reserved: countRow?.reserved_count || 0,
       sold: countRow?.sold_count || 0,
       hidden: countRow?.hidden_count || 0,
       total: countRow?.total_count || 0,

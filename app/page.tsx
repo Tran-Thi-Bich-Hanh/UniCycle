@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
+import { SafeTradeTimeline } from "@/components/safe-trade-timeline";
 import {
   CategoryIcon,
   IconArrowRight,
@@ -12,8 +13,17 @@ import {
 } from "@/components/icons";
 import db, { Category, Product, ProductImage } from "@/lib/db";
 
+const QUICK_SEARCH_CHIPS = [
+  { label: "Giáo trình & Sách", href: "/products?category=giao-trinh-sach" },
+  { label: "Đồ điện tử", href: "/products?category=do-dien-tu" },
+  { label: "Nội thất KTX", href: "/products?category=noi-that-ktx" },
+  { label: "Gia dụng phòng trọ", href: "/products?category=do-gia-dung" },
+  { label: "KTX Khu A", href: "/products?search=Khu+A" },
+  { label: "KTX Khu B", href: "/products?search=Khu+B" },
+];
+
 export default async function HomePage() {
-  // Lấy danh sách danh mục và đếm số sản phẩm đang bán
+  // Lấy danh sách danh mục và đếm số sản phẩm đang mở bán
   const categories = db.prepare(`
     SELECT c.*, 
       (SELECT COUNT(*) FROM products p WHERE p.category_id = c.id AND p.status = 'ACTIVE') as product_count
@@ -21,7 +31,7 @@ export default async function HomePage() {
     ORDER BY c.display_order ASC
   `).all() as Category[];
 
-  // Lấy các sản phẩm mới đăng nhất đang ở trạng thái ACTIVE
+  // Lấy các sản phẩm mới đăng nhất (ưu tiên ACTIVE trước, sau đó RESERVED)
   const rawProducts = db.prepare(`
     SELECT 
       p.*,
@@ -31,13 +41,13 @@ export default async function HomePage() {
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     LEFT JOIN users u ON p.seller_id = u.id
-    WHERE p.status = 'ACTIVE'
-    ORDER BY p.created_at DESC
+    WHERE p.status IN ('ACTIVE', 'RESERVED')
+    ORDER BY CASE WHEN p.status = 'ACTIVE' THEN 0 ELSE 1 END ASC, p.created_at DESC
     LIMIT 8
   `).all() as any[];
 
   const productIds = rawProducts.map((p) => p.id);
-  let imagesByProduct: Record<string, ProductImage[]> = {};
+  const imagesByProduct: Record<string, ProductImage[]> = {};
 
   if (productIds.length > 0) {
     const placeholders = productIds.map(() => "?").join(",");
@@ -66,6 +76,7 @@ export default async function HomePage() {
     pickup_location: row.pickup_location,
     attributes: row.attributes,
     passport_hash: row.passport_hash,
+    passport_tx: row.passport_tx,
     view_count: row.view_count,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -94,103 +105,107 @@ export default async function HomePage() {
       <Navbar />
 
       <main className="flex-1">
-        {/* Hero Section với Kỹ thuật loang màu (Color Bleed Gradient) */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-[#001B48] via-[#02457A] to-[#018ABE] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
-          {/* Các đốm loang màu mượt mà phía sau (Mesh Gradient Bleed) */}
-          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#018ABE]/30 blur-3xl pointer-events-none"></div>
-          <div className="absolute top-1/2 -right-24 w-96 h-96 rounded-full bg-[#97CADB]/25 blur-3xl pointer-events-none"></div>
-          <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-white/10 to-transparent pointer-events-none"></div>
+        {/* Hero Section tinh gọn với Thanh tìm kiếm trực tiếp & Chip lọc nhanh */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-[#001B48] via-[#02457A] to-[#018ABE] text-white pt-10 pb-16 sm:pt-14 sm:pb-20 px-4 sm:px-6 lg:px-8">
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#018ABE]/30 blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 -right-24 w-96 h-96 rounded-full bg-[#97CADB]/25 blur-3xl pointer-events-none" />
 
-          <div className="relative max-w-5xl mx-auto text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-[#D6E8EE] text-xs font-bold backdrop-blur-md shadow-xs">
+          <div className="relative max-w-4xl mx-auto text-center space-y-5">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/20 text-[#D6E8EE] text-xs font-bold backdrop-blur-md">
               <IconSparkles className="w-3.5 h-3.5 text-[#97CADB]" />
-              <span>Chợ đồ cũ sinh viên ĐHQG & TP. Hồ Chí Minh</span>
+              <span>Chợ đồ cũ sinh viên ĐHQG & TP.HCM • Bảo vệ bằng Hợp đồng Escrow</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-              Mua bán đồ cũ dễ dàng, <br />
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+              Trao đổi đồ cũ sinh viên{" "}
               <span className="bg-gradient-to-r from-white via-[#D6E8EE] to-[#97CADB] bg-clip-text text-transparent">
-                tái sử dụng thông minh
+                minh bạch & giữ chỗ an toàn
               </span>
             </h1>
 
-            <p className="max-w-2xl mx-auto text-xs sm:text-base text-[#D6E8EE]/90 font-normal leading-relaxed">
-              Từ giáo trình ôn thi, bàn học gấp, ghế xoay cho đến quạt điện, nệm KTX... Tìm món đồ bạn cần với chi phí tiết kiệm từ các bạn sinh viên cùng trường.
+            <p className="max-w-2xl mx-auto text-xs sm:text-sm text-[#D6E8EE] font-medium">
+              Tìm nhanh giáo trình, bàn ghế, đồ điện tử quanh KTX. Tiền đặt cọc được giữ trong hợp đồng thông minh 48h cho tới khi bạn gặp mặt kiểm tra đúng mô tả trên{" "}
+              <span className="text-white font-bold">UniCycle Passport</span>.
             </p>
 
-            {/* Quick action buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-bold text-[#001B48] bg-white hover:bg-[#D6E8EE] shadow-lg shadow-[#001B48]/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
-              >
-                <IconSearch className="w-4 h-4 text-[#02457A]" />
-                <span>Khám phá đồ đang bán</span>
-              </Link>
-              <Link
-                href="/products/new"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-bold text-white bg-[#001B48]/60 hover:bg-[#001B48]/90 border border-white/25 transition-all cursor-pointer"
-              >
-                <span>Đăng thanh lý ngay</span>
-                <IconArrowRight className="w-4 h-4 text-[#97CADB]" />
-              </Link>
-            </div>
+            {/* Thanh tìm kiếm nhanh ngay tại Hero */}
+            <form
+              action="/products"
+              method="GET"
+              className="max-w-2xl mx-auto pt-1"
+            >
+              <div className="flex items-center bg-white rounded-2xl p-1.5 shadow-xl shadow-[#001B48]/25 border border-[#97CADB]">
+                <div className="pl-3 pr-2 text-[#02457A]">
+                  <IconSearch className="w-5 h-5" />
+                </div>
+                <input
+                  type="text"
+                  name="search"
+                  placeholder="Tìm giáo trình, bàn học gấp, tai nghe, KTX Khu A..."
+                  aria-label="Tìm kiếm món đồ sinh viên"
+                  className="flex-1 py-2.5 px-2 text-xs sm:text-sm text-[#001B48] placeholder-[#02457A]/60 font-medium focus:outline-hidden bg-transparent"
+                />
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#001B48] hover:bg-[#02457A] text-white text-xs sm:text-sm font-extrabold transition-colors shrink-0 cursor-pointer"
+                >
+                  Tìm ngay
+                </button>
+              </div>
+            </form>
 
-            {/* Trust highlights */}
-            <div className="pt-8 flex flex-wrap items-center justify-center gap-6 sm:gap-12 text-xs text-[#D6E8EE]">
-              <div className="flex items-center gap-2">
-                <span className="text-[#97CADB] font-bold text-base">✓</span>
-                <span>Giá sinh viên siêu rẻ</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[#97CADB] font-bold text-base">✓</span>
-                <span>Giao dịch trực tiếp tại KTX/Trường</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[#97CADB] font-bold text-base">✓</span>
-                <span>Tình trạng minh bạch rõ ràng</span>
-              </div>
+            {/* Chip lọc nhanh theo danh mục & khu vực KTX */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <span className="text-[11px] font-bold text-[#D6E8EE]/80">Phổ biến:</span>
+              {QUICK_SEARCH_CHIPS.map((chip) => (
+                <Link
+                  key={chip.label}
+                  href={chip.href}
+                  className="px-3 py-1 rounded-full text-xs font-bold bg-white/12 hover:bg-white hover:text-[#001B48] text-white border border-white/20 transition-all"
+                >
+                  {chip.label}
+                </Link>
+              ))}
             </div>
           </div>
         </section>
 
         {/* Danh mục sản phẩm (Categories Section) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-[#001B48]/5 border border-[#D6E8EE]">
-            <div className="flex items-center justify-between mb-6">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 pb-4">
+          <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-lg shadow-[#001B48]/5 border border-[#97CADB]">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base sm:text-lg font-black text-[#001B48]">
-                  Danh mục đồ cũ sinh viên
+                <h2 className="text-lg sm:text-xl font-black text-[#001B48]">
+                  Khám phá theo danh mục
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Đa dạng mặt hàng phục vụ đời sống học tập và sinh hoạt
-                </p>
               </div>
               <Link
                 href="/products"
                 className="text-xs font-bold text-[#018ABE] hover:text-[#02457A] flex items-center gap-1 group"
               >
-                <span>Xem tất cả</span>
+                <span>Tất cả danh mục</span>
                 <IconArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
               {categories.map((cat) => (
                 <Link
                   key={cat.id}
                   href={`/products?category=${cat.slug}`}
-                  className="group flex flex-col items-center text-center p-4 rounded-2xl bg-white hover:bg-[#D6E8EE]/40 border border-[#D6E8EE] hover:border-[#97CADB] transition-all hover:-translate-y-1 cursor-pointer"
+                  className="group flex items-center gap-3 p-3.5 rounded-2xl bg-white hover:bg-[#D6E8EE]/40 border border-[#D6E8EE] hover:border-[#018ABE] transition-all hover:-translate-y-0.5 cursor-pointer shadow-2xs"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-[#D6E8EE]/70 text-[#02457A] flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-[#018ABE] group-hover:text-white transition-all shadow-2xs">
-                    <CategoryIcon name={cat.icon} className="w-6 h-6" />
+                  <div className="w-11 h-11 rounded-xl bg-[#D6E8EE]/70 text-[#02457A] flex items-center justify-center shrink-0 group-hover:bg-[#018ABE] group-hover:text-white transition-all">
+                    <CategoryIcon name={cat.icon} className="w-5 h-5" />
                   </div>
-                  <span className="text-xs sm:text-sm font-bold text-[#001B48] group-hover:text-[#018ABE] transition-colors">
-                    {cat.name}
-                  </span>
-                  <span className="text-[11px] text-slate-400 mt-1">
-                    {cat.product_count || 0} món đồ
-                  </span>
+                  <div className="min-w-0">
+                    <span className="block text-xs sm:text-sm font-extrabold text-[#001B48] group-hover:text-[#018ABE] truncate transition-colors">
+                      {cat.name}
+                    </span>
+                    <span className="block text-[11px] text-[#02457A] font-medium mt-0.5">
+                      {cat.product_count || 0} món đang bán
+                    </span>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -198,32 +213,37 @@ export default async function HomePage() {
         </section>
 
         {/* Danh sách đồ mới đăng (Recent Listings) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="flex items-center justify-between mb-8">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#018ABE] animate-pulse"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#018ABE] animate-pulse" />
                 <h2 className="text-xl sm:text-2xl font-black text-[#001B48]">
-                  Đồ mới đăng thanh lý
+                  Top sản phẩm
                 </h2>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Các món đồ vừa được sinh viên đăng bán quanh các trường và ký túc xá
-              </p>
             </div>
 
-            <Link
-              href="/products"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-[#02457A] bg-[#D6E8EE]/70 hover:bg-[#D6E8EE] transition-colors border border-[#97CADB]/60"
-            >
-              <span>Xem thêm</span>
-              <IconArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/products/new"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-[#001B48] hover:bg-[#02457A] transition-colors"
+              >
+                <span>+ Đăng bán đồ</span>
+              </Link>
+              <Link
+                href="/products"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold text-[#001B48] bg-[#D6E8EE] hover:bg-[#97CADB] transition-colors border border-[#97CADB]"
+              >
+                <span>Xem tất cả</span>
+                <IconArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
 
           {products.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-[#97CADB] p-8">
-              <p className="text-slate-500 text-sm">Chưa có sản phẩm nào được đăng.</p>
+              <p className="text-[#02457A] text-sm font-semibold">Chưa có sản phẩm nào được đăng.</p>
               <Link
                 href="/products/new"
                 className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-[#018ABE] hover:bg-[#02457A]"
@@ -240,70 +260,28 @@ export default async function HomePage() {
           )}
         </section>
 
-        {/* Hướng dẫn quy trình 3 bước an toàn */}
-        <section className="bg-[#D6E8EE]/20 border-y border-[#D6E8EE] py-16 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center space-y-2 mb-12">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#001B48]">
-                Quy trình mua bán đồ cũ 3 bước an toàn
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-                Đơn giản, minh bạch và tiện lợi giữa những người bạn sinh viên
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-2xl border border-[#D6E8EE] shadow-2xs flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-[#001B48] text-white font-black text-base flex items-center justify-center mb-4 shadow-md shadow-[#001B48]/20">
-                  1
-                </div>
-                <h3 className="text-sm sm:text-base font-bold text-[#001B48] mb-2">Đăng đồ & Mô tả thực tế</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Người bán chụp hình các góc độ, ghi rõ tình trạng (vết xước, độ mới) và địa điểm giao dịch như phòng KTX hoặc cổng trường.
-                </p>
-              </div>
-
-              <div className="bg-white p-6 rounded-2xl border border-[#D6E8EE] shadow-2xs flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-[#02457A] text-white font-black text-base flex items-center justify-center mb-4 shadow-md shadow-[#02457A]/20">
-                  2
-                </div>
-                <h3 className="text-sm sm:text-base font-bold text-[#001B48] mb-2">Tìm kiếm & Hẹn xem đồ</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Người mua dễ dàng lọc món đồ gần mình, liên hệ qua số điện thoại/Zalo để thống nhất thời gian xem và nhận hàng.
-                </p>
-              </div>
-
-              <div className="bg-white p-6 rounded-2xl border border-[#D6E8EE] shadow-2xs flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-[#018ABE] text-white font-black text-base flex items-center justify-center mb-4 shadow-md shadow-[#018ABE]/20">
-                  3
-                </div>
-                <h3 className="text-sm sm:text-base font-bold text-[#001B48] mb-2">Kiểm tra & Nhận hàng</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Kiểm tra tận mắt tình trạng thực tế của món đồ trước khi giao dịch. Tiết kiệm tối đa chi phí cho kỳ học mới!
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Timeline quy trình giao dịch kéo tới đâu hiển thị tới đó */}
+        <SafeTradeTimeline />
 
         {/* Banner kêu gọi đăng bán */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="rounded-3xl bg-gradient-to-r from-[#001B48] via-[#02457A] to-[#018ABE] text-white p-8 sm:p-12 shadow-xl shadow-[#001B48]/10 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="space-y-3 max-w-xl">
-              <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold backdrop-blur-xs text-[#D6E8EE] border border-white/20">
-                Chuyển phòng trọ • Dọn KTX • Tốt nghiệp
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 pt-4">
+          <div className="rounded-3xl bg-gradient-to-r from-[#001B48] via-[#02457A] to-[#018ABE] text-white p-6 sm:p-10 shadow-xl shadow-[#001B48]/10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 max-w-xl">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-bold text-[#D6E8EE] border border-white/20">
+                <IconShieldCheck className="w-3.5 h-3.5 text-[#97CADB]" />
+                Bạn đang chuyển phòng trọ, dọn KTX hay ra trường
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black leading-tight">
-                Bạn có đồ dùng sinh hoạt hoặc giáo trình không còn dùng tới?
+              <h2 className="text-xl sm:text-2xl font-black leading-tight">
+                Bạn có giáo trình hoặc đồ dùng KTX không còn sử dụng?
               </h2>
               <p className="text-[#D6E8EE] text-xs sm:text-sm leading-relaxed">
-                Đừng vội bỏ đi! Hãy thanh lý lại cho các bạn sinh viên khóa dưới. Vừa giúp bạn có thêm chi phí, vừa lan tỏa thói quen sống xanh và tiết kiệm.
+                Đăng tin trong 3 bước gọn gàng để khởi tạo Hồ sơ UniCycle Passport và nhận thanh toán 100% giá trị qua ví Escrow.
               </p>
             </div>
 
             <Link
               href="/products/new"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-xs sm:text-sm font-bold text-[#001B48] bg-white hover:bg-[#D6E8EE] shadow-lg transition-all transform hover:scale-105 shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-xs sm:text-sm font-extrabold text-[#001B48] bg-white hover:bg-[#D6E8EE] shadow-lg transition-all shrink-0 cursor-pointer"
             >
               <span>Đăng bán đồ cũ ngay</span>
               <IconArrowRight className="w-4 h-4 text-[#02457A]" />
